@@ -193,3 +193,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .history/
+
+# tmp files
+tmp/

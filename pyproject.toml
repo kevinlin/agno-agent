@@ -1,10 +1,14 @@
 [project]
 name = "agno-agent"
 version = "0.1.0"
-description = "An AI agent using Agno framework with Claude and YFinance tools"
+description = "A series of AI agents built using Agno framework"
 requires-python = ">=3.12"
 dependencies = [
     "agno>=1.5.10",
+    "lancedb>=0.23.0",
     "openai>=1.84.0",
+    "pylance>=0.29.0",
+    "sqlalchemy>=2.0.41",
+    "tantivy>=0.24.0",
     "yfinance>=0.2.61",
 ]
