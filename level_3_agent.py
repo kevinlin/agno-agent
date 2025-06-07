@@ -7,7 +7,7 @@ from agno.tools.yfinance import YFinanceTools
 
 memory = Memory(
     # Use any model for creating and managing memories
-    model=OpenAIChat(id="gpt-4o"),
+    model=OpenAIChat(id="gpt-4.1"),
     # Store memories in a SQLite database
     db=SqliteMemoryDb(table_name="user_memories", db_file="tmp/agent.db"),
     # We disable deletion by default, enable it if needed
@@ -16,7 +16,7 @@ memory = Memory(
 )
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4o"),
+    model=OpenAIChat(id="gpt-4.1"),
     tools=[
         ReasoningTools(add_instructions=True),
         YFinanceTools(
