@@ -8,7 +8,7 @@ from agno.workflow import Workflow
 
 class CacheWorkflow(Workflow):
     # Add agents or teams as attributes on the workflow
-    agent = Agent(model=OpenAIChat(id="gpt-4.1"))
+    agent = Agent(model=OpenAIChat(id="gpt-4.1-mini"))
 
     # Write the logic in the `run()` method
     def run(self, message: str) -> Iterator[RunResponse]:

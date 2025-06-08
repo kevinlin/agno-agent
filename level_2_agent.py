@@ -23,7 +23,7 @@ storage = SqliteStorage(table_name="agent_sessions", db_file="tmp/agent.db")
 
 agent = Agent(
     name="Agno Assist",
-    model=OpenAIChat(id="gpt-4.1"),
+    model=OpenAIChat(id="gpt-4.1-mini"),
     instructions=[
         "Search your knowledge before answering the question.",
         "Only include the output in your response. No other text.",
