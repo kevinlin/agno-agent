@@ -10,19 +10,30 @@ This project uses [uv](https://docs.astral.sh/uv/) for Python dependency managem
 
 - Python 3.12+
 - uv package manager
-- Anthropic API key
+- OpenAI API key
+
+Install uv if you don't have it:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
 
 ### Installation
-
 1. Clone the repository
-2. Install dependencies:
+
+2. Setup your virtual environment:
+   ```bash
+   uv venv --python 3.12
+   source .venv/bin/activate
+   ```
+
+3. Install dependencies:
    ```bash
    uv sync
    ```
 
 ### Configuration
 
-Set your Anthropic API key as an environment variable:
+Set your OpenAI API key as an environment variable:
 
 ```bash
 export OPENAI_API_KEY=="your-oepnai-api-key"
@@ -30,13 +41,37 @@ export OPENAI_API_KEY=="your-oepnai-api-key"
 
 ### Usage
 
-Run the agent:
+Run the different agent levels:
 
+**Level 1: Agents with tools and instructions**
 ```bash
 uv run python level_1_agent.py
 ```
 
-The agent will query the stock price of Apple using YFinance tools and display the results in a table format.
+**Level 2: Agents with knowledge and storage**
+```bash
+uv run python level_2_agent.py
+```
+
+**Level 3: Agents with memory and reasoning**
+```bash
+uv run python level_3_agent.py
+```
+
+**Level 4: Agent Teams that can reason and collaborate**
+```bash
+uv run python level_4_team.py
+```
+
+**Level 5: Agentic Workflows with state and determinism**
+```bash
+uv run python level_5_workflow.py
+```
+
+**Run Playground Server Locally**
+```bash
+uv run python playground.py
+```
 
 ## Dependencies
 
