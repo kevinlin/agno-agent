@@ -12,12 +12,16 @@ This project uses [uv](https://docs.astral.sh/uv/) for Python dependency managem
 - uv package manager
 - OpenAI API key
 
-Install uv if you don't have it:
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+### Install `uv`
+
+We use `uv` for python environment and package management. Install it by following the the [`uv` documentation](https://docs.astral.sh/uv/#getting-started) or use the command below for unix-like systems:
+
+```sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ### Installation
+
 1. Clone the repository
 
 2. Setup your virtual environment:
