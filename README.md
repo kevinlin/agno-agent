@@ -43,6 +43,25 @@ Set your OpenAI API key as an environment variable:
 export OPENAI_API_KEY=="your-oepnai-api-key"
 ```
 
+### Code Formatting
+
+This project uses `black` for code formatting and `isort` for import sorting, both configured in `pyproject.toml`.
+
+**Format code and sort imports (recommended):**
+```bash
+uv run black . && uv run isort .
+```
+
+**Check formatting and import sorting without making changes:**
+```bash
+uv run black --check . && uv run isort --check-only .
+```
+
+**Show formatting and import sorting diff without making changes:**
+```bash
+uv run black --diff . && uv run isort --diff .
+```
+
 ### Usage
 
 Run the different agent levels:
@@ -84,7 +103,9 @@ uv run python playground/playground.py
 
 ## Dependencies
 
-- `agno>=1.5.10` - The Agno AI agent framework
+- `agno>=1.7.0` - The Agno AI agent framework
+- `black>=24.0.0` - Python code formatter
+- `isort>=5.13.2` - Python import sorting tool
 
 ## Project Structure
 

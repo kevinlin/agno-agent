@@ -18,7 +18,14 @@ finance_agent = Agent(
     name="Finance Agent",
     role="Handle financial data requests and market analysis",
     model=OpenAIChat(id="gpt-4.1-mini"),
-    tools=[YFinanceTools(stock_price=True, stock_fundamentals=True,analyst_recommendations=True, company_info=True)],
+    tools=[
+        YFinanceTools(
+            stock_price=True,
+            stock_fundamentals=True,
+            analyst_recommendations=True,
+            company_info=True,
+        )
+    ],
     instructions=[
         "Use tables to display stock prices, fundamentals (P/E, Market Cap), and recommendations.",
         "Clearly state the company name and ticker symbol.",
@@ -48,7 +55,8 @@ reasoning_finance_team = Team(
 )
 
 if __name__ == "__main__":
-    reasoning_finance_team.print_response("""Compare the tech sector giants (Nvida, AMD, Qualcomm) performance:
+    reasoning_finance_team.print_response(
+        """Compare the tech sector giants (Nvida, AMD, Qualcomm) performance:
         1. Get financial data for all three companies
         2. Analyze recent news affecting the tech sector
         3. Calculate comparative metrics and correlations
