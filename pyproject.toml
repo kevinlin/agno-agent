@@ -12,6 +12,7 @@ dependencies = [
     "isort>=5.13.2",
     "lancedb>=0.24.0",
     "openai>=1.93.0",
+    "pandas>=2.3.0",
     "pathlib>=1.0.1",
     "pylance>=0.30.0",
     "sqlalchemy>=2.0.41",
@@ -50,8 +51,8 @@ skip_glob = [
     "*.egg-info/*"
 ]
 known_first_party = ["agent", "playground"]
-known_third_party = ["agno", "fastapi", "openai", "duckduckgo_search", "exa_py", "lancedb", "yfinance"]
-line_length = 88
+known_third_party = ["agno", "fastapi", "openai", "duckduckgo_search", "exa_py", "lancedb", "pandas", "yfinance"]
+line_length = 120
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
