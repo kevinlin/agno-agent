@@ -49,32 +49,37 @@ Run the different agent levels:
 
 **Level 1: Agents with tools and instructions**
 ```bash
-uv run python level_1_agent.py
+uv run python agent/level_1_agent.py
 ```
 
 **Level 2: Agents with knowledge and storage**
 ```bash
-uv run python level_2_agent.py
+uv run python agent/level_2_agent.py
 ```
 
 **Level 3: Agents with memory and reasoning**
 ```bash
-uv run python level_3_agent.py
+uv run python agent/level_3_agent.py
 ```
 
 **Level 4: Agent Teams that can reason and collaborate**
 ```bash
-uv run python level_4_team.py
+uv run python agent/level_4_team.py
 ```
 
 **Level 5: Agentic Workflows with state and determinism**
 ```bash
-uv run python level_5_workflow.py
+uv run python agent/level_5_workflow.py
+```
+
+**Run Research Agent**
+```bash
+uv run python agent/research_agent.py
 ```
 
 **Run Playground Server Locally**
 ```bash
-uv run python playground.py
+uv run python playground/playground.py
 ```
 
 ## Dependencies
@@ -83,6 +88,16 @@ uv run python playground.py
 
 ## Project Structure
 
-- `level_1_agent.py` - Main agent script
+- `agent/` - Contains all agent implementations
+  - `level_1_agent.py` - Agents with tools and instructions
+  - `level_2_agent.py` - Agents with knowledge and storage
+  - `level_3_agent.py` - Agents with memory and reasoning
+  - `level_4_team.py` - Agent teams that can reason and collaborate
+  - `level_5_workflow.py` - Agentic workflows with state and determinism
+  - `research_agent.py` - Research agent example
+  - `run_response.py` - Response running utilities
+  - `stream_response.py` - Response streaming utilities
+- `playground/` - Contains playground server
+  - `playground.py` - Local playground server
 - `pyproject.toml` - Project configuration and dependencies
 - `.python-version` - Python version specification 
