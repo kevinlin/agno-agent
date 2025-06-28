@@ -89,15 +89,6 @@ uv run python playground/playground.py
 ## Project Structure
 
 - `agent/` - Contains all agent implementations
-  - `level_1_agent.py` - Agents with tools and instructions
-  - `level_2_agent.py` - Agents with knowledge and storage
-  - `level_3_agent.py` - Agents with memory and reasoning
-  - `level_4_team.py` - Agent teams that can reason and collaborate
-  - `level_5_workflow.py` - Agentic workflows with state and determinism
-  - `research_agent.py` - Research agent example
-  - `run_response.py` - Response running utilities
-  - `stream_response.py` - Response streaming utilities
 - `playground/` - Contains playground server
-  - `playground.py` - Local playground server
 - `pyproject.toml` - Project configuration and dependencies
 - `.python-version` - Python version specification 
