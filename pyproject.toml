@@ -4,15 +4,15 @@ version = "0.1.0"
 description = "A series of AI agents built using Agno framework"
 requires-python = ">=3.12"
 dependencies = [
-    "agno>=1.5.10",
-    "duckduckgo-search>=8.0.2",
-    "exa-py>=1.14.5",
-    "fastapi[standard]>=0.115.12",
-    "lancedb>=0.23.0",
-    "openai>=1.84.0",
+    "agno>=1.7.0",
+    "duckduckgo-search>=8.0.4",
+    "exa-py>=1.14.13",
+    "fastapi[standard]>=0.115.14",
+    "lancedb>=0.24.0",
+    "openai>=1.93.0",
     "pathlib>=1.0.1",
-    "pylance>=0.29.0",
+    "pylance>=0.30.0",
     "sqlalchemy>=2.0.41",
     "tantivy>=0.24.0",
-    "yfinance>=0.2.61",
+    "yfinance>=0.2.64",
 ]
