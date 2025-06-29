@@ -26,13 +26,18 @@ response_stream: Iterator[RunResponse] = agent.run(
 # Print event per message
 for event in response_stream:
     if event.event == "RunStarted":
-        print(f"{event.event}: {event.model}")
+        print(f"{event.event}->")
+        print(json.dumps(event.__dict__, indent=2, default=str))
     elif event.event == "RunCompleted":
-        print(f"{event.event}->\nResponse: {event.content}\nReasoning: {event.reasoning_content or ''}")
+        print(
+            f"{event.event}->\nResponse: {event.content}\nReasoning: {event.reasoning_content or ''}"
+        )
     elif event.event == "RunResponseContent":
         print(f"Content: {event.content}")
     elif event.event == "ToolCallStarted":
-        print(f"{event.event}->\ttool_name: {event.tool.tool_name}, tool_args: {event.tool.tool_args}")
+        print(
+            f"{event.event}->\ttool_name: {event.tool.tool_name}, tool_args: {event.tool.tool_args}"
+        )
     elif event.event == "ToolCallCompleted":
         tool_call_result = getattr(
             event.tool,

@@ -1,6 +1,4 @@
-from typing import Iterator
-
-from agno.agent import Agent, RunResponse
+from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools.yfinance import YFinanceTools
 from rich.pretty import pprint
