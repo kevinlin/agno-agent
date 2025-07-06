@@ -1,0 +1,29 @@
+[
+    {
+        "memory_id": "5c9e9c72-cf09-4319-b910-fd8a20aa6bc5",
+        "memory": "User\"s name is Ava.",
+        "topics": [
+            "name"
+        ],
+        "last_updated": "2025-07-06T13: 47: 41.998925",
+        "input": "My name is Ava and I like to ski."
+    },
+    {
+        "memory_id": "a6e6ae58-a520-48f0-97bb-2f06505c2ae0",
+        "memory": "User lives in San Francisco.",
+        "topics": [
+            "location"
+        ],
+        "last_updated": "2025-07-06T13: 47: 58.125892",
+        "input": "I live in san francisco, where should i move within a 4 hour drive?"
+    },
+    {
+        "memory_id": "ad859245-b2fb-467e-ab3e-ac1243a408f7",
+        "memory": "Ava likes to ski.",
+        "topics": [
+            "hobbies"
+        ],
+        "last_updated": "2025-07-06T13: 47: 42.006376",
+        "input": "My name is Ava and I like to ski."
+    }
+]
