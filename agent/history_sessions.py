@@ -8,7 +8,7 @@ from agno.storage.sqlite import SqliteStorage
 # os.remove("tmp/data.db")
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4o-mini"),
+    model=OpenAIChat(id="gpt-4.1-mini"),
     user_id="user_1",
     storage=SqliteStorage(table_name="agent_sessions_new", db_file="tmp/data.db"),
     search_previous_sessions_history=True,  # allow searching previous sessions
