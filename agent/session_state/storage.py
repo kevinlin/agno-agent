@@ -1,5 +1,3 @@
-"""Run `pip install agno openai sqlalchemy` to install dependencies."""
-
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.storage.sqlite import SqliteStorage
