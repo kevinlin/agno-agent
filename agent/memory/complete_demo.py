@@ -7,6 +7,8 @@ from rich.pretty import pprint
 
 # UserId for the memories
 user_id = "ava"
+session_id = "1000"
+
 # Database file for memory and storage
 db_file = "tmp/agent.db"
 
@@ -34,6 +36,7 @@ agent = Agent(
     add_history_to_messages=True,
     # Number of history runs
     num_history_runs=3,
+    enable_session_summaries=True,
     markdown=True,
 )
 
@@ -41,30 +44,25 @@ memory.clear()
 agent.print_response(
     "My name is Ava and I like to ski.",
     user_id=user_id,
+    session_id=session_id,
     stream=True,
     stream_intermediate_steps=True,
 )
 print("Memories about Ava:")
 pprint(memory.get_user_memories(user_id=user_id))
-# -*- Print the messages in the memory
-pprint(
-    [
-        m.model_dump(include={"role", "content"})
-        for m in agent.get_messages_for_session()
-    ]
-)
 
 agent.print_response(
     "I live in san francisco, where should i move within a 4 hour drive?",
     user_id=user_id,
+    session_id=session_id,
     stream=True,
     stream_intermediate_steps=True,
 )
 print("Memories about Ava:")
 pprint(memory.get_user_memories(user_id=user_id))
-pprint(
-    [
-        m.model_dump(include={"role", "content"})
-        for m in agent.get_messages_for_session()
-    ]
-)
+
+session_summary = agent.get_session_summary(user_id=user_id, session_id=session_id)
+if session_summary:
+    print(f"Session summary: {session_summary.summary}")
+else:
+    print("No session summary found")
