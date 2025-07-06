@@ -10,7 +10,7 @@ def add_translation(agent: Agent, german_word: str, english_word: str) -> str:
     # Add the translation if it's not already in the dictionary
     dictionary = agent.session_state["dictionary"]
     german_lower = german_word.lower()
-    
+
     if german_lower in dictionary:
         return f"'{german_word}' is already in the dictionary with translation '{dictionary[german_lower]}'"
 
@@ -23,7 +23,7 @@ def remove_translation(agent: Agent, german_word: str) -> str:
     # Case-insensitive search
     german_lower = german_word.lower()
     dictionary = agent.session_state["dictionary"]
-    
+
     if german_lower in dictionary:
         english_translation = dictionary.pop(german_lower)
         return f"Removed translation: '{german_word}' -> '{english_translation}'"
@@ -35,10 +35,10 @@ def translate_word(agent: Agent, german_word: str) -> str:
     """Translate a German word to English using the dictionary."""
     german_lower = german_word.lower()
     dictionary = agent.session_state["dictionary"]
-    
+
     if german_lower in dictionary:
         return f"'{german_word}' translates to '{dictionary[german_lower]}'"
-    
+
     return f"'{german_word}' not found in dictionary. Please add it first."
 
 
@@ -49,7 +49,9 @@ def list_translations(agent: Agent) -> str:
     if not dictionary:
         return "The dictionary is empty."
 
-    translations_text = "\n".join([f"- {german.title()} -> {english}" for german, english in dictionary.items()])
+    translations_text = "\n".join(
+        [f"- {german.title()} -> {english}" for german, english in dictionary.items()]
+    )
     return f"Current dictionary:\n{translations_text}"
 
 
@@ -57,12 +59,16 @@ def search_by_english(agent: Agent, english_word: str) -> str:
     """Find German word(s) that translate to the given English word."""
     english_lower = english_word.lower()
     dictionary = agent.session_state["dictionary"]
-    
-    matches = [german for german, english in dictionary.items() if english.lower() == english_lower]
-    
+
+    matches = [
+        german
+        for german, english in dictionary.items()
+        if english.lower() == english_lower
+    ]
+
     if not matches:
         return f"No German words found that translate to '{english_word}'"
-    
+
     if len(matches) == 1:
         return f"'{matches[0].title()}' translates to '{english_word}'"
     else:
@@ -75,7 +81,13 @@ agent = Agent(
     model=OpenAIChat(id="gpt-4.1-mini"),
     # Initialize the session state with an empty dictionary
     session_state={"dictionary": {}},
-    tools=[add_translation, remove_translation, translate_word, list_translations, search_by_english],
+    tools=[
+        add_translation,
+        remove_translation,
+        translate_word,
+        list_translations,
+        search_by_english,
+    ],
     # You can use variables from the session state in the instructions
     instructions=dedent(
         """\
@@ -97,7 +109,10 @@ agent = Agent(
 )
 
 # Example usage
-agent.print_response("Add some basic German words: Hund means dog, Katze means cat, and Haus means house", stream=True)
+agent.print_response(
+    "Add some basic German words: Hund means dog, Katze means cat, and Haus means house",
+    stream=True,
+)
 print(f"Session state: {agent.session_state}")
 
 agent.print_response("What does Hund mean?", stream=True)
@@ -116,4 +131,4 @@ agent.print_response("Remove Haus from the dictionary", stream=True)
 print(f"Session state: {agent.session_state}")
 
 agent.print_response("Show me my current dictionary", stream=True)
-print(f"Session state: {agent.session_state}") 
+print(f"Session state: {agent.session_state}")
