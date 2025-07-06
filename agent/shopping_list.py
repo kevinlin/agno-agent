@@ -8,11 +8,12 @@ from agno.models.openai import OpenAIChat
 def add_item(agent: Agent, item: str) -> str:
     """Add an item to the shopping list and return confirmation."""
     # Add the item if it's not already in the list
-    if item.lower() not in [i.lower() for i in agent.session_state["shopping_list"]]:
-        agent.session_state["shopping_list"].append(item)
-        return f"Added '{item}' to the shopping list"
-    else:
+    shopping_list = agent.session_state["shopping_list"]
+    if any(item.lower() == list_item.lower() for list_item in shopping_list):
         return f"'{item}' is already in the shopping list"
+
+    shopping_list.append(item)
+    return f"Added '{item}' to the shopping list"
 
 
 def remove_item(agent: Agent, item: str) -> str:
