@@ -194,5 +194,6 @@ cython_debug/
 .cursorindexingignore
 .history/
 
-# tmp files
+# Data files
 tmp/
+data/

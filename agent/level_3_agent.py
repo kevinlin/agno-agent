@@ -9,7 +9,7 @@ memory = Memory(
     # Use any model for creating and managing memories
     model=OpenAIChat(id="gpt-4.1-mini"),
     # Store memories in a SQLite database
-    db=SqliteMemoryDb(table_name="user_memories", db_file="tmp/agent.db"),
+    db=SqliteMemoryDb(table_name="user_memories", db_file="data/agent.db"),
     # We disable deletion by default, enable it if needed
     delete_memories=False,
     clear_memories=False,

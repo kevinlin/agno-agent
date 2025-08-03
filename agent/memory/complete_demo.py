@@ -10,7 +10,7 @@ user_id = "ava"
 session_id = "1000"
 
 # Database file for memory and storage
-db_file = "tmp/agent.db"
+db_file = "data/agent.db"
 
 # Initialize memory.v2
 memory = Memory(

@@ -20,7 +20,7 @@ agent = Agent(
     # Add a tool that adds an item to the shopping list
     tools=[add_item],
     # Store the session state in a SQLite database
-    storage=SqliteStorage(table_name="agent_sessions", db_file="tmp/data.db"),
+    storage=SqliteStorage(table_name="agent_sessions", db_file="data/data.db"),
     # Add the current shopping list from the state in the instructions
     instructions="Current shopping list is: {shopping_list}",
     # Important: Set `add_state_in_messages=True`

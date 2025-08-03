@@ -47,6 +47,7 @@ profile = "black"
 skip_glob = [
     ".venv/*",
     ".history/*",
+    "data/*",
     "tmp/*",
     "*.egg-info/*"
 ]

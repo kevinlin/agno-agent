@@ -5,7 +5,7 @@ from agno.storage.sqlite import SqliteStorage
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.yfinance import YFinanceTools
 
-agent_storage: str = "tmp/agents.db"
+agent_storage: str = "data/agents.db"
 
 web_agent = Agent(
     name="Web Agent",

@@ -10,7 +10,7 @@ from agno.vectordb.lancedb import LanceDb, SearchType
 knowledge = UrlKnowledge(
     urls=["https://docs.agno.com/introduction.md"],
     vector_db=LanceDb(
-        uri="tmp/lancedb",
+        uri="data/lancedb",
         table_name="agno_docs",
         search_type=SearchType.hybrid,
         # Use OpenAI for embeddings
@@ -19,7 +19,7 @@ knowledge = UrlKnowledge(
 )
 
 # Store agent sessions in a SQLite database
-storage = SqliteStorage(table_name="agent_sessions", db_file="tmp/agent.db")
+storage = SqliteStorage(table_name="agent_sessions", db_file="data/agent.db")
 
 agent = Agent(
     name="Agno Assist",
