@@ -23,4 +23,5 @@ jobs:
         run: |
           uv run pytest tests/ -v --cov=agent --cov-report=term-missing --cov-report=xml
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
