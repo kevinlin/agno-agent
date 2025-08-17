@@ -33,7 +33,7 @@ def get_top_hackernews_stories(num_stories: int = 10) -> str:
 
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[get_top_hackernews_stories],
     show_tool_calls=True,
     markdown=True,

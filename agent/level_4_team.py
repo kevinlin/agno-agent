@@ -8,7 +8,7 @@ from agno.tools.yfinance import YFinanceTools
 web_agent = Agent(
     name="Web Search Agent",
     role="Handle web search requests and general research",
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[DuckDuckGoTools()],
     instructions="Always include sources",
     add_datetime_to_instructions=True,
@@ -17,7 +17,7 @@ web_agent = Agent(
 finance_agent = Agent(
     name="Finance Agent",
     role="Handle financial data requests and market analysis",
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[
         YFinanceTools(
             stock_price=True,

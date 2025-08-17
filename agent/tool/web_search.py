@@ -4,7 +4,7 @@ from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.shell import ShellTools
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[DuckDuckGoTools(), ShellTools()],
     show_tool_calls=True,
     markdown=True,

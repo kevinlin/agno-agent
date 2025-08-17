@@ -40,7 +40,7 @@ def list_items(agent: Agent) -> str:
 
 # Create a Shopping List Manager Agent that maintains state
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     # Initialize the session state with an empty shopping list
     session_state={"shopping_list": []},
     tools=[add_item, remove_item, list_items],

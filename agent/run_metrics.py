@@ -4,7 +4,7 @@ from agno.tools.yfinance import YFinanceTools
 from rich.pretty import pprint
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[YFinanceTools(stock_price=True)],
     markdown=True,
     show_tool_calls=True,

@@ -9,7 +9,7 @@ memory = Memory(db=memory_db)
 john_doe_id = "john_doe@example.com"
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     memory=memory,
     enable_agentic_memory=True,
 )

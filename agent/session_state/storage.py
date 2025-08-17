@@ -12,7 +12,7 @@ def add_item(agent: Agent, item: str) -> str:
 
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     # Fix the session id to continue the same session across execution cycles
     session_id="fixed_id_for_demo",
     # Initialize the session state with an empty shopping list

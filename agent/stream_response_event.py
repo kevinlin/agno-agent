@@ -8,7 +8,7 @@ from agno.tools.yfinance import YFinanceTools
 from agno.utils.pprint import pprint_run_response
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[
         ReasoningTools(add_instructions=True),
         YFinanceTools(stock_price=True),

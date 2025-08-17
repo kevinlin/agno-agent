@@ -4,7 +4,7 @@ from agno.storage.sqlite import SqliteStorage
 from rich.pretty import pprint
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     # Fix the session id to continue the same session across execution cycles
     session_id="fixed_id_for_demo",
     storage=SqliteStorage(table_name="agent_sessions", db_file="data/data.db"),

@@ -78,7 +78,7 @@ def search_by_english(agent: Agent, english_word: str) -> str:
 
 # Create a Dictionary Agent that maintains state
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     # Initialize the session state with an empty dictionary
     session_state={"dictionary": {}},
     tools=[

@@ -27,7 +27,7 @@ class MovieScript(BaseModel):
 
 # Agent that uses JSON mode
 json_mode_agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     description="You write movie scripts.",
     response_model=MovieScript,
     use_json_mode=True,
@@ -36,7 +36,7 @@ json_mode_agent.print_response("New York", stream=True, stream_intermediate_step
 
 # Agent that uses structured outputs
 structured_output_agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     description="You write movie scripts.",
     response_model=MovieScript,
 )
@@ -46,7 +46,7 @@ structured_output_agent.print_response(
 
 # Agent that uses a parser model
 parser_model_agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     description="You write movie scripts.",
     response_model=MovieScript,
     parser_model=OpenAIChat(id="gpt-4o"),

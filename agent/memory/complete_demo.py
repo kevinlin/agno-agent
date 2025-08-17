@@ -15,7 +15,7 @@ db_file = "data/agent.db"
 # Initialize memory.v2
 memory = Memory(
     # Use any model for creating memories
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     db=SqliteMemoryDb(table_name="user_memories", db_file=db_file),
 )
 # Initialize storage
@@ -23,7 +23,7 @@ storage = SqliteStorage(table_name="agent_sessions", db_file=db_file)
 
 # Initialize Agent
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     # Store memories in a database
     memory=memory,
     # Give the Agent the ability to update memories

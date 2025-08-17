@@ -3,7 +3,7 @@ from agno.memory.v2 import Memory
 from agno.models.openai import OpenAIChat
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     # Multi-user, multi-session only work with Memory.v2
     memory=Memory(),
     add_history_to_messages=True,

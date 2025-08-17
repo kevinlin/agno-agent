@@ -10,7 +10,7 @@ user_id = "jon_hamm@example.com"
 session_id = "1001"
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1-mini"),
+    model=OpenAIChat(id="gpt-5-mini"),
     memory=memory,
     enable_agentic_memory=True,
     enable_user_memories=True,
