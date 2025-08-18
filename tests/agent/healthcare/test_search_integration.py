@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from agent.healthcare.main import create_app
-from agent.healthcare.search.routes import set_search_service
+from agent.healthcare.search.routes import get_search_service
 from agent.healthcare.search.service import SearchResult, SearchService
 
 
@@ -25,8 +25,8 @@ class TestSearchIntegration:
         """Create FastAPI app with mocked search service."""
         app = create_app()
 
-        # Set the mock search service
-        set_search_service(mock_search_service)
+        # Store the mock search service in app state
+        app.state.search_service = mock_search_service
 
         # Add search routes
         from agent.healthcare.search import router as search_router
@@ -227,12 +227,12 @@ class TestSearchIntegration:
 
     def test_search_health_check_service_not_initialized(self, client):
         """Test search health check when service not initialized."""
-        # Clear the search service
-        set_search_service(None)
+        # Remove the search service from app state
+        delattr(client.app.state, "search_service")
 
         response = client.get("/reports/search/health")
         assert response.status_code == 503
-        assert "Search service" in response.json()["detail"]
+        assert "Search service not initialized" in response.json()["detail"]
 
     def test_search_response_format_validation(self, client, mock_search_service):
         """Test that search response matches expected format."""

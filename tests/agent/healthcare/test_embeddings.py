@@ -289,7 +289,9 @@ class TestEmbeddingService:
         assert results[0]["content"] == "test document"
         assert results[0]["metadata"]["report_id"] == 1
         assert results[0]["distance"] == 0.2
-        assert abs(results[0]["relevance_score"] - 0.833) < 0.01  # 1.0 / (1.0 + 0.2) ≈ 0.833
+        assert (
+            abs(results[0]["relevance_score"] - 0.833) < 0.01
+        )  # 1.0 / (1.0 + 0.2) ≈ 0.833
 
         # Verify query was called correctly
         mock_collection.query.assert_called_once_with(

@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -12,6 +12,13 @@ from agent.healthcare.search.service import SearchResult, SearchService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/reports", tags=["search"])
+
+
+def get_search_service(request: Request) -> SearchService:
+    """Dependency function to get search service from app state."""
+    if not hasattr(request.app.state, "search_service"):
+        raise HTTPException(status_code=503, detail="Search service not initialized")
+    return request.app.state.search_service
 
 
 class SearchResultResponse(BaseModel):
@@ -43,23 +50,6 @@ class ErrorResponse(BaseModel):
     details: Dict[str, Any] = Field(default_factory=dict)
 
 
-# Global search service instance (will be injected via dependency)
-search_service: SearchService = None
-
-
-def set_search_service(service: SearchService) -> None:
-    """Set the global search service instance."""
-    global search_service
-    search_service = service
-
-
-def get_search_service() -> SearchService:
-    """Get the search service instance."""
-    if search_service is None:
-        raise HTTPException(status_code=503, detail="Search service not initialized")
-    return search_service
-
-
 @router.get(
     "/{user_external_id}/search",
     response_model=SearchResponse,
@@ -73,6 +63,7 @@ async def search_reports(
     user_external_id: str,
     q: str = Query(..., min_length=1, max_length=1000, description="Search query"),
     k: int = Query(5, ge=1, le=20, description="Number of results to return"),
+    search_service: SearchService = Depends(get_search_service),
 ) -> SearchResponse:
     """Search medical reports using semantic search.
 
@@ -91,14 +82,12 @@ async def search_reports(
         HTTPException: For validation errors, user not found, or search failures
     """
     try:
-        service = get_search_service()
-
         logger.info(
             f"Search request: user={user_external_id}, query='{q[:50]}...', k={k}"
         )
 
         # Perform semantic search
-        search_results = service.semantic_search(
+        search_results = search_service.semantic_search(
             user_external_id=user_external_id, query=q, k=k
         )
 
@@ -144,7 +133,10 @@ async def search_reports(
         500: {"model": ErrorResponse, "description": "Failed to get stats"},
     },
 )
-async def get_search_stats(user_external_id: str) -> Dict[str, Any]:
+async def get_search_stats(
+    user_external_id: str,
+    search_service: SearchService = Depends(get_search_service),
+) -> Dict[str, Any]:
     """Get search statistics for a user.
 
     Returns information about the user's searchable content,
@@ -160,9 +152,7 @@ async def get_search_stats(user_external_id: str) -> Dict[str, Any]:
         HTTPException: If user not found or operation fails
     """
     try:
-        service = get_search_service()
-
-        stats = service.get_search_stats(user_external_id)
+        stats = search_service.get_search_stats(user_external_id)
 
         if "error" in stats:
             if stats["error"] == "User not found":
@@ -182,16 +172,16 @@ async def get_search_stats(user_external_id: str) -> Dict[str, Any]:
 
 # Health check endpoint for search service
 @router.get("/search/health")
-async def search_health_check() -> Dict[str, Any]:
+async def search_health_check(
+    search_service: SearchService = Depends(get_search_service),
+) -> Dict[str, Any]:
     """Health check for search service."""
     try:
-        service = get_search_service()
-
         # Basic health check - verify service is initialized
         return {
             "status": "healthy",
             "service": "search",
-            "embedding_model": service.config.embedding_model,
+            "embedding_model": search_service.config.embedding_model,
         }
     except Exception as e:
         logger.error(f"Search health check failed: {e}")

@@ -125,6 +125,60 @@ sequenceDiagram
     AG-->>U: "Blood work uploaded and processed successfully"
 ```
 
+## Dependency Injection and Service Management
+
+### FastAPI Application State Pattern
+The application uses FastAPI's `app.state` for service management with proper dependency injection:
+
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup and shutdown."""
+    # Initialize services in dependency order
+    config = ConfigManager.load_config()
+    db_service = DatabaseService(config)
+    embedding_service = EmbeddingService(config)
+    search_service = SearchService(config, db_service, embedding_service)
+    
+    # Store services in app state for dependency injection
+    app.state.config = config
+    app.state.db_service = db_service
+    app.state.embedding_service = embedding_service
+    app.state.search_service = search_service
+    
+    yield
+    
+    # Cleanup on shutdown
+    if db_service:
+        db_service.close()
+```
+
+### Dependency Injection in Routes
+Routes use FastAPI's `Depends()` system for clean service injection:
+
+```python
+def get_search_service(request: Request) -> SearchService:
+    """Dependency function to get search service from app state."""
+    if not hasattr(request.app.state, 'search_service'):
+        raise HTTPException(status_code=503, detail="Search service not initialized")
+    return request.app.state.search_service
+
+@router.get("/search")
+async def search_endpoint(
+    query: str,
+    search_service: SearchService = Depends(get_search_service)
+) -> SearchResponse:
+    """Search endpoint with injected service dependency."""
+    return search_service.semantic_search(query)
+```
+
+### Benefits of This Pattern
+- **Clean separation**: No global variables or manual service passing
+- **Testable**: Easy to mock services in tests using `app.state`
+- **Type-safe**: Full type checking and IDE support
+- **FastAPI idiomatic**: Follows FastAPI best practices
+- **Error handling**: Built-in service availability checking
+
 ## Components and Interfaces
 
 ### 1. Configuration and Deployment Component

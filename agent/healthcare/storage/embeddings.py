@@ -258,7 +258,7 @@ class EmbeddingService:
                     # Use exponential decay to handle distances > 1.0
                     distance = results["distances"][0][i]
                     relevance_score = max(0.0, min(1.0, 1.0 / (1.0 + distance)))
-                    
+
                     result = {
                         "content": results["documents"][0][i],
                         "metadata": results["metadatas"][0][i],

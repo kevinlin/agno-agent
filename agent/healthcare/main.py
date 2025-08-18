@@ -54,10 +54,12 @@ async def lifespan(app: FastAPI):
         search_service = SearchService(config, db_service, embedding_service)
         logger.info("✓ Search service initialized")
 
-        # Set up service dependencies for routes
-        from agent.healthcare.search import set_search_service
-        set_search_service(search_service)
-        logger.info("✓ Service dependencies configured")
+        # Store services in app state for dependency injection
+        app.state.config = config
+        app.state.db_service = db_service
+        app.state.embedding_service = embedding_service
+        app.state.search_service = search_service
+        logger.info("✓ Services stored in application state")
 
         logger.info("Healthcare Agent MVP started successfully!")
 
@@ -127,10 +129,12 @@ def add_routes(app: FastAPI) -> None:
 
     # Include upload routes
     from agent.healthcare.upload.routes import router as upload_router
+
     app.include_router(upload_router)
 
     # Include search routes
     from agent.healthcare.search import router as search_router
+
     app.include_router(search_router)
 
     @app.get("/")
