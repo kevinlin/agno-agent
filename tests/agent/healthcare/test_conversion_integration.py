@@ -190,46 +190,6 @@ class TestConversionIntegration:
             assert markdown_file.exists()
 
     @pytest.mark.integration
-    def test_conversion_with_fallback_handling(self, config, sample_pdf_content):
-        """Test conversion workflow with fallback error handling."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            pdf_path = temp_path / "fallback_test.pdf"
-            pdf_path.write_bytes(sample_pdf_content)
-            report_dir = temp_path / "fallback_report"
-
-            # Mock client with first call failure and successful fallback
-            mock_client = Mock()
-            mock_file = Mock()
-            mock_file.id = "file-fallback-789"
-            mock_client.files.create.return_value = mock_file
-
-            # Mock first call failure and successful fallback
-            fallback_result = {
-                "markdown": "# Fallback Report\n\nConverted using fallback method.",
-                "manifest": {"figures": [], "tables": []},
-            }
-            mock_client.responses.create.side_effect = [
-                Exception("First call failed"),
-                Mock(output_text=json.dumps(fallback_result)),
-            ]
-
-            # Create service and test fallback
-            service = PDFConversionService(config, mock_client)
-            result = service.convert_pdf_to_markdown("file-fallback-789")
-
-            # Verify fallback worked
-            assert isinstance(result, ConversionResult)
-            assert (
-                result.markdown
-                == "# Fallback Report\n\nConverted using fallback method."
-            )
-            assert result.manifest == {"figures": [], "tables": []}
-
-            # Verify fallback was used (should be called twice)
-            assert mock_client.responses.create.call_count == 2
-
-    @pytest.mark.integration
     def test_conversion_with_retry_logic(self, config, sample_pdf_content):
         """Test conversion workflow with retry logic."""
         with tempfile.TemporaryDirectory() as temp_dir:

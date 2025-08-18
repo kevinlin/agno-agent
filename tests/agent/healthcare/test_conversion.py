@@ -146,40 +146,16 @@ class TestPDFConversionService:
         assert call_args[1]["model"] == "gpt-5-mini"
         assert "input" in call_args[1]
 
-    def test_convert_pdf_to_markdown_fallback(
-        self, conversion_service, mock_openai_client
-    ):
-        """Test fallback conversion when structured parsing fails."""
-        # Mock first call failure and successful fallback
-        mock_openai_client.responses.create.side_effect = [
-            Exception("JSON parsing failed"),
-            Mock(
-                output_text=json.dumps(
-                    {
-                        "markdown": "# Fallback Report",
-                        "manifest": {"figures": [], "tables": []},
-                    }
-                )
-            ),
-        ]
-
-        result = conversion_service.convert_pdf_to_markdown("file-12345")
-
-        assert isinstance(result, ConversionResult)
-        assert result.markdown == "# Fallback Report"
-        assert result.manifest == {"figures": [], "tables": []}
-
-    def test_convert_pdf_to_markdown_complete_failure(
+    def test_convert_pdf_to_markdown_failure(
         self, conversion_service, mock_openai_client
     ):
         """Test conversion failure with both methods."""
         # Mock both calls failing
         mock_openai_client.responses.create.side_effect = [
-            Exception("First call failed"),
-            Exception("Fallback call failed"),
+            Exception("First call failed")
         ]
 
-        with pytest.raises(Exception, match="Fallback call failed"):
+        with pytest.raises(Exception, match="First call failed"):
             conversion_service.convert_pdf_to_markdown("file-12345")
 
     def test_save_markdown_success(self, conversion_service, tmp_path):
