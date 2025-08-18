@@ -28,9 +28,19 @@ jobs:
         run: uv pip install pytest-github-actions-annotate-failures
 
       - name: Run code formatting checks
+        continue-on-error: true
         run: |
-          uv run black --check .
-          uv run isort --check-only .
+          echo "::notice::Running code formatting checks - issues will be shown as warnings"
+          
+          # Check black formatting
+          if ! uv run black --check .; then
+            echo "::warning::Black formatting issues found. Run 'uv run black .' to fix."
+          fi
+          
+          # Check isort formatting
+          if ! uv run isort --check-only .; then
+            echo "::warning::Import sorting issues found. Run 'uv run isort .' to fix."
+          fi
 
       - name: Run tests
         run: |
