@@ -87,9 +87,19 @@ class TestUploadConversionIntegration:
                 "agent.healthcare.upload.routes.PDFConversionService"
             ) as mock_conversion_class:
                 mock_conversion_service = Mock()
-                # Make process_pdf an async mock
+
+                # Create a custom async mock that also creates the markdown file
+                async def mock_process_pdf(pdf_path, report_dir):
+                    # Create the report directory and markdown file
+                    report_dir.mkdir(parents=True, exist_ok=True)
+                    markdown_path = report_dir / "report.md"
+                    markdown_path.write_text(
+                        sample_conversion_result.markdown, encoding="utf-8"
+                    )
+                    return sample_conversion_result
+
                 mock_conversion_service.process_pdf = AsyncMock(
-                    return_value=sample_conversion_result
+                    side_effect=mock_process_pdf
                 )
                 mock_conversion_class.return_value = mock_conversion_service
 
@@ -100,45 +110,57 @@ class TestUploadConversionIntegration:
                 # Create services
                 upload_service = PDFUploadService(config, db_service)
 
-                # Create mock upload file
-                mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
+                # Mock embedding service
+                with patch(
+                    "agent.healthcare.storage.embeddings.EmbeddingService"
+                ) as mock_embedding_class:
+                    mock_embedding_service = Mock()
+                    mock_embedding_service.process_report_embeddings = Mock()
+                    mock_embedding_class.return_value = mock_embedding_service
 
-                # Call the ingest endpoint
-                result = await ingest_pdf(
-                    user_external_id="test_user",
-                    file=mock_file,
-                    upload_service=upload_service,
-                    conversion_service=mock_conversion_service,
-                    db_service=db_service,
-                    config=config,
-                )
+                    # Create mock upload file
+                    mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
 
-                # Verify response
-                assert result.status_code == 200
-                response_data = json.loads(result.body)
+                    # Call the ingest endpoint
+                    result = await ingest_pdf(
+                        user_external_id="test_user",
+                        file=mock_file,
+                        upload_service=upload_service,
+                        conversion_service=mock_conversion_service,
+                        embedding_service=mock_embedding_service,
+                        db_service=db_service,
+                        config=config,
+                    )
 
-                assert (
-                    response_data["message"]
-                    == "PDF uploaded and processed successfully"
-                )
-                assert response_data["markdown_generated"] is True
-                assert "report_id" in response_data
-                assert response_data["manifest"] == sample_conversion_result.manifest
-                assert response_data["duplicate"] is False
+                    # Verify response
+                    assert result.status_code == 200
+                    response_data = json.loads(result.body)
 
-                # Verify conversion service was called
-                mock_conversion_service.process_pdf.assert_called_once()
+                    assert (
+                        response_data["message"]
+                        == "PDF uploaded and processed successfully"
+                    )
+                    assert response_data["markdown_generated"] is True
+                    assert response_data["embeddings_generated"] is True
+                    assert "report_id" in response_data
+                    assert (
+                        response_data["manifest"] == sample_conversion_result.manifest
+                    )
+                    assert response_data["duplicate"] is False
 
-                # Verify database record was created with conversion data
-                report = db_service.get_report_by_id(response_data["report_id"])
-                assert report is not None
-                assert report.filename == "test_report.pdf"
-                assert report.markdown_path != ""
-                assert report.images_dir != ""
+                    # Verify conversion service was called
+                    mock_conversion_service.process_pdf.assert_called_once()
 
-                # Verify manifest was stored
-                stored_manifest = json.loads(report.meta_json)
-                assert stored_manifest == sample_conversion_result.manifest
+                    # Verify database record was created with conversion data
+                    report = db_service.get_report_by_id(response_data["report_id"])
+                    assert report is not None
+                    assert report.filename == "test_report.pdf"
+                    assert report.markdown_path != ""
+                    assert report.images_dir != ""
+
+                    # Verify manifest was stored
+                    stored_manifest = json.loads(report.meta_json)
+                    assert stored_manifest == sample_conversion_result.manifest
 
     @pytest.mark.asyncio
     async def test_upload_with_conversion_failure(self, config, sample_pdf_content):
@@ -172,39 +194,49 @@ class TestUploadConversionIntegration:
                 # Create services
                 upload_service = PDFUploadService(config, db_service)
 
-                # Create mock upload file
-                mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
+                # Mock embedding service
+                with patch(
+                    "agent.healthcare.storage.embeddings.EmbeddingService"
+                ) as mock_embedding_class:
+                    mock_embedding_service = Mock()
+                    mock_embedding_service.process_report_embeddings = Mock()
+                    mock_embedding_class.return_value = mock_embedding_service
 
-                # Call the ingest endpoint
-                result = await ingest_pdf(
-                    user_external_id="test_user",
-                    file=mock_file,
-                    upload_service=upload_service,
-                    conversion_service=mock_conversion_service,
-                    db_service=db_service,
-                    config=config,
-                )
+                    # Create mock upload file
+                    mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
 
-                # Verify response indicates conversion failure but upload success
-                assert result.status_code == 200
-                response_data = json.loads(result.body)
+                    # Call the ingest endpoint
+                    result = await ingest_pdf(
+                        user_external_id="test_user",
+                        file=mock_file,
+                        upload_service=upload_service,
+                        conversion_service=mock_conversion_service,
+                        embedding_service=mock_embedding_service,
+                        db_service=db_service,
+                        config=config,
+                    )
 
-                assert "conversion failed" in response_data["message"].lower()
-                assert response_data["markdown_generated"] is False
-                assert "report_id" in response_data
-                assert "conversion_error" in response_data
-                assert response_data["duplicate"] is False
+                    # Verify response indicates conversion failure but upload success
+                    assert result.status_code == 200
+                    response_data = json.loads(result.body)
 
-                # Verify database record was created without conversion data
-                report = db_service.get_report_by_id(response_data["report_id"])
-                assert report is not None
-                assert report.filename == "test_report.pdf"
-                assert report.markdown_path == ""  # Empty due to conversion failure
-                assert report.images_dir == ""  # Empty due to conversion failure
+                    assert "conversion failed" in response_data["message"].lower()
+                    assert response_data["markdown_generated"] is False
+                    assert response_data["embeddings_generated"] is False
+                    assert "report_id" in response_data
+                    assert "conversion_error" in response_data
+                    assert response_data["duplicate"] is False
 
-                # Verify error manifest was stored
-                stored_manifest = json.loads(report.meta_json)
-                assert stored_manifest["error"] == "Conversion failed"
+                    # Verify database record was created without conversion data
+                    report = db_service.get_report_by_id(response_data["report_id"])
+                    assert report is not None
+                    assert report.filename == "test_report.pdf"
+                    assert report.markdown_path == ""  # Empty due to conversion failure
+                    assert report.images_dir == ""  # Empty due to conversion failure
+
+                    # Verify error manifest was stored
+                    stored_manifest = json.loads(report.meta_json)
+                    assert stored_manifest["error"] == "Conversion failed"
 
     @pytest.mark.asyncio
     async def test_duplicate_file_handling(self, config, sample_pdf_content):
@@ -229,49 +261,59 @@ class TestUploadConversionIntegration:
             upload_service = PDFUploadService(config, db_service)
             mock_conversion_service = Mock()
 
-            # Create mock upload file
-            mock_file1 = MockUploadFile("test_report.pdf", sample_pdf_content)
-            mock_file2 = MockUploadFile("test_report.pdf", sample_pdf_content)
+            # Mock embedding service
+            with patch(
+                "agent.healthcare.storage.embeddings.EmbeddingService"
+            ) as mock_embedding_class:
+                mock_embedding_service = Mock()
+                mock_embedding_service.process_report_embeddings = Mock()
+                mock_embedding_class.return_value = mock_embedding_service
 
-            # First upload
-            result1 = await ingest_pdf(
-                user_external_id="test_user",
-                file=mock_file1,
-                upload_service=upload_service,
-                conversion_service=mock_conversion_service,
-                db_service=db_service,
-                config=config,
-            )
+                # Create mock upload file
+                mock_file1 = MockUploadFile("test_report.pdf", sample_pdf_content)
+                mock_file2 = MockUploadFile("test_report.pdf", sample_pdf_content)
 
-            # Second upload (duplicate)
-            result2 = await ingest_pdf(
-                user_external_id="test_user",
-                file=mock_file2,
-                upload_service=upload_service,
-                conversion_service=mock_conversion_service,
-                db_service=db_service,
-                config=config,
-            )
+                # First upload
+                result1 = await ingest_pdf(
+                    user_external_id="test_user",
+                    file=mock_file1,
+                    upload_service=upload_service,
+                    conversion_service=mock_conversion_service,
+                    embedding_service=mock_embedding_service,
+                    db_service=db_service,
+                    config=config,
+                )
 
-            # Verify both responses
-            assert result1.status_code == 200
-            assert result2.status_code == 200
+                # Second upload (duplicate)
+                result2 = await ingest_pdf(
+                    user_external_id="test_user",
+                    file=mock_file2,
+                    upload_service=upload_service,
+                    conversion_service=mock_conversion_service,
+                    embedding_service=mock_embedding_service,
+                    db_service=db_service,
+                    config=config,
+                )
 
-            response1_data = json.loads(result1.body)
-            response2_data = json.loads(result2.body)
+                # Verify both responses
+                assert result1.status_code == 200
+                assert result2.status_code == 200
 
-            # First upload should not be marked as duplicate
-            assert response1_data["duplicate"] is False
+                response1_data = json.loads(result1.body)
+                response2_data = json.loads(result2.body)
 
-            # Second upload should be marked as duplicate
-            assert response2_data["duplicate"] is True
-            assert (
-                response2_data["message"]
-                == "File already exists - no processing needed"
-            )
+                # First upload should not be marked as duplicate
+                assert response1_data["duplicate"] is False
 
-            # Both should have same report_id
-            assert response1_data["report_id"] == response2_data["report_id"]
+                # Second upload should be marked as duplicate
+                assert response2_data["duplicate"] is True
+                assert (
+                    response2_data["message"]
+                    == "File already exists - no processing needed"
+                )
+
+                # Both should have same report_id
+                assert response1_data["report_id"] == response2_data["report_id"]
 
     @pytest.mark.asyncio
     async def test_directory_structure_creation(
@@ -295,9 +337,19 @@ class TestUploadConversionIntegration:
                 "agent.healthcare.upload.routes.PDFConversionService"
             ) as mock_conversion_class:
                 mock_conversion_service = Mock()
-                # Make process_pdf an async mock
+
+                # Create a custom async mock that also creates the markdown file
+                async def mock_process_pdf(pdf_path, report_dir):
+                    # Create the report directory and markdown file
+                    report_dir.mkdir(parents=True, exist_ok=True)
+                    markdown_path = report_dir / "report.md"
+                    markdown_path.write_text(
+                        sample_conversion_result.markdown, encoding="utf-8"
+                    )
+                    return sample_conversion_result
+
                 mock_conversion_service.process_pdf = AsyncMock(
-                    return_value=sample_conversion_result
+                    side_effect=mock_process_pdf
                 )
                 mock_conversion_class.return_value = mock_conversion_service
 
@@ -308,33 +360,42 @@ class TestUploadConversionIntegration:
                 # Create services
                 upload_service = PDFUploadService(config, db_service)
 
-                # Create mock upload file
-                mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
+                # Mock embedding service
+                with patch(
+                    "agent.healthcare.storage.embeddings.EmbeddingService"
+                ) as mock_embedding_class:
+                    mock_embedding_service = Mock()
+                    mock_embedding_service.process_report_embeddings = Mock()
+                    mock_embedding_class.return_value = mock_embedding_service
 
-                # Call the ingest endpoint
-                result = await ingest_pdf(
-                    user_external_id="test_user",
-                    file=mock_file,
-                    upload_service=upload_service,
-                    conversion_service=mock_conversion_service,
-                    db_service=db_service,
-                    config=config,
-                )
+                    # Create mock upload file
+                    mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
 
-                # Verify directory structure was created
-                response_data = json.loads(result.body)
-                report = db_service.get_report_by_id(response_data["report_id"])
+                    # Call the ingest endpoint
+                    result = await ingest_pdf(
+                        user_external_id="test_user",
+                        file=mock_file,
+                        upload_service=upload_service,
+                        conversion_service=mock_conversion_service,
+                        embedding_service=mock_embedding_service,
+                        db_service=db_service,
+                        config=config,
+                    )
 
-                # Check that paths are correctly structured
-                assert "user_1" in report.markdown_path
-                assert "user_1" in report.images_dir
-                assert report.markdown_path.endswith("report.md")
-                assert report.images_dir.endswith("images")
+                    # Verify directory structure was created
+                    response_data = json.loads(result.body)
+                    report = db_service.get_report_by_id(response_data["report_id"])
 
-                # Verify conversion service was called with correct paths
-                call_args = mock_conversion_service.process_pdf.call_args
-                pdf_path, report_dir = call_args[0]
+                    # Check that paths are correctly structured
+                    assert "user_1" in report.markdown_path
+                    assert "user_1" in report.images_dir
+                    assert report.markdown_path.endswith("report.md")
+                    assert report.images_dir.endswith("images")
 
-                assert pdf_path.name.endswith(".pdf")
-                assert "user_1" in str(report_dir)
-                assert str(report_dir).startswith(str(config.reports_dir))
+                    # Verify conversion service was called with correct paths
+                    call_args = mock_conversion_service.process_pdf.call_args
+                    pdf_path, report_dir = call_args[0]
+
+                    assert pdf_path.name.endswith(".pdf")
+                    assert "user_1" in str(report_dir)
+                    assert str(report_dir).startswith(str(config.reports_dir))

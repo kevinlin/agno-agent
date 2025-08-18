@@ -93,7 +93,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 4. Vector Database and Semantic Search Foundation
 
-- [ ] 4.1 Implement vector database integration
+- [x] 4.1 Implement vector database integration
   - Add chromadb dependency and create `agent/healthcare/storage/embeddings.py`
   - Implement EmbeddingService with Chroma client initialization
   - Add chunk_markdown() for paragraph-based segmentation
@@ -101,7 +101,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 5.8, 5.10, 5.11 (chunking, Chroma storage, collection naming)
   - **Testable Outcome**: Can initialize Chroma, chunk markdown content, store embeddings with metadata
 
-- [ ] 4.2 Add embedding generation and storage
+- [x] 4.2 Add embedding generation and storage
   - Implement generate_embeddings() using OpenAI embedding model
   - Add store_chunks() method with user and report metadata
   - Implement retry logic for embedding generation failures
@@ -109,7 +109,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 5.9, 5.12, 5.13, 5.14 (embedding generation, vector storage, retry logic, unit tests)
   - **Testable Outcome**: Can generate embeddings for text chunks, store in Chroma with proper metadata
 
-- [ ] 4.3 Integrate embeddings with PDF ingestion pipeline
+- [x] 4.3 Integrate embeddings with PDF ingestion pipeline
   - Connect embedding generation to PDF conversion workflow
   - Update ingestion endpoint to include vector database storage
   - Add comprehensive integration tests for full ingestion pipeline

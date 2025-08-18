@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from agent.healthcare.config.config import Config, ConfigManager
 from agent.healthcare.conversion.conversion_service import PDFConversionService
 from agent.healthcare.storage.database import DatabaseService
+from agent.healthcare.storage.embeddings import EmbeddingService
 from agent.healthcare.upload.upload_service import PDFUploadService
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,13 @@ def get_conversion_service(
     return PDFConversionService(config)
 
 
+def get_embedding_service(
+    config: Annotated[Config, Depends(get_config)],
+) -> EmbeddingService:
+    """Dependency to get embedding service."""
+    return EmbeddingService(config)
+
+
 @router.post("/ingest")
 async def ingest_pdf(
     user_external_id: Annotated[str, Form(description="External user identifier")],
@@ -54,6 +62,7 @@ async def ingest_pdf(
     conversion_service: Annotated[
         PDFConversionService, Depends(get_conversion_service)
     ],
+    embedding_service: Annotated[EmbeddingService, Depends(get_embedding_service)],
     db_service: Annotated[DatabaseService, Depends(get_database_service)],
     config: Annotated[Config, Depends(get_config)],
 ) -> JSONResponse:
@@ -126,6 +135,37 @@ async def ingest_pdf(
                 user_id=user_id, report_data=report_data
             )
 
+            # Generate and store embeddings for the converted markdown
+            logger.info(f"Generating embeddings for report_id={medical_report.id}")
+            try:
+                # Read the markdown content
+                markdown_content = markdown_path.read_text(encoding="utf-8")
+
+                # Prepare metadata for embedding storage
+                embedding_metadata = {
+                    "user_external_id": user_external_id,
+                    "user_id": user_id,
+                    "report_id": medical_report.id,
+                    "filename": upload_result["filename"],
+                    "created_at": medical_report.created_at.isoformat(),
+                }
+
+                # Process embeddings
+                embedding_service.process_report_embeddings(
+                    markdown_content, embedding_metadata
+                )
+
+                logger.info(
+                    f"Embeddings generated successfully for report_id={medical_report.id}"
+                )
+                embeddings_generated = True
+
+            except Exception as embedding_error:
+                logger.error(
+                    f"Failed to generate embeddings for report {medical_report.id}: {embedding_error}"
+                )
+                embeddings_generated = False
+
             logger.info(
                 f"PDF processing completed successfully: report_id={medical_report.id}"
             )
@@ -139,6 +179,7 @@ async def ingest_pdf(
                     "file_size": upload_result["file_size"],
                     "file_hash": file_hash,
                     "markdown_generated": True,
+                    "embeddings_generated": embeddings_generated,
                     "manifest": conversion_result.manifest,
                     "duplicate": False,
                 },
@@ -176,6 +217,7 @@ async def ingest_pdf(
                     "file_size": upload_result["file_size"],
                     "file_hash": upload_result["file_hash"],
                     "markdown_generated": False,
+                    "embeddings_generated": False,  # No embeddings without markdown
                     "conversion_error": str(conversion_error),
                     "duplicate": False,
                 },
