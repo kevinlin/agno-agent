@@ -9,7 +9,7 @@ from agno.tools.exa import ExaTools
 today = datetime.now().strftime("%Y-%m-%d")
 
 agent = Agent(
-    model=OpenAIChat(id="gpt-4.1"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[ExaTools(start_published_date=today, type="keyword")],
     description=dedent(
         """\
