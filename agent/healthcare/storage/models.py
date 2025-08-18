@@ -8,7 +8,7 @@ from sqlmodel import Field, SQLModel, UniqueConstraint
 
 class User(SQLModel, table=True):
     """User model for external user identification."""
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     external_id: str = Field(unique=True, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -16,7 +16,7 @@ class User(SQLModel, table=True):
 
 class MedicalReport(SQLModel, table=True):
     """Medical report model for storing report metadata."""
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     filename: str
@@ -26,13 +26,13 @@ class MedicalReport(SQLModel, table=True):
     images_dir: Optional[str] = None
     meta_json: str  # JSON-encoded manifest
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
     __table_args__ = (UniqueConstraint("user_id", "file_hash"),)
 
 
 class ReportAsset(SQLModel, table=True):
     """Model for tracking report assets like images and tables."""
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     report_id: int = Field(foreign_key="medicalreport.id")
     kind: str  # "image" | "table"
