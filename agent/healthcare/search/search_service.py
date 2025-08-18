@@ -88,7 +88,10 @@ class SearchService:
             RuntimeError: If search operation fails
         """
         try:
-            # Validate inputs
+            # Strip and validate text inputs
+            user_external_id = user_external_id.strip() if user_external_id else ""
+            query = query.strip() if query else ""
+            
             if not self.validate_query(query):
                 raise ValueError("Invalid search query")
 
@@ -185,6 +188,9 @@ class SearchService:
             Dictionary with search statistics
         """
         try:
+            # Strip text input
+            user_external_id = user_external_id.strip() if user_external_id else ""
+            
             with self.db_service.get_session() as session:
                 user = session.exec(
                     select(User).where(User.external_id == user_external_id)

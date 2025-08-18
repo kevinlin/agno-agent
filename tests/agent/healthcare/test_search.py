@@ -342,3 +342,119 @@ class TestSearchService:
 
         with pytest.raises(RuntimeError, match="Search operation failed"):
             search_service.semantic_search("user123", "valid query")
+
+    def test_semantic_search_strips_whitespace(
+        self, search_service, mock_db_service, mock_embedding_service
+    ):
+        """Test that semantic_search strips whitespace from inputs."""
+        # Mock user
+        mock_user = User(id=1, external_id="user123")
+
+        # Mock database session for user lookup
+        mock_session = Mock()
+        mock_session.exec.return_value.first.return_value = mock_user
+        self._mock_session_context(mock_db_service, mock_session)
+
+        # Mock embedding service results
+        raw_results = [
+            {
+                "content": "Patient has high blood pressure",
+                "relevance_score": 0.85,
+                "metadata": {
+                    "report_id": 1,
+                    "chunk_index": 0,
+                    "user_external_id": "user123",
+                },
+            }
+        ]
+        mock_embedding_service.search_similar.return_value = raw_results
+
+        # Mock report for enrichment
+        mock_report = MedicalReport(
+            id=1,
+            user_id=1,
+            filename="test.pdf",
+            file_hash="hash123",
+            markdown_path="/path/to/markdown",
+            created_at=datetime.now(),
+        )
+        
+        # Mock session.get for report enrichment
+        mock_session.get.return_value = mock_report
+
+        # Test with whitespace in inputs
+        results = search_service.semantic_search(
+            "  user123  ", "  blood pressure  ", 5
+        )
+
+        # Verify embedding service was called with stripped values
+        mock_embedding_service.search_similar.assert_called_once_with(
+            query="blood pressure", user_filter="user123", k=5
+        )
+
+        # Verify results
+        assert len(results) == 1
+        assert results[0].content == "Patient has high blood pressure"
+
+    def test_semantic_search_handles_none_inputs(self, search_service, mock_db_service):
+        """Test that semantic_search handles None inputs gracefully."""
+        # Mock database session to return no user found
+        mock_session = Mock()
+        mock_session.exec.return_value.first.return_value = None
+        self._mock_session_context(mock_db_service, mock_session)
+        
+        # Test with None user_external_id - should strip to empty string and fail validation
+        with pytest.raises(ValueError, match="User not found"):
+            search_service.semantic_search(None, "valid query", 5)
+
+        # Test with None query - should strip to empty string and fail validation
+        with pytest.raises(ValueError, match="Invalid search query"):
+            search_service.semantic_search("user123", None, 5)
+
+    def test_get_search_stats_strips_whitespace(
+        self, search_service, mock_db_service, mock_embedding_service
+    ):
+        """Test that get_search_stats strips whitespace from user_external_id."""
+        # Mock user
+        mock_user = User(id=1, external_id="user123")
+
+        # Mock database session
+        mock_session = Mock()
+        mock_session.exec.return_value.first.return_value = mock_user
+        mock_session.exec.return_value.all.return_value = []  # No reports
+        self._mock_session_context(mock_db_service, mock_session)
+
+        # Mock embedding service stats
+        mock_embedding_service.get_collection_stats.return_value = {"total_chunks": 10}
+
+        # Test with whitespace in user_external_id
+        stats = search_service.get_search_stats("  user123  ")
+
+        # Verify the user was found (whitespace stripped)
+        assert stats["user_external_id"] == "user123"
+        assert stats["reports_count"] == 0
+        assert stats["total_chunks"] == 10
+
+    def test_get_search_stats_handles_none_input(
+        self, search_service, mock_db_service
+    ):
+        """Test that get_search_stats handles None input gracefully."""
+        # Mock database session to return no user found
+        mock_session = Mock()
+        mock_session.exec.return_value.first.return_value = None
+        self._mock_session_context(mock_db_service, mock_session)
+
+        # Test with None user_external_id - should strip to empty string
+        stats = search_service.get_search_stats(None)
+
+        # Should return user not found error
+        assert stats == {"error": "User not found"}
+
+    def test_validate_query_with_whitespace_only(self, search_service):
+        """Test that validate_query returns False for whitespace-only strings."""
+        # Test with only whitespace - should be stripped to empty and return False
+        assert search_service.validate_query("   ") is False
+        assert search_service.validate_query("\t\n  ") is False
+        
+        # Test with valid query with whitespace - should pass
+        assert search_service.validate_query("  valid query  ") is True

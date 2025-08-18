@@ -412,7 +412,7 @@ class EmbeddingService:
 - Semantic search using Chroma vector database
 - User-scoped data retrieval
 - Search result ranking and metadata enrichment
-- Query validation and sanitization
+- Query validation and input sanitization with automatic whitespace stripping
 
 **Key Classes**:
 ```python
@@ -431,6 +431,10 @@ class SearchService:
     def validate_query(self, query: str) -> bool
     
     def semantic_search(self, user_external_id: str, query: str, k: int = 5) -> List[SearchResult]
+        # Automatically strips whitespace from user_external_id and query parameters
+    
+    def get_search_stats(self, user_external_id: str) -> Dict[str, Any]
+        # Automatically strips whitespace from user_external_id parameter
     
     def enrich_with_metadata(self, raw_results: List, user_id: int) -> List[SearchResult]
 

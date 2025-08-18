@@ -131,7 +131,7 @@ The Healthcare Agent MVP is a personal health data management system that enable
 7. The system SHALL return results in order of relevance score
 8. The system SHALL return appropriate HTTP status codes for search operations
 9. The system SHALL provide JSON responses with consistent error formatting for search endpoint
-10. The system SHALL include request validation and input sanitization for search endpoint
+10. The system SHALL include request validation and input sanitization for search endpoint, including automatic whitespace stripping for all text inputs
 11. The system SHALL include unit tests for search functionality, query validation, and result formatting
 12. The system SHALL ensure all search-related tests pass before deployment
 
