@@ -9,7 +9,7 @@ from fastapi import HTTPException
 
 from agent.healthcare.config.config import Config
 from agent.healthcare.storage.database import DatabaseService
-from agent.healthcare.upload.service import PDFUploadService
+from agent.healthcare.upload.upload_service import PDFUploadService
 
 
 class TestUploadErrorScenarios:

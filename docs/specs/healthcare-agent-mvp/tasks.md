@@ -43,7 +43,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 2. PDF Upload and File Handling Core
 
 - [x] 2.1 Implement basic PDF upload service
-  - Create `agent/healthcare/upload/service.py` with PDFUploadService class
+  - Create `agent/healthcare/upload/upload_service.py` with PDFUploadService class
   - Implement PDF validation, SHA-256 hash computation, and file storage
   - Add duplicate detection using file hash
   - Create unit tests for upload service functionality
@@ -69,13 +69,13 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 - [x] 3.1 Implement OpenAI Files API integration
   - Add OpenAI dependency and API client configuration
-  - Create `agent/healthcare/conversion/service.py` with PDFConversionService
+  - Create `agent/healthcare/conversion/conversion_service.py` with PDFConversionService
   - Implement upload_to_openai() method for Files API integration
   - Add basic retry logic and error handling for API calls
   - **Requirements**: 3.1, 3.7, 3.10 (OpenAI Files API, retry logic, timeout handling)
   - **Testable Outcome**: Can successfully upload PDF to OpenAI Files API and receive file_id
 
-- [] 3.2 Implement PDF to Markdown conversion
+- [x] 3.2 Implement PDF to Markdown conversion
   - Create Pydantic models for structured output: Figure, TableRef, ConversionResult
   - Implement convert_pdf_to_markdown() using Responses API with File Inputs
   - Add manifest JSON generation for tables and figures
@@ -83,7 +83,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 3.2, 3.3, 3.4, 3.5, 3.6 (Responses API, document hierarchy, tables, images, manifest)
   - **Testable Outcome**: Can convert PDF to structured Markdown with manifest, hierarchy preserved
 
-- [] 3.3 Add Markdown storage and conversion testing
+- [x] 3.3 Add Markdown storage and conversion testing
   - Implement save_markdown() to store converted content in structured directories
   - Create comprehensive unit tests with mocked OpenAI responses
   - Add integration tests for full conversion workflow

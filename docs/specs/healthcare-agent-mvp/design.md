@@ -177,6 +177,7 @@ class ConfigManager:
 ### 2. PDF Upload Component
 
 **Location**: `agent/healthcare/upload/`
+**Main File**: `upload_service.py`
 
 **Responsibilities**:
 - PDF file validation and sanitization
@@ -210,6 +211,7 @@ async def ingest_pdf(
 ### 3. PDF Conversion Component
 
 **Location**: `agent/healthcare/conversion/`
+**Main File**: `conversion_service.py`
 
 **Responsibilities**:
 - OpenAI Files API integration

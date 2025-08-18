@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 from agent.healthcare.config.config import Config
 from agent.healthcare.storage.database import DatabaseService
-from agent.healthcare.upload.service import PDFUploadService
+from agent.healthcare.upload.upload_service import PDFUploadService
 
 
 async def create_sample_pdf() -> bytes:

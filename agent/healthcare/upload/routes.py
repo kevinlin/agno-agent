@@ -1,14 +1,17 @@
 """FastAPI routes for PDF upload endpoints."""
 
+import json
 import logging
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
 from agent.healthcare.config.config import Config, ConfigManager
+from agent.healthcare.conversion.conversion_service import PDFConversionService
 from agent.healthcare.storage.database import DatabaseService
-from agent.healthcare.upload.service import PDFUploadService
+from agent.healthcare.upload.upload_service import PDFUploadService
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +39,23 @@ def get_upload_service(
     return PDFUploadService(config, db_service)
 
 
+def get_conversion_service(
+    config: Annotated[Config, Depends(get_config)],
+) -> PDFConversionService:
+    """Dependency to get PDF conversion service."""
+    return PDFConversionService(config)
+
+
 @router.post("/ingest")
 async def ingest_pdf(
     user_external_id: Annotated[str, Form(description="External user identifier")],
     file: Annotated[UploadFile, File(description="PDF file to upload")],
     upload_service: Annotated[PDFUploadService, Depends(get_upload_service)],
+    conversion_service: Annotated[
+        PDFConversionService, Depends(get_conversion_service)
+    ],
     db_service: Annotated[DatabaseService, Depends(get_database_service)],
+    config: Annotated[Config, Depends(get_config)],
 ) -> JSONResponse:
     """
     Ingest a PDF medical report.
@@ -80,33 +94,92 @@ async def ingest_pdf(
                 },
             )
 
-        # Create medical report record in database
-        report_data = {
-            "filename": upload_result["filename"],
-            "file_hash": upload_result["file_hash"],
-            "language": "en",  # Default language
-            "markdown_path": "",  # Will be set during conversion
-            "images_dir": "",  # Will be set during image extraction
-            "meta_json": "{}",  # Will be populated during conversion
-        }
+        # Process PDF through conversion pipeline
+        logger.info(f"Starting PDF conversion for file: {upload_result['filename']}")
 
-        medical_report = db_service.create_medical_report(
-            user_id=upload_result["user_id"], report_data=report_data
-        )
+        try:
+            # Set up report directory structure
+            user_id = upload_result["user_id"]
+            file_hash = upload_result["file_hash"]
+            report_dir = config.reports_dir / f"user_{user_id}" / file_hash[:12]
 
-        logger.info(f"PDF upload completed successfully: report_id={medical_report.id}")
+            # Convert PDF to Markdown
+            pdf_path = Path(upload_result["stored_path"])
+            conversion_result = await conversion_service.process_pdf(
+                pdf_path, report_dir
+            )
 
-        return JSONResponse(
-            status_code=200,
-            content={
-                "report_id": medical_report.id,
-                "message": "PDF uploaded successfully",
+            # Create medical report record in database with conversion results
+            markdown_path = report_dir / "report.md"
+            images_dir = report_dir / "images"
+
+            report_data = {
                 "filename": upload_result["filename"],
-                "file_size": upload_result["file_size"],
+                "file_hash": file_hash,
+                "language": "en",  # Default language
+                "markdown_path": str(markdown_path),
+                "images_dir": str(images_dir),
+                "meta_json": json.dumps(conversion_result.manifest),
+            }
+
+            medical_report = db_service.create_medical_report(
+                user_id=user_id, report_data=report_data
+            )
+
+            logger.info(
+                f"PDF processing completed successfully: report_id={medical_report.id}"
+            )
+
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "report_id": medical_report.id,
+                    "message": "PDF uploaded and processed successfully",
+                    "filename": upload_result["filename"],
+                    "file_size": upload_result["file_size"],
+                    "file_hash": file_hash,
+                    "markdown_generated": True,
+                    "manifest": conversion_result.manifest,
+                    "duplicate": False,
+                },
+            )
+
+        except Exception as conversion_error:
+            logger.error(f"PDF conversion failed: {conversion_error}", exc_info=True)
+
+            # Create report record without conversion data as fallback
+            report_data = {
+                "filename": upload_result["filename"],
                 "file_hash": upload_result["file_hash"],
-                "duplicate": False,
-            },
-        )
+                "language": "en",
+                "markdown_path": "",  # Empty - conversion failed
+                "images_dir": "",  # Empty - conversion failed
+                "meta_json": json.dumps(
+                    {"error": "Conversion failed", "figures": [], "tables": []}
+                ),
+            }
+
+            medical_report = db_service.create_medical_report(
+                user_id=upload_result["user_id"], report_data=report_data
+            )
+
+            logger.warning(
+                f"PDF uploaded but conversion failed: report_id={medical_report.id}"
+            )
+
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "report_id": medical_report.id,
+                    "message": "PDF uploaded but conversion failed - file stored for manual processing",
+                    "filename": upload_result["filename"],
+                    "file_size": upload_result["file_size"],
+                    "file_hash": upload_result["file_hash"],
+                    "markdown_generated": False,
+                    "conversion_error": str(conversion_error),
+                    "duplicate": False,
+                },
+            )
 
     except HTTPException:
         # Re-raise HTTP exceptions (they have proper status codes)

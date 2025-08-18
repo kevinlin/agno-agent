@@ -1,6 +1,6 @@
 """Database models for healthcare agent using SQLModel."""
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Optional
 
 from sqlmodel import Field, SQLModel, UniqueConstraint

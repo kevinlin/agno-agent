@@ -11,7 +11,7 @@ from fastapi import HTTPException, UploadFile
 from agent.healthcare.config.config import Config
 from agent.healthcare.storage.database import DatabaseService
 from agent.healthcare.storage.models import User
-from agent.healthcare.upload.service import PDFUploadService
+from agent.healthcare.upload.upload_service import PDFUploadService
 
 
 class TestPDFUploadService:

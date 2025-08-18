@@ -97,6 +97,12 @@ Once the server is running, you can access:
     -F "user_external_id=john_doe" \
     -F "file=@path/to/medical_report.pdf"
   ```
+  
+  **Response includes**:
+  - `report_id`: Unique identifier for the processed report
+  - `markdown_generated`: Boolean indicating successful conversion
+  - `manifest`: JSON object with detected figures and tables
+  - `file_hash`: SHA-256 hash for deduplication
 
 #### Report Management (Implementation Pending)
 - `GET /reports/{user_external_id}` - List user's reports
@@ -162,13 +168,13 @@ python -m agent.healthcare.cli start
 ### Running Tests
 ```bash
 # Run all tests
-python -m agent.healthcare.cli test
+uv run pytest tests/ --tb=short
 
 # Run with verbose output
-python -m agent.healthcare.cli test --verbose
+uv run pytest tests/ --verbose
 
 # Run specific test pattern
-python -m agent.healthcare.cli test --pattern "test_config*"
+uv run pytest tests/ --tb=short --pattern "test_config*"
 ```
 
 ### Development Mode
@@ -192,27 +198,6 @@ The application can be configured via environment variables:
 | `CHUNK_OVERLAP` | `200` | Text chunk overlap |
 | `MAX_RETRIES` | `3` | Max retries for API calls |
 | `REQUEST_TIMEOUT` | `30` | Request timeout in seconds |
-
-## Implementation Status
-
-This is an MVP implementation. Current status based on the task list:
-
-### ✅ Completed (Tasks 1.1-1.4, 2.1-2.3, 3.1-3.3)
-- [x] Basic project structure and configuration
-- [x] Database models and storage layer
-- [x] FastAPI application foundation with health checks
-- [x] Comprehensive README documentation
-- [x] PDF upload service and endpoints
-- [x] OpenAI integration for PDF conversion (Files API + Responses API)
-- [x] Comprehensive unit and integration testing
-
-### 🚧 In Progress / Pending
-- [ ] Image extraction and asset management (Tasks 4.1-4.3)
-- [ ] Vector database and embeddings (Tasks 5.1-5.3)
-- [ ] Search and retrieval system (Tasks 6.1-6.3)
-- [ ] Report management endpoints (Tasks 7.1-7.3)
-- [ ] AI agent integration (Tasks 8.1-8.3)
-- [ ] Complete application integration (Tasks 9.1-9.3)
 
 ## Troubleshooting
 

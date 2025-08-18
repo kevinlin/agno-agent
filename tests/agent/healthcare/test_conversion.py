@@ -2,16 +2,16 @@
 
 import json
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, mock_open, patch
 
-import pytest
 import openai
+import pytest
 
 from agent.healthcare.config.config import Config
-from agent.healthcare.conversion.service import (
-    PDFConversionService,
+from agent.healthcare.conversion.conversion_service import (
     ConversionResult,
     Figure,
+    PDFConversionService,
     TableRef,
 )
 
@@ -23,7 +23,7 @@ def config():
         openai_api_key="test-key",
         openai_model="gpt-5-mini",
         max_retries=2,
-        request_timeout=10
+        request_timeout=10,
     )
 
 
@@ -50,18 +50,13 @@ def sample_conversion_result():
                     "page": 1,
                     "index": 1,
                     "caption": "Chest X-ray",
-                    "filename": "page-001-img-01.png"
+                    "filename": "page-001-img-01.png",
                 }
             ],
             "tables": [
-                {
-                    "page": 2,
-                    "index": 1,
-                    "title": "Lab Results",
-                    "format": "markdown"
-                }
-            ]
-        }
+                {"page": 2, "index": 1, "title": "Lab Results", "format": "markdown"}
+            ],
+        },
     )
 
 
@@ -70,7 +65,9 @@ class TestPDFConversionService:
 
     def test_init_with_default_client(self, config):
         """Test initialization with default OpenAI client."""
-        with patch('agent.healthcare.conversion.service.OpenAI') as mock_openai:
+        with patch(
+            "agent.healthcare.conversion.conversion_service.OpenAI"
+        ) as mock_openai:
             service = PDFConversionService(config)
             mock_openai.assert_called_once_with(api_key="test-key")
             assert service.config == config
@@ -89,8 +86,8 @@ class TestPDFConversionService:
         mock_openai_client.files.create.return_value = mock_file
 
         # Mock file reading
-        with patch('builtins.open', mock_open(read_data=b"fake pdf content")):
-            with patch('pathlib.Path.exists', return_value=True):
+        with patch("builtins.open", mock_open(read_data=b"fake pdf content")):
+            with patch("pathlib.Path.exists", return_value=True):
                 file_id = conversion_service.upload_to_openai(Path("test.pdf"))
 
         assert file_id == "file-12345"
@@ -103,24 +100,28 @@ class TestPDFConversionService:
         with pytest.raises(FileNotFoundError, match="PDF file not found"):
             conversion_service.upload_to_openai(Path("nonexistent.pdf"))
 
-    def test_upload_to_openai_api_error_retry(self, conversion_service, mock_openai_client):
+    def test_upload_to_openai_api_error_retry(
+        self, conversion_service, mock_openai_client
+    ):
         """Test upload with API error and retry logic."""
         # Mock API error on first call, success on second
         mock_file = Mock()
         mock_file.id = "file-12345"
         mock_openai_client.files.create.side_effect = [
             openai.APIError("Rate limit exceeded", request=Mock(), body=None),
-            mock_file
+            mock_file,
         ]
 
-        with patch('builtins.open', mock_open(read_data=b"fake pdf content")):
-            with patch('pathlib.Path.exists', return_value=True):
+        with patch("builtins.open", mock_open(read_data=b"fake pdf content")):
+            with patch("pathlib.Path.exists", return_value=True):
                 file_id = conversion_service.upload_to_openai(Path("test.pdf"))
 
         assert file_id == "file-12345"
         assert mock_openai_client.files.create.call_count == 2
 
-    def test_convert_pdf_to_markdown_success(self, conversion_service, mock_openai_client, sample_conversion_result):
+    def test_convert_pdf_to_markdown_success(
+        self, conversion_service, mock_openai_client, sample_conversion_result
+    ):
         """Test successful PDF to Markdown conversion."""
         # Mock successful response
         mock_response = Mock()
@@ -133,23 +134,31 @@ class TestPDFConversionService:
         assert result.markdown == "# Test Report\n\nSample medical report content."
         assert "figures" in result.manifest
         assert "tables" in result.manifest
-        
+
         # Verify API call
         mock_openai_client.responses.parse.assert_called_once()
         call_args = mock_openai_client.responses.parse.call_args
         assert call_args[1]["model"] == "gpt-5-mini"
         assert call_args[1]["response_format"] == ConversionResult
 
-    def test_convert_pdf_to_markdown_fallback(self, conversion_service, mock_openai_client):
+    def test_convert_pdf_to_markdown_fallback(
+        self, conversion_service, mock_openai_client
+    ):
         """Test fallback conversion when structured parsing fails."""
         # Mock parse failure and successful create
         mock_openai_client.responses.parse.side_effect = Exception("Parse failed")
-        
+
         mock_response = Mock()
-        mock_response.output = [Mock(content=json.dumps({
-            "markdown": "# Fallback Report",
-            "manifest": {"figures": [], "tables": []}
-        }))]
+        mock_response.output = [
+            Mock(
+                content=json.dumps(
+                    {
+                        "markdown": "# Fallback Report",
+                        "manifest": {"figures": [], "tables": []},
+                    }
+                )
+            )
+        ]
         mock_openai_client.responses.create.return_value = mock_response
 
         result = conversion_service.convert_pdf_to_markdown("file-12345")
@@ -158,7 +167,9 @@ class TestPDFConversionService:
         assert result.markdown == "# Fallback Report"
         assert result.manifest == {"figures": [], "tables": []}
 
-    def test_convert_pdf_to_markdown_complete_failure(self, conversion_service, mock_openai_client):
+    def test_convert_pdf_to_markdown_complete_failure(
+        self, conversion_service, mock_openai_client
+    ):
         """Test conversion failure with both methods."""
         # Mock both methods failing
         mock_openai_client.responses.parse.side_effect = Exception("Parse failed")
@@ -190,7 +201,9 @@ class TestPDFConversionService:
         assert result_path.read_text(encoding="utf-8") == markdown_content
 
     @pytest.mark.asyncio
-    async def test_process_pdf_complete_pipeline(self, conversion_service, mock_openai_client, sample_conversion_result, tmp_path):
+    async def test_process_pdf_complete_pipeline(
+        self, conversion_service, mock_openai_client, sample_conversion_result, tmp_path
+    ):
         """Test complete PDF processing pipeline."""
         # Mock successful upload
         mock_file = Mock()
@@ -216,7 +229,10 @@ class TestPDFConversionService:
         # Verify Markdown was saved
         markdown_path = report_dir / "report.md"
         assert markdown_path.exists()
-        assert markdown_path.read_text(encoding="utf-8") == sample_conversion_result.markdown
+        assert (
+            markdown_path.read_text(encoding="utf-8")
+            == sample_conversion_result.markdown
+        )
 
     def test_cleanup_openai_file_success(self, conversion_service, mock_openai_client):
         """Test successful file cleanup."""
@@ -226,7 +242,7 @@ class TestPDFConversionService:
     def test_cleanup_openai_file_failure(self, conversion_service, mock_openai_client):
         """Test file cleanup failure (should not raise exception)."""
         mock_openai_client.files.delete.side_effect = Exception("Delete failed")
-        
+
         # Should not raise exception
         conversion_service.cleanup_openai_file("file-12345")
         mock_openai_client.files.delete.assert_called_once_with("file-12345")
@@ -238,10 +254,7 @@ class TestConversionModels:
     def test_figure_model(self):
         """Test Figure model validation."""
         figure = Figure(
-            page=1,
-            index=1,
-            caption="Test image",
-            filename="page-001-img-01.png"
+            page=1, index=1, caption="Test image", filename="page-001-img-01.png"
         )
         assert figure.page == 1
         assert figure.index == 1
@@ -250,12 +263,7 @@ class TestConversionModels:
 
     def test_table_ref_model(self):
         """Test TableRef model validation."""
-        table = TableRef(
-            page=2,
-            index=1,
-            title="Lab Results",
-            format="markdown"
-        )
+        table = TableRef(page=2, index=1, title="Lab Results", format="markdown")
         assert table.page == 2
         assert table.index == 1
         assert table.title == "Lab Results"
@@ -264,8 +272,7 @@ class TestConversionModels:
     def test_conversion_result_model(self):
         """Test ConversionResult model validation."""
         result = ConversionResult(
-            markdown="# Test",
-            manifest={"figures": [], "tables": []}
+            markdown="# Test", manifest={"figures": [], "tables": []}
         )
         assert result.markdown == "# Test"
         assert result.manifest == {"figures": [], "tables": []}
@@ -274,15 +281,17 @@ class TestConversionModels:
         """Test ConversionResult with complex manifest."""
         manifest = {
             "figures": [
-                {"page": 1, "index": 1, "caption": "X-ray", "filename": "page-001-img-01.png"}
+                {
+                    "page": 1,
+                    "index": 1,
+                    "caption": "X-ray",
+                    "filename": "page-001-img-01.png",
+                }
             ],
-            "tables": [
-                {"page": 2, "index": 1, "title": "Labs", "format": "markdown"}
-            ]
+            "tables": [{"page": 2, "index": 1, "title": "Labs", "format": "markdown"}],
         }
         result = ConversionResult(
-            markdown="# Medical Report\n\nContent...",
-            manifest=manifest
+            markdown="# Medical Report\n\nContent...", manifest=manifest
         )
         assert result.manifest["figures"][0]["caption"] == "X-ray"
         assert result.manifest["tables"][0]["title"] == "Labs"
