@@ -32,6 +32,14 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 1.6, 1.7, 1.9 (directory creation, database initialization, logging)
   - **Testable Outcome**: FastAPI server starts successfully, health check responds, database initializes on startup
 
+- [x] 1.4 Create comprehensive README documentation
+  - Create `agent/healthcare/README.md` with setup and usage instructions
+  - Document steps to run the testable FastAPI application
+  - Document steps to access running app and generated artifacts
+  - Include API endpoint documentation and data structure information
+  - **Requirements**: 1.13, 1.14 (README documentation, API and artifact documentation)
+  - **Testable Outcome**: README provides clear instructions for setup, running, and accessing the application
+
 ### 2. PDF Upload and File Handling Core
 
 - [ ] 2.1 Implement basic PDF upload service

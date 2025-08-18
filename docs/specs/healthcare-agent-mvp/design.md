@@ -4,6 +4,8 @@
 
 The Healthcare Agent MVP is a personal health data management system that enables a single user to upload medical report PDFs, automatically convert them to structured Markdown format, store them in a local database, and query the longitudinal health data using natural language through an AI agent interface. The system leverages OpenAI's Responses API with File Inputs for document processing and the Agno framework for intelligent querying capabilities.
 
+For setup and usage instructions, see the [Healthcare Agent README](../../agent/healthcare/README.md).
+
 ### Key Design Principles
 
 1. **Privacy-First**: All data storage remains local with configurable external API usage

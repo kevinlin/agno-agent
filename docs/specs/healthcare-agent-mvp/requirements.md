@@ -23,6 +23,8 @@ The Healthcare Agent MVP is a personal health data management system that enable
 10. The system SHALL log errors for debugging while protecting sensitive information
 11. The system SHALL include unit tests for configuration validation and deployment setup
 12. The system SHALL ensure all configuration and deployment tests pass before deployment
+13. The system SHALL provide comprehensive README documentation with setup and usage instructions
+14. The system SHALL document API endpoints and generated artifact locations in README
 
 ### 2. PDF Document Upload
 
