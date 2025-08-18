@@ -6,6 +6,8 @@ requires-python = ">=3.12"
 dependencies = [
     "agno>=1.7.0",
     "black>=24.0.0",
+    "chromadb>=0.4.0",
+    "click>=8.0.0",
     "duckduckgo-search>=8.0.4",
     "exa-py>=1.14.13",
     "fastapi[standard]>=0.115.14",
@@ -14,13 +16,25 @@ dependencies = [
     "openai>=1.93.0",
     "pandas>=2.3.0",
     "pathlib>=1.0.1",
+    "pikepdf>=8.0.0",
     "pylance>=0.30.0",
     "pytest>=8.0.0",
     "pytest-cov>=6.0.0",
     "sqlalchemy>=2.0.41",
+    "sqlmodel>=0.0.16",
     "tantivy>=0.24.0",
+    "tenacity>=8.0.0",
+    "uvicorn>=0.24.0",
     "yfinance>=0.2.64",
 ]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent*"]
 
 [tool.black]
 line-length = 88
