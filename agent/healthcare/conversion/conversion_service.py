@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -131,8 +132,8 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
         logger.info(f"Converting PDF to Markdown using file_id: {file_id}")
 
         try:
-            # Use Responses API with File Input and Structured Output
-            response = self.client.responses.parse(
+            # Use Responses API with File Input
+            response = self.client.responses.create(
                 model=self.config.openai_model,
                 input=[
                     {
@@ -143,11 +144,12 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
                         ],
                     }
                 ],
-                response_format=ConversionResult,
                 timeout=self.config.request_timeout,
             )
 
-            conversion_result = response.output_parsed
+            # Parse the JSON response from output_text
+            result_data = json.loads(response.output_text)
+            conversion_result = ConversionResult(**result_data)
             logger.info(
                 f"Successfully converted PDF to Markdown ({len(conversion_result.markdown)} chars)"
             )
@@ -156,11 +158,11 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
 
         except Exception as e:
             logger.error(f"Failed to convert PDF to Markdown: {e}")
-            # If structured parsing fails, try regular response and parse manually
+            # If conversion or JSON parsing fails, try to make a simple request without structured output
             try:
-                logger.warning(
-                    "Attempting fallback conversion without structured output"
-                )
+                logger.warning("Attempting fallback conversion without JSON parsing")
+
+                # Make a simpler request
                 response = self.client.responses.create(
                     model=self.config.openai_model,
                     input=[
@@ -172,19 +174,22 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
                             ],
                         }
                     ],
-                    response_format={
-                        "type": "json_schema",
-                        "json_schema": {
-                            "name": "conversion_result",
-                            "schema": ConversionResult.model_json_schema(),
-                        },
-                    },
                     timeout=self.config.request_timeout,
                 )
 
-                # Parse the JSON response manually
-                result_data = json.loads(response.output[0].content)
-                conversion_result = ConversionResult(**result_data)
+                # Try to find JSON in the response text
+                response_text = response.output_text
+
+                # Look for JSON block in the response
+                json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
+                if json_match:
+                    result_data = json.loads(json_match.group())
+                    conversion_result = ConversionResult(**result_data)
+                else:
+                    # If no JSON found, create a simple result with the text as markdown
+                    conversion_result = ConversionResult(
+                        markdown=response_text, manifest={"figures": [], "tables": []}
+                    )
 
                 logger.info("Successfully converted PDF using fallback method")
                 return conversion_result

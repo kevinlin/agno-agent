@@ -125,8 +125,13 @@ class TestPDFConversionService:
         """Test successful PDF to Markdown conversion."""
         # Mock successful response
         mock_response = Mock()
-        mock_response.output_parsed = sample_conversion_result
-        mock_openai_client.responses.parse.return_value = mock_response
+        mock_response.output_text = json.dumps(
+            {
+                "markdown": sample_conversion_result.markdown,
+                "manifest": sample_conversion_result.manifest,
+            }
+        )
+        mock_openai_client.responses.create.return_value = mock_response
 
         result = conversion_service.convert_pdf_to_markdown("file-12345")
 
@@ -136,30 +141,27 @@ class TestPDFConversionService:
         assert "tables" in result.manifest
 
         # Verify API call
-        mock_openai_client.responses.parse.assert_called_once()
-        call_args = mock_openai_client.responses.parse.call_args
+        mock_openai_client.responses.create.assert_called_once()
+        call_args = mock_openai_client.responses.create.call_args
         assert call_args[1]["model"] == "gpt-5-mini"
-        assert call_args[1]["response_format"] == ConversionResult
+        assert "input" in call_args[1]
 
     def test_convert_pdf_to_markdown_fallback(
         self, conversion_service, mock_openai_client
     ):
         """Test fallback conversion when structured parsing fails."""
-        # Mock parse failure and successful create
-        mock_openai_client.responses.parse.side_effect = Exception("Parse failed")
-
-        mock_response = Mock()
-        mock_response.output = [
+        # Mock first call failure and successful fallback
+        mock_openai_client.responses.create.side_effect = [
+            Exception("JSON parsing failed"),
             Mock(
-                content=json.dumps(
+                output_text=json.dumps(
                     {
                         "markdown": "# Fallback Report",
                         "manifest": {"figures": [], "tables": []},
                     }
                 )
-            )
+            ),
         ]
-        mock_openai_client.responses.create.return_value = mock_response
 
         result = conversion_service.convert_pdf_to_markdown("file-12345")
 
@@ -171,11 +173,13 @@ class TestPDFConversionService:
         self, conversion_service, mock_openai_client
     ):
         """Test conversion failure with both methods."""
-        # Mock both methods failing
-        mock_openai_client.responses.parse.side_effect = Exception("Parse failed")
-        mock_openai_client.responses.create.side_effect = Exception("Create failed")
+        # Mock both calls failing
+        mock_openai_client.responses.create.side_effect = [
+            Exception("First call failed"),
+            Exception("Fallback call failed"),
+        ]
 
-        with pytest.raises(Exception, match="Create failed"):
+        with pytest.raises(Exception, match="Fallback call failed"):
             conversion_service.convert_pdf_to_markdown("file-12345")
 
     def test_save_markdown_success(self, conversion_service, tmp_path):
@@ -212,8 +216,13 @@ class TestPDFConversionService:
 
         # Mock successful conversion
         mock_response = Mock()
-        mock_response.output_parsed = sample_conversion_result
-        mock_openai_client.responses.parse.return_value = mock_response
+        mock_response.output_text = json.dumps(
+            {
+                "markdown": sample_conversion_result.markdown,
+                "manifest": sample_conversion_result.manifest,
+            }
+        )
+        mock_openai_client.responses.create.return_value = mock_response
 
         pdf_path = tmp_path / "test.pdf"
         pdf_path.write_bytes(b"fake pdf content")

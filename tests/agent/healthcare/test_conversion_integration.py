@@ -105,8 +105,13 @@ class TestConversionIntegration:
 
             # Mock conversion response
             mock_response = Mock()
-            mock_response.output_parsed = expected_conversion_result
-            mock_client.responses.parse.return_value = mock_response
+            mock_response.output_text = json.dumps(
+                {
+                    "markdown": expected_conversion_result.markdown,
+                    "manifest": expected_conversion_result.manifest,
+                }
+            )
+            mock_client.responses.create.return_value = mock_response
 
             # Create service with mocked client
             service = PDFConversionService(config, mock_client)
@@ -131,16 +136,16 @@ class TestConversionIntegration:
 
             # Verify API calls were made correctly
             mock_client.files.create.assert_called_once()
-            mock_client.responses.parse.assert_called_once()
+            mock_client.responses.create.assert_called_once()
 
             # Verify upload call arguments
             upload_call = mock_client.files.create.call_args
             assert upload_call[1]["purpose"] == "assistants"
 
             # Verify conversion call arguments
-            conversion_call = mock_client.responses.parse.call_args
+            conversion_call = mock_client.responses.create.call_args
             assert conversion_call[1]["model"] == "gpt-5-mini"
-            assert conversion_call[1]["response_format"] == ConversionResult
+            assert "input" in conversion_call[1]
 
     @pytest.mark.integration
     async def test_async_process_pdf_workflow(
@@ -164,8 +169,13 @@ class TestConversionIntegration:
             mock_client.files.create.return_value = mock_file
 
             mock_response = Mock()
-            mock_response.output_parsed = expected_conversion_result
-            mock_client.responses.parse.return_value = mock_response
+            mock_response.output_text = json.dumps(
+                {
+                    "markdown": expected_conversion_result.markdown,
+                    "manifest": expected_conversion_result.manifest,
+                }
+            )
+            mock_client.responses.create.return_value = mock_response
 
             # Create service and run async workflow
             service = PDFConversionService(config, mock_client)
@@ -188,23 +198,21 @@ class TestConversionIntegration:
             pdf_path.write_bytes(sample_pdf_content)
             report_dir = temp_path / "fallback_report"
 
-            # Mock client with parse failure and successful create
+            # Mock client with first call failure and successful fallback
             mock_client = Mock()
             mock_file = Mock()
             mock_file.id = "file-fallback-789"
             mock_client.files.create.return_value = mock_file
 
-            # Mock parse failure
-            mock_client.responses.parse.side_effect = Exception("Parse failed")
-
-            # Mock successful create with JSON response
+            # Mock first call failure and successful fallback
             fallback_result = {
                 "markdown": "# Fallback Report\n\nConverted using fallback method.",
                 "manifest": {"figures": [], "tables": []},
             }
-            mock_response = Mock()
-            mock_response.output = [Mock(content=json.dumps(fallback_result))]
-            mock_client.responses.create.return_value = mock_response
+            mock_client.responses.create.side_effect = [
+                Exception("First call failed"),
+                Mock(output_text=json.dumps(fallback_result)),
+            ]
 
             # Create service and test fallback
             service = PDFConversionService(config, mock_client)
@@ -218,9 +226,8 @@ class TestConversionIntegration:
             )
             assert result.manifest == {"figures": [], "tables": []}
 
-            # Verify both methods were called
-            mock_client.responses.parse.assert_called_once()
-            mock_client.responses.create.assert_called_once()
+            # Verify fallback was used (should be called twice)
+            assert mock_client.responses.create.call_count == 2
 
     @pytest.mark.integration
     def test_conversion_with_retry_logic(self, config, sample_pdf_content):
@@ -248,8 +255,13 @@ class TestConversionIntegration:
                 markdown="# Retry Test Report", manifest={"figures": [], "tables": []}
             )
             mock_response = Mock()
-            mock_response.output_parsed = conversion_result
-            mock_client.responses.parse.return_value = mock_response
+            mock_response.output_text = json.dumps(
+                {
+                    "markdown": conversion_result.markdown,
+                    "manifest": conversion_result.manifest,
+                }
+            )
+            mock_client.responses.create.return_value = mock_response
 
             # Test upload retry
             service = PDFConversionService(config, mock_client)

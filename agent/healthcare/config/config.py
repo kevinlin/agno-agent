@@ -29,7 +29,7 @@ class Config:
     chunk_size: int = 1000
     chunk_overlap: int = 200
     max_retries: int = 3
-    request_timeout: int = 30
+    request_timeout: int = 120
 
     # Logging Configuration
     log_level: str = "INFO"
@@ -59,7 +59,7 @@ class ConfigManager:
             chunk_size=int(os.getenv("CHUNK_SIZE", "1000")),
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
             max_retries=int(os.getenv("MAX_RETRIES", "3")),
-            request_timeout=int(os.getenv("REQUEST_TIMEOUT", "30")),
+            request_timeout=int(os.getenv("REQUEST_TIMEOUT", "120")),
             log_level=os.getenv("LOG_LEVEL", "INFO"),
             log_format=os.getenv(
                 "LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
