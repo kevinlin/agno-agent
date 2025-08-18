@@ -19,6 +19,7 @@ dependencies = [
     "pikepdf>=8.0.0",
     "pylance>=0.30.0",
     "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.0",
     "pytest-cov>=6.0.0",
     "sqlalchemy>=2.0.41",
     "sqlmodel>=0.0.16",
@@ -57,6 +58,13 @@ extend-exclude = '''
   | tmp
 )/
 '''
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 
 [tool.isort]
 profile = "black"

@@ -42,7 +42,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 2. PDF Upload and File Handling Core
 
-- [ ] 2.1 Implement basic PDF upload service
+- [x] 2.1 Implement basic PDF upload service
   - Create `agent/healthcare/upload/service.py` with PDFUploadService class
   - Implement PDF validation, SHA-256 hash computation, and file storage
   - Add duplicate detection using file hash
@@ -50,7 +50,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 2.3, 2.4, 2.5, 2.6 (PDF validation, hash computation, deduplication, storage)
   - **Testable Outcome**: Can validate PDFs, compute consistent hashes, detect duplicates, store files to disk
 
-- [ ] 2.2 Create PDF upload REST endpoint
+- [x] 2.2 Create PDF upload REST endpoint
   - Create `agent/healthcare/upload/routes.py` with POST /ingest endpoint
   - Implement multipart form data handling and basic user management
   - Add request validation and error response formatting
@@ -58,7 +58,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 2.1, 2.2, 2.7, 2.8, 2.9, 2.10 (REST endpoint, file acceptance, report ID, HTTP responses)
   - **Testable Outcome**: Can upload PDF via API, receive report_id, user and report records created in database
 
-- [ ] 2.3 Add comprehensive upload error handling and testing
+- [x] 2.3 Add comprehensive upload error handling and testing
   - Implement error handling for invalid files, duplicates, and storage failures
   - Add integration tests for complete upload workflow
   - Test error scenarios and HTTP response formatting

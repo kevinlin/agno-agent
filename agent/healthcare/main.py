@@ -107,6 +107,10 @@ def create_app() -> FastAPI:
 
 def add_routes(app: FastAPI) -> None:
     """Add all routes to the FastAPI app."""
+    
+    # Include upload routes
+    from agent.healthcare.upload.routes import router as upload_router
+    app.include_router(upload_router)
 
     @app.get("/")
     async def root():
