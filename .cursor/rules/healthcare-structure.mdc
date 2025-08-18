@@ -1,0 +1,207 @@
+---
+description: Healthcare Agent Project Structure and Architecture Patterns
+globs: agent/healthcare/**/*.py
+alwaysApply: false
+---
+
+# Healthcare Agent Project Structure and Architecture Patterns
+
+This rule defines the architectural patterns and project structure for the Healthcare Agent MVP, based on the established codebase patterns.
+
+## Project Structure
+
+The healthcare agent follows a layered architecture with clear separation of concerns:
+
+```
+agent/healthcare/
+├── config/          # Configuration management
+├── upload/          # PDF upload handling
+├── conversion/      # PDF to Markdown conversion
+├── images/          # Image extraction services
+├── storage/         # Database and embeddings
+├── search/          # Search and retrieval
+├── reports/         # Report management
+├── agent/           # AI agent integration
+└── main.py          # FastAPI application entry point
+```
+
+## Architectural Layers
+
+### 1. Presentation Layer (FastAPI)
+- **Location**: `main.py` and `*/routes.py` files
+- **Responsibilities**: HTTP endpoints, request/response handling, middleware
+- **Pattern**: Use FastAPI with proper lifespan management and dependency injection
+
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup and shutdown."""
+    # Startup logic
+    yield
+    # Shutdown logic
+```
+
+### 2. Application Layer (Services)
+- **Location**: `*/service.py` files
+- **Responsibilities**: Business logic, orchestration, data processing
+- **Pattern**: Service classes with dependency injection via constructor
+
+```python
+class SearchService:
+    def __init__(self, config: Config, db_service: DatabaseService, embedding_service: EmbeddingService):
+        self.config = config
+        self.db_service = db_service
+        self.embedding_service = embedding_service
+```
+
+### 3. Infrastructure Layer (Storage, External APIs)
+- **Location**: `storage/`, `config/` directories
+- **Responsibilities**: Database operations, external API calls, file system operations
+- **Pattern**: Separate concerns with dedicated service classes
+
+## Dependency Management
+
+### Global Application State
+Use global variables for application-wide services, initialized in the lifespan manager:
+
+```python
+# Global variables for application state
+config: Config = None
+db_service: DatabaseService = None
+embedding_service: EmbeddingService = None
+search_service: SearchService = None
+```
+
+### Service Dependencies
+Services should declare their dependencies explicitly in constructors and validate them on initialization.
+
+## Module Organization
+
+### Service Modules
+Each major feature should have its own directory with:
+- `__init__.py` - Module exports and router setup
+- `service.py` - Business logic implementation
+- `routes.py` - FastAPI endpoint definitions (if applicable)
+- `models.py` - Domain-specific models (if needed)
+
+### Configuration Pattern
+Use dataclasses for configuration with environment variable loading:
+
+```python
+@dataclass
+class Config:
+    """Configuration settings for Healthcare Agent MVP."""
+    openai_api_key: str
+    openai_model: str = "gpt-5"
+    # ... other fields with defaults
+```
+
+## Error Handling
+
+### Service-Level Errors
+Services should raise specific exceptions that can be caught and handled at the API layer:
+
+```python
+class ValidationError(Exception):
+    """Raised when input validation fails."""
+    pass
+```
+
+### API-Level Error Handling
+Use FastAPI exception handlers for consistent error responses:
+
+```python
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    """Handle unexpected exceptions."""
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(...)
+```
+
+## Logging Standards
+
+### Logger Setup
+Each module should have its own logger:
+
+```python
+import logging
+logger = logging.getLogger(__name__)
+```
+
+### Logging Levels
+- `INFO`: Successful operations, startup/shutdown events
+- `WARNING`: Recoverable issues, configuration warnings  
+- `ERROR`: Failures that prevent operation completion
+- `DEBUG`: Detailed diagnostic information
+
+### Logging Format
+Use structured logging with consistent format defined in configuration:
+
+```python
+log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+```
+
+## File and Directory Management
+
+### Path Handling
+Always use `pathlib.Path` for file system operations:
+
+```python
+from pathlib import Path
+
+config.base_data_dir = Path("data")
+```
+
+### Directory Initialization
+Create directories with proper error handling:
+
+```python
+directory.mkdir(parents=True, exist_ok=True)
+```
+
+## Testing Integration
+
+### Test Structure
+Mirror the main code structure in tests:
+
+```
+tests/agent/healthcare/
+├── test_config.py
+├── test_upload.py
+├── test_conversion.py
+└── test_integration_*.py
+```
+
+### Fixture Patterns
+Use pytest fixtures for common test setup:
+
+```python
+@pytest.fixture
+def temp_config():
+    """Create a temporary config for testing."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # ... setup
+        yield config
+```
+
+## Import Standards
+
+### Module Imports
+Group imports in this order:
+1. Standard library imports
+2. Third-party imports  
+3. Local application imports
+
+```python
+import logging
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import FastAPI
+from sqlmodel import Session
+
+from agent.healthcare.config.config import Config
+```
+
+### Avoid Circular Imports
+Use dependency injection instead of importing services directly in modules that might create circular dependencies.

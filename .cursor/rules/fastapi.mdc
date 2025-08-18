@@ -1,87 +1,384 @@
 ---
-description: FastAPI Best Practices
+description: FastAPI Best Practices for Healthcare Agent
 globs: agent/healthcare/**/*.py
 alwaysApply: false
 ---
 
-# FastAPI Best Practices
+# FastAPI Best Practices for Healthcare Agent
 
-## Project Structure
-- Use proper directory structure
-- Implement proper module organization
-- Use proper dependency injection
-- Keep routes organized by domain
-- Implement proper middleware
-- Use proper configuration management
+This rule defines FastAPI-specific best practices for the Healthcare Agent project, complementing the service architecture patterns.
 
-## API Design
-- Use proper HTTP methods
-- Implement proper status codes
-- Use proper request/response models
-- Implement proper validation
-- Use proper error handling
-- Document APIs with OpenAPI
+## Application Structure
 
-## Models
-- Use Pydantic models
-- Implement proper validation
-- Use proper type hints
-- Keep models organized
-- Use proper inheritance
-- Implement proper serialization
+### Factory Pattern
+Use the factory pattern for app creation with proper lifespan management:
 
-## Database
-- Use proper ORM (SQLAlchemy)
-- Implement proper migrations
-- Use proper connection pooling
-- Implement proper transactions
-- Use proper query optimization
-- Handle database errors properly
+```python
+def create_app() -> FastAPI:
+    """Create and configure FastAPI application."""
+    app = FastAPI(
+        title="Healthcare Agent MVP",
+        description="Personal health data management system with AI-powered analysis",
+        version="0.1.0",
+        docs_url="/docs",
+        redoc_url="/redoc",
+        lifespan=lifespan,
+    )
+    return app
+```
 
-## Authentication
-- Implement proper JWT authentication
-- Use proper password hashing
-- Implement proper role-based access
-- Use proper session management
-- Implement proper OAuth2
-- Handle authentication errors properly
+### Router Organization
+Organize routes by domain with proper dependency injection:
 
-## Security
-- Implement proper CORS
-- Use proper rate limiting
-- Implement proper input validation
-- Use proper security headers
-- Handle security errors properly
-- Implement proper logging
+```python
+# In each module's __init__.py
+router = APIRouter(prefix="/search", tags=["search"])
 
-## Performance
-- Use proper caching
-- Implement proper async operations
-- Use proper background tasks
-- Implement proper connection pooling
-- Use proper query optimization
-- Monitor performance metrics
+# Service injection pattern
+_search_service: SearchService = None
 
-## Testing
-- Write proper unit tests
-- Implement proper integration tests
-- Use proper test fixtures
-- Implement proper mocking
-- Test error scenarios
-- Use proper test coverage
+def set_search_service(service: SearchService) -> None:
+    global _search_service
+    _search_service = service
+```
 
-## Deployment
-- Use proper Docker configuration
-- Implement proper CI/CD
-- Use proper environment variables
-- Implement proper logging
-- Use proper monitoring
-- Handle deployment errors properly
+## Request/Response Patterns
 
-## Documentation
-- Use proper docstrings
-- Implement proper API documentation
-- Use proper type hints
-- Keep documentation updated
-- Document error scenarios
-- Use proper versioning
+### JSON Response Format
+Use consistent JSONResponse format throughout the application:
+
+```python
+# Success responses
+return JSONResponse(
+    status_code=200,
+    content={
+        "status": "success",
+        "data": result_data,
+        "message": "Operation completed successfully"
+    }
+)
+
+# Error responses
+return JSONResponse(
+    status_code=400,
+    content={
+        "error": "validation_failed",
+        "message": "Invalid input data",
+        "details": validation_errors
+    }
+)
+```
+
+### File Upload Handling
+Handle file uploads with proper validation for medical documents:
+
+```python
+@router.post("/ingest")
+async def ingest_pdf(
+    user_external_id: str = Form(..., description="External user identifier"),
+    file: UploadFile = File(..., description="PDF medical report")
+) -> JSONResponse:
+    """Ingest a medical report PDF."""
+    # Validate file type
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+    
+    # Validate file size (e.g., 50MB limit)
+    if file.size > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File too large (max 50MB)")
+```
+
+## Error Handling
+
+### HTTP Exception Patterns
+Use appropriate HTTP status codes for different error types:
+
+```python
+# Validation errors
+raise HTTPException(status_code=400, detail="Invalid input data")
+
+# Authentication errors
+raise HTTPException(status_code=401, detail="Authentication required")
+
+# Authorization errors
+raise HTTPException(status_code=403, detail="Access denied")
+
+# Resource not found
+raise HTTPException(status_code=404, detail="Resource not found")
+
+# File too large
+raise HTTPException(status_code=413, detail="File too large")
+
+# Rate limiting
+raise HTTPException(status_code=429, detail="Rate limit exceeded")
+
+# Internal server errors
+raise HTTPException(status_code=500, detail="Internal server error")
+
+# Service unavailable
+raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+```
+
+### Global Exception Handler
+Implement comprehensive error handling with proper logging:
+
+```python
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Handle unexpected exceptions."""
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    
+    # Don't expose internal details in production
+    detail = str(exc) if app.debug else "Internal server error"
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "internal_server_error",
+            "message": "An unexpected error occurred",
+            "detail": detail,
+        }
+    )
+```
+
+## Validation Patterns
+
+### Query Parameter Validation
+Use proper validation for query parameters:
+
+```python
+@router.get("/search")
+async def search_reports(
+    user_external_id: str = Path(..., description="User identifier"),
+    q: str = Query(..., min_length=1, max_length=500, description="Search query"),
+    k: int = Query(5, ge=1, le=20, description="Number of results to return"),
+    offset: int = Query(0, ge=0, description="Result offset for pagination")
+) -> JSONResponse:
+```
+
+### Form Data Validation
+Validate form data for file uploads:
+
+```python
+async def validate_upload_request(
+    user_external_id: str = Form(..., regex=r'^[a-zA-Z0-9_-]+$'),
+    file: UploadFile = File(...)
+):
+    """Validate upload request parameters."""
+    if not user_external_id:
+        raise HTTPException(status_code=400, detail="user_external_id is required")
+    
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="File name is required")
+```
+
+## Security Patterns
+
+### CORS Configuration
+Configure CORS appropriately for the healthcare domain:
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://yourdomain.com"],  # Specific origins
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+)
+```
+
+### Input Sanitization
+Sanitize inputs for security, especially important for healthcare data:
+
+```python
+def sanitize_user_input(text: str) -> str:
+    """Sanitize user input to prevent injection attacks."""
+    # Remove potentially dangerous characters
+    import re
+    sanitized = re.sub(r'[<>"\']', '', text)
+    return sanitized.strip()
+```
+
+## Health and Monitoring
+
+### Health Check Implementation
+Implement comprehensive health checks:
+
+```python
+@app.get("/health")
+async def health_check():
+    """Comprehensive health check endpoint."""
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "0.1.0",
+        "checks": {}
+    }
+    
+    try:
+        # Database health check
+        if db_service:
+            with db_service.get_session() as session:
+                session.exec(text("SELECT 1")).first()
+            health_status["checks"]["database"] = "healthy"
+        
+        # Vector database health check
+        if embedding_service:
+            # Test vector database connection
+            health_status["checks"]["vector_db"] = "healthy"
+        
+        return JSONResponse(status_code=200, content=health_status)
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        health_status["status"] = "unhealthy"
+        health_status["checks"]["error"] = str(e)
+        return JSONResponse(status_code=503, content=health_status)
+```
+
+### Metrics Endpoint
+Expose application metrics:
+
+```python
+@app.get("/metrics")
+async def get_metrics():
+    """Get application metrics."""
+    return {
+        "reports_processed": get_reports_count(),
+        "active_users": get_active_users_count(),
+        "storage_usage": get_storage_usage(),
+        "uptime": get_uptime_seconds(),
+    }
+```
+
+## Documentation Patterns
+
+### OpenAPI Documentation
+Use proper OpenAPI documentation with examples:
+
+```python
+@router.post(
+    "/ingest",
+    summary="Ingest Medical Report PDF",
+    description="Upload and process a medical report PDF for a specific user",
+    response_description="Report processing result",
+    responses={
+        200: {
+            "description": "Report processed successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "report_id": 123,
+                        "status": "processed",
+                        "message": "Report ingested successfully"
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Invalid request",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": "validation_failed",
+                        "message": "Invalid file format",
+                        "detail": "Only PDF files are supported"
+                    }
+                }
+            }
+        }
+    }
+)
+```
+
+### Endpoint Documentation
+Document endpoints with proper descriptions:
+
+```python
+async def search_reports(
+    user_external_id: str,
+    q: str = Query(..., description="Natural language search query for medical reports"),
+    k: int = Query(5, description="Maximum number of results to return")
+) -> JSONResponse:
+    """
+    Search medical reports using semantic search.
+    
+    This endpoint allows users to search through their medical reports using
+    natural language queries. The search uses semantic similarity to find
+    relevant content across all uploaded reports.
+    
+    Args:
+        user_external_id: The external identifier for the user
+        q: Search query in natural language (e.g., "blood pressure results")
+        k: Number of results to return (1-20)
+    
+    Returns:
+        JSONResponse containing search results with relevance scores
+    
+    Raises:
+        HTTPException: 400 if query is invalid, 404 if user not found
+    """
+```
+
+## Performance Patterns
+
+### Async Operations
+Use async/await properly for I/O operations:
+
+```python
+@router.post("/process")
+async def process_report(file: UploadFile) -> JSONResponse:
+    """Process report asynchronously."""
+    try:
+        # Read file content asynchronously
+        content = await file.read()
+        
+        # Process with external API (async)
+        result = await openai_service.process_pdf(content)
+        
+        return JSONResponse(content={"result": result})
+    finally:
+        await file.close()
+```
+
+### Response Streaming
+Implement streaming for large responses:
+
+```python
+from fastapi.responses import StreamingResponse
+
+@router.get("/reports/{report_id}/markdown")
+async def stream_report_markdown(report_id: int):
+    """Stream large markdown content."""
+    def generate_content():
+        with open(markdown_path, 'r') as f:
+            while chunk := f.read(8192):
+                yield chunk
+    
+    return StreamingResponse(
+        generate_content(),
+        media_type="text/markdown",
+        headers={"Content-Disposition": f"attachment; filename=report_{report_id}.md"}
+    )
+```
+
+## Testing Integration
+
+### Test Client Setup
+Set up FastAPI test client properly:
+
+```python
+from fastapi.testclient import TestClient
+
+@pytest.fixture
+def test_client():
+    """Create test client for API testing."""
+    app = create_app()
+    return TestClient(app)
+
+@pytest.fixture
+def authenticated_client(test_client):
+    """Create authenticated test client."""
+    # Set up authentication if needed
+    return test_client
+```

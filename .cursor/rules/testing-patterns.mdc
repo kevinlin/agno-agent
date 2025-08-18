@@ -1,0 +1,465 @@
+---
+description: Testing Patterns and Best Practices for Healthcare Agent
+globs: tests/**/*.py
+alwaysApply: false
+---
+
+# Testing Patterns and Best Practices
+
+This rule defines testing patterns and best practices based on the Healthcare Agent test suite structure and implementation patterns.
+
+## Test Structure and Organization
+
+### Directory Structure
+Mirror the main code structure in tests:
+
+```
+tests/
+├── __init__.py
+├── conftest.py                    # Global fixtures and configuration
+└── agent/
+    └── healthcare/
+        ├── __init__.py
+        ├── test_config.py         # Configuration tests
+        ├── test_upload.py         # Upload service tests
+        ├── test_conversion.py     # Conversion service tests
+        ├── test_storage.py        # Database and storage tests
+        ├── test_search.py         # Search service tests
+        ├── test_embeddings.py     # Embedding service tests
+        └── test_*_integration.py  # Integration tests
+```
+
+### Test Categories
+Use pytest markers to categorize tests:
+
+```python
+# Unit tests (default)
+def test_user_creation():
+    """Test creating a user instance."""
+    pass
+
+# Integration tests
+@pytest.mark.integration
+def test_complete_pdf_ingestion_flow():
+    """Test complete flow from upload to search."""
+    pass
+```
+
+## Fixture Patterns
+
+### Configuration Fixtures
+Create temporary configurations for isolated testing:
+
+```python
+@pytest.fixture
+def temp_config():
+    """Create a temporary config for testing."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        config = Config(
+            openai_api_key="test_key",
+            openai_model="gpt-5-mini",
+            base_data_dir=temp_path,
+            uploads_dir=temp_path / "uploads",
+            reports_dir=temp_path / "reports",
+            chroma_dir=temp_path / "chroma",
+            medical_db_path=temp_path / "test_medical.db",
+            agent_db_path=temp_path / "test_agent.db",
+        )
+        yield config
+```
+
+### Service Fixtures
+Create service instances with proper cleanup:
+
+```python
+@pytest.fixture
+def db_service(temp_config):
+    """Create a database service for testing."""
+    service = DatabaseService(temp_config)
+    service.create_tables()
+    yield service
+    service.close()
+
+@pytest.fixture
+def upload_service(temp_config, db_service):
+    """Create upload service for testing."""
+    service = UploadService(temp_config, db_service)
+    yield service
+```
+
+### Test Data Fixtures
+Provide reusable test data:
+
+```python
+@pytest.fixture
+def sample_pdf_content():
+    """Sample PDF content for testing."""
+    # Create minimal valid PDF content
+    return b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n..."
+
+@pytest.fixture
+def sample_user_data():
+    """Sample user data for testing."""
+    return {
+        "external_id": "test_user_123",
+        "name": "Test User",
+        "email": "test@example.com"
+    }
+
+@pytest.fixture
+def sample_report_data():
+    """Sample medical report data for testing."""
+    return {
+        "filename": "test_report.pdf",
+        "file_hash": "abc123def456789",
+        "markdown_path": "/path/to/test_report.md",
+        "meta_json": json.dumps({
+            "manifest": {
+                "figures": [],
+                "tables": []
+            }
+        }),
+        "language": "en"
+    }
+```
+
+## Unit Test Patterns
+
+### Model Testing
+Test model creation and validation:
+
+```python
+class TestUser:
+    """Test User model."""
+    
+    def test_user_creation(self):
+        """Test creating a user instance."""
+        user = User(external_id="test_user")
+        assert user.external_id == "test_user"
+        assert user.id is None  # Not set until saved
+        assert isinstance(user.created_at, datetime)
+    
+    def test_user_validation(self):
+        """Test user validation rules."""
+        # Test required fields
+        with pytest.raises(ValidationError):
+            User()  # Missing external_id
+            
+        # Test field constraints
+        with pytest.raises(ValidationError):
+            User(external_id="")  # Empty external_id
+```
+
+### Service Testing
+Test service methods with proper mocking:
+
+```python
+class TestDatabaseService:
+    """Test DatabaseService functionality."""
+    
+    def test_get_or_create_user_new(self, db_service):
+        """Test creating a new user."""
+        user = db_service.get_or_create_user("new_user")
+        assert user.external_id == "new_user"
+        assert user.id is not None
+        assert isinstance(user.created_at, datetime)
+    
+    def test_get_or_create_user_existing(self, db_service):
+        """Test getting an existing user."""
+        # Create user first
+        user1 = db_service.get_or_create_user("existing_user")
+        original_id = user1.id
+        
+        # Get same user again
+        user2 = db_service.get_or_create_user("existing_user")
+        assert user2.id == original_id
+        assert user2.external_id == "existing_user"
+    
+    def test_create_duplicate_report(self, db_service):
+        """Test handling duplicate report creation."""
+        user = db_service.get_or_create_user("test_user")
+        
+        report_data = {
+            "filename": "test.pdf",
+            "file_hash": "duplicate_hash",
+            "markdown_path": "/path/to/test.md",
+            "meta_json": json.dumps({}),
+        }
+        
+        # Create first report
+        report1 = db_service.create_medical_report(user.id, report_data)
+        original_id = report1.id
+        
+        # Try to create duplicate
+        report2 = db_service.create_medical_report(user.id, report_data)
+        assert report2.id == original_id  # Should return existing report
+```
+
+## Integration Test Patterns
+
+### API Integration Tests
+Test complete API workflows:
+
+```python
+@pytest.mark.integration
+class TestIntegrationFullWorkflow:
+    """Test complete integration workflows."""
+    
+    async def test_complete_pdf_ingestion_flow(self, test_client, sample_pdf):
+        """Test complete flow from upload to search."""
+        # Upload PDF
+        response = await test_client.post("/ingest", 
+            data={"user_external_id": "test_user"},
+            files={"file": sample_pdf}
+        )
+        assert response.status_code == 200
+        report_id = response.json()["report_id"]
+        
+        # Verify markdown was created
+        markdown_response = await test_client.get(f"/reports/{report_id}/markdown")
+        assert markdown_response.status_code == 200
+        
+        # Verify search works
+        search_response = await test_client.get("/reports/test_user/search?q=diagnosis")
+        assert search_response.status_code == 200
+        assert len(search_response.json()["results"]) > 0
+```
+
+### Database Integration Tests
+Test database operations across services:
+
+```python
+@pytest.mark.integration
+def test_upload_conversion_embedding_integration(self, temp_config):
+    """Test integration between upload, conversion, and embedding services."""
+    # Initialize services
+    db_service = DatabaseService(temp_config)
+    db_service.create_tables()
+    
+    conversion_service = ConversionService(temp_config)
+    embedding_service = EmbeddingService(temp_config)
+    upload_service = UploadService(temp_config, db_service)
+    
+    try:
+        # Test complete workflow
+        user = db_service.get_or_create_user("integration_test_user")
+        
+        # Upload and process PDF
+        with open("test_data/sample.pdf", "rb") as f:
+            result = upload_service.process_upload(user.external_id, f.read(), "sample.pdf")
+        
+        # Verify report was created
+        report = db_service.get_report_by_id(result["report_id"])
+        assert report is not None
+        assert report.user_id == user.id
+        
+        # Verify embeddings were created
+        # ... embedding verification logic
+        
+    finally:
+        db_service.close()
+```
+
+## Mocking Patterns
+
+### External Service Mocking
+Mock external APIs consistently:
+
+```python
+@pytest.fixture
+def mock_openai_client():
+    """Mock OpenAI client for testing."""
+    with patch('openai.OpenAI') as mock:
+        mock_instance = mock.return_value
+        
+        # Mock file upload
+        mock_instance.files.create.return_value.id = "file-123"
+        
+        # Mock conversion response
+        mock_instance.responses.parse.return_value.output_parsed = ConversionResult(
+            markdown="# Test Report\n\nSample content",
+            manifest={"figures": [], "tables": []}
+        )
+        
+        yield mock_instance
+
+def test_conversion_with_mock(self, mock_openai_client, temp_config):
+    """Test PDF conversion with mocked OpenAI."""
+    service = ConversionService(temp_config, mock_openai_client)
+    
+    result = service.convert_pdf_to_markdown("file-123")
+    assert result.markdown.startswith("# Test Report")
+    assert "figures" in result.manifest
+```
+
+### Database Mocking
+Mock database operations when needed:
+
+```python
+@pytest.fixture
+def mock_db_session():
+    """Mock database session for unit tests."""
+    with patch('sqlmodel.Session') as mock:
+        mock_session = Mock()
+        mock.return_value.__enter__.return_value = mock_session
+        yield mock_session
+
+def test_service_with_mock_db(self, mock_db_session, temp_config):
+    """Test service with mocked database."""
+    service = SomeService(temp_config)
+    
+    # Configure mock behavior
+    mock_db_session.exec.return_value.first.return_value = User(id=1, external_id="test")
+    
+    result = service.get_user("test")
+    assert result.external_id == "test"
+```
+
+## Error Testing
+
+### Exception Testing
+Test error conditions and edge cases:
+
+```python
+def test_invalid_pdf_upload(self, upload_service):
+    """Test handling of invalid PDF files."""
+    invalid_pdf = b"This is not a PDF file"
+    
+    with pytest.raises(ValueError, match="Invalid PDF format"):
+        upload_service.validate_pdf(invalid_pdf)
+
+def test_database_connection_error(self, temp_config):
+    """Test handling of database connection errors."""
+    # Use invalid database path
+    temp_config.medical_db_path = Path("/invalid/path/database.db")
+    
+    with pytest.raises(DatabaseConnectionError):
+        service = DatabaseService(temp_config)
+        service.create_tables()
+```
+
+### Validation Testing
+Test input validation thoroughly:
+
+```python
+def test_search_query_validation(self, search_service):
+    """Test search query validation."""
+    # Test empty query
+    with pytest.raises(ValueError, match="Query cannot be empty"):
+        search_service.semantic_search("user123", "")
+    
+    # Test query too short
+    with pytest.raises(ValueError, match="Query too short"):
+        search_service.semantic_search("user123", "a")
+    
+    # Test query too long
+    long_query = "a" * 1000
+    with pytest.raises(ValueError, match="Query too long"):
+        search_service.semantic_search("user123", long_query)
+```
+
+## Test Data Management
+
+### Fixture Data Files
+Organize test data in dedicated directories:
+
+```
+tests/
+├── fixtures/
+│   ├── sample_medical_reports/
+│   │   ├── blood_test.pdf
+│   │   ├── xray_report.pdf
+│   │   └── prescription.pdf
+│   ├── mock_responses/
+│   │   ├── openai_conversion_response.json
+│   │   └── embedding_response.json
+│   └── test_data.json
+```
+
+### Dynamic Test Data
+Generate test data programmatically:
+
+```python
+@pytest.fixture
+def generate_test_reports(db_service):
+    """Generate multiple test reports for testing."""
+    user = db_service.get_or_create_user("test_user")
+    reports = []
+    
+    for i in range(5):
+        report_data = {
+            "filename": f"test_report_{i}.pdf",
+            "file_hash": f"hash_{i:03d}",
+            "markdown_path": f"/path/to/report_{i}.md",
+            "meta_json": json.dumps({"test": f"data_{i}"}),
+        }
+        report = db_service.create_medical_report(user.id, report_data)
+        reports.append(report)
+    
+    return reports
+```
+
+## Performance Testing
+
+### Test Performance Benchmarks
+Include performance tests for critical paths:
+
+```python
+@pytest.mark.performance
+def test_search_performance(self, search_service, generate_test_reports):
+    """Test search performance with multiple reports."""
+    import time
+    
+    start_time = time.time()
+    results = search_service.semantic_search("test_user", "diagnosis", k=10)
+    end_time = time.time()
+    
+    # Assert performance requirements
+    assert (end_time - start_time) < 2.0  # Should complete within 2 seconds
+    assert len(results) > 0
+```
+
+## Cleanup Patterns
+
+### Resource Cleanup
+Ensure proper cleanup in fixtures and tests:
+
+```python
+@pytest.fixture
+def temp_files():
+    """Create temporary files for testing."""
+    temp_files = []
+    
+    def create_temp_file(content: bytes, suffix: str = ".pdf") -> Path:
+        temp_file = Path(tempfile.mktemp(suffix=suffix))
+        temp_file.write_bytes(content)
+        temp_files.append(temp_file)
+        return temp_file
+    
+    yield create_temp_file
+    
+    # Cleanup
+    for temp_file in temp_files:
+        if temp_file.exists():
+            temp_file.unlink()
+```
+
+### Test Isolation
+Ensure tests don't interfere with each other:
+
+```python
+def test_isolated_database_operations(self, temp_config):
+    """Test that uses isolated database."""
+    # Each test gets its own temporary database
+    db_service = DatabaseService(temp_config)
+    db_service.create_tables()
+    
+    try:
+        # Test operations
+        user = db_service.get_or_create_user("isolated_user")
+        assert user.external_id == "isolated_user"
+    finally:
+        db_service.close()
+        # Database file is automatically cleaned up by temp_config fixture
+```

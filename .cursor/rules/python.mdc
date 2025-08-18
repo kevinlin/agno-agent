@@ -4,25 +4,23 @@ globs: **/*.py
 alwaysApply: false
 ---
 
-# Python Best Practices
+# Python Best Practices for Healthcare Agent
 
 ## Project Structure
-- Use src-layout with `src/your_package_name/`
-- Place tests in `tests/` directory parallel to `src/`
-- Keep configuration in `config/` or as environment variables
-- Store requirements in `requirements.txt` or `pyproject.toml`
-- Place static files in `static/` directory
-- Use `templates/` for Jinja2 templates
+- Use domain-driven structure: `agent/healthcare/`
+- Mirror test structure: `tests/agent/healthcare/`
+- Configuration in `config/` directory with dataclasses
+- Use `pyproject.toml` for dependency management
+- Organize by functional domains (upload, search, storage, etc.)
 
-## Code Style
-- Follow Black code formatting
-- Use isort for import sorting
-- Follow PEP 8 naming conventions:
-  - snake_case for functions and variables
-  - PascalCase for classes
-  - UPPER_CASE for constants
-- Maximum line length of 88 characters (Black default)
-- Use absolute imports over relative imports
+## Code Style and Formatting
+- Follow Black formatting with 88-character line length
+- Use isort with Black profile for import sorting
+- Follow established naming conventions:
+  - `snake_case` for functions, variables, modules
+  - `PascalCase` for classes
+  - `UPPER_CASE` for constants
+- Group imports: stdlib, third-party, local application
 
 ## Type Hints
 - Use type hints for all function parameters and returns
