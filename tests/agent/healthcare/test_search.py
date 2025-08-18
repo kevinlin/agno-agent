@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from agent.healthcare.config.config import Config
-from agent.healthcare.search.service import SearchResult, SearchService
+from agent.healthcare.search.search_service import SearchResult, SearchService
 from agent.healthcare.storage.database import DatabaseService
 from agent.healthcare.storage.embeddings import EmbeddingService
 from agent.healthcare.storage.models import MedicalReport, User

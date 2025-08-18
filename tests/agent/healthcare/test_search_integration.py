@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from agent.healthcare.main import create_app
 from agent.healthcare.search.routes import get_search_service
-from agent.healthcare.search.service import SearchResult, SearchService
+from agent.healthcare.search.search_service import SearchResult, SearchService
 
 
 class TestSearchIntegration:
@@ -211,28 +211,7 @@ class TestSearchIntegration:
         assert response.status_code == 500
         assert "Failed to get search statistics" in response.json()["detail"]
 
-    def test_search_health_check_success(self, client, mock_search_service):
-        """Test search service health check."""
-        mock_config = Mock()
-        mock_config.embedding_model = "text-embedding-3-large"
-        mock_search_service.config = mock_config
 
-        response = client.get("/reports/search/health")
-        assert response.status_code == 200
-
-        data = response.json()
-        assert data["status"] == "healthy"
-        assert data["service"] == "search"
-        assert data["embedding_model"] == "text-embedding-3-large"
-
-    def test_search_health_check_service_not_initialized(self, client):
-        """Test search health check when service not initialized."""
-        # Remove the search service from app state
-        delattr(client.app.state, "search_service")
-
-        response = client.get("/reports/search/health")
-        assert response.status_code == 503
-        assert "Search service not initialized" in response.json()["detail"]
 
     def test_search_response_format_validation(self, client, mock_search_service):
         """Test that search response matches expected format."""

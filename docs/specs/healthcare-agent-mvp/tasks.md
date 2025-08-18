@@ -119,7 +119,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 5. Search and Retrieval System
 
 - [x] 5.1 Implement semantic search service
-  - Create `agent/healthcare/search/service.py` with SearchService class
+  - Create `agent/healthcare/search/search_service.py` with SearchService class
   - Implement semantic_search() using Chroma vector database
   - Add user-scoped data retrieval with proper filtering
   - Create SearchResult dataclass with relevance scores and metadata

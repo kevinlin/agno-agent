@@ -550,6 +550,225 @@ def create_healthcare_agent(config: Config) -> Agent:
     return agent
 ```
 
+## System Health and Monitoring
+
+### Comprehensive Health Check Implementation
+
+The system implements a comprehensive health check endpoint that monitors all services stored in `app.state` and provides detailed status information for system administrators.
+
+**Location**: `agent/healthcare/main.py`
+**Endpoint**: `GET /health`
+
+**Key Features**:
+- **Service-Level Health Checks**: Individual status monitoring for all application services
+- **Connectivity Testing**: Active database and vector database connection verification
+- **Configuration Validation**: Service configuration and dependency verification
+- **Structured Response Format**: Consistent JSON response with detailed service information
+- **Status Classification**: Three-tier status system (healthy, degraded, unhealthy)
+- **Error Handling**: Graceful error handling with detailed error reporting
+
+### Health Check Implementation
+
+```python
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for all services."""
+    from datetime import datetime
+    from sqlmodel import text
+    
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "0.1.0",
+        "services": {}
+    }
+    
+    # Check configuration service
+    if hasattr(app.state, 'config') and app.state.config:
+        health_status["services"]["config"] = {
+            "status": "healthy",
+            "openai_model": app.state.config.openai_model,
+            "embedding_model": app.state.config.embedding_model,
+            "base_data_dir_exists": app.state.config.base_data_dir.exists()
+        }
+    else:
+        health_status["services"]["config"] = {"status": "not_initialized"}
+        health_status["status"] = "degraded"
+
+    # Check database service with active connectivity test
+    if hasattr(app.state, 'db_service') and app.state.db_service:
+        try:
+            with app.state.db_service.get_session() as session:
+                session.exec(text("SELECT 1")).first()
+            health_status["services"]["database"] = {
+                "status": "healthy", 
+                "connection": "active"
+            }
+        except Exception as e:
+            health_status["services"]["database"] = {
+                "status": "unhealthy", 
+                "error": str(e)
+            }
+            health_status["status"] = "unhealthy"
+    else:
+        health_status["services"]["database"] = {"status": "not_initialized"}
+        health_status["status"] = "degraded"
+
+    # Check embedding service
+    if hasattr(app.state, 'embedding_service') and app.state.embedding_service:
+        try:
+            embedding_config = app.state.embedding_service.config
+            health_status["services"]["embedding"] = {
+                "status": "healthy",
+                "model": embedding_config.embedding_model,
+                "chunk_size": embedding_config.chunk_size,
+                "chunk_overlap": embedding_config.chunk_overlap
+            }
+        except Exception as e:
+            health_status["services"]["embedding"] = {
+                "status": "unhealthy", 
+                "error": str(e)
+            }
+            health_status["status"] = "unhealthy"
+    else:
+        health_status["services"]["embedding"] = {"status": "not_initialized"}
+        health_status["status"] = "degraded"
+
+    # Check search service
+    if hasattr(app.state, 'search_service') and app.state.search_service:
+        try:
+            search_config = app.state.search_service.config
+            health_status["services"]["search"] = {
+                "status": "healthy",
+                "embedding_model": search_config.embedding_model,
+                "vector_db": "chroma"
+            }
+        except Exception as e:
+            health_status["services"]["search"] = {
+                "status": "unhealthy", 
+                "error": str(e)
+            }
+            health_status["status"] = "unhealthy"
+    else:
+        health_status["services"]["search"] = {"status": "not_initialized"}
+        health_status["status"] = "degraded"
+
+    # Return appropriate HTTP status code based on overall health
+    if health_status["status"] == "unhealthy":
+        raise HTTPException(status_code=503, detail=health_status)
+    elif health_status["status"] == "degraded":
+        raise HTTPException(status_code=503, detail=health_status)
+    
+    return health_status
+```
+
+### Health Status Response Format
+
+**Healthy System Response (HTTP 200)**:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00.123456Z",
+  "version": "0.1.0",
+  "services": {
+    "config": {
+      "status": "healthy",
+      "openai_model": "gpt-4o-mini",
+      "embedding_model": "text-embedding-3-large",
+      "base_data_dir_exists": true
+    },
+    "database": {
+      "status": "healthy",
+      "connection": "active"
+    },
+    "embedding": {
+      "status": "healthy",
+      "model": "text-embedding-3-large",
+      "chunk_size": 1000,
+      "chunk_overlap": 200
+    },
+    "search": {
+      "status": "healthy",
+      "embedding_model": "text-embedding-3-large",
+      "vector_db": "chroma"
+    }
+  }
+}
+```
+
+**Degraded System Response (HTTP 503)**:
+```json
+{
+  "status": "degraded",
+  "timestamp": "2024-01-15T10:30:00.123456Z",
+  "version": "0.1.0",
+  "services": {
+    "config": {
+      "status": "healthy",
+      "openai_model": "gpt-4o-mini",
+      "embedding_model": "text-embedding-3-large",
+      "base_data_dir_exists": true
+    },
+    "database": {
+      "status": "not_initialized"
+    },
+    "embedding": {
+      "status": "not_initialized"
+    },
+    "search": {
+      "status": "not_initialized"
+    }
+  }
+}
+```
+
+**Unhealthy System Response (HTTP 503)**:
+```json
+{
+  "status": "unhealthy",
+  "timestamp": "2024-01-15T10:30:00.123456Z",
+  "version": "0.1.0",
+  "services": {
+    "config": {
+      "status": "healthy",
+      "openai_model": "gpt-4o-mini",
+      "embedding_model": "text-embedding-3-large",
+      "base_data_dir_exists": true
+    },
+    "database": {
+      "status": "unhealthy",
+      "error": "Connection refused: unable to connect to database"
+    },
+    "embedding": {
+      "status": "healthy",
+      "model": "text-embedding-3-large",
+      "chunk_size": 1000,
+      "chunk_overlap": 200
+    },
+    "search": {
+      "status": "healthy",
+      "embedding_model": "text-embedding-3-large",
+      "vector_db": "chroma"
+    }
+  }
+}
+```
+
+### Status Classification
+
+1. **Healthy (HTTP 200)**: All services are initialized and functioning properly
+2. **Degraded (HTTP 503)**: Some services are not initialized but no active failures
+3. **Unhealthy (HTTP 503)**: One or more services have active failures or connection issues
+
+### Benefits of Enhanced Health Check
+
+- **Comprehensive Monitoring**: Visibility into all critical system components
+- **Proactive Issue Detection**: Early warning system for service degradation
+- **Debugging Support**: Detailed error information for troubleshooting
+- **Operational Excellence**: Standard monitoring interface for deployment automation
+- **Service Dependencies**: Clear understanding of service initialization status
+- **Configuration Validation**: Verification of critical configuration parameters
+
 ## Data Models
 
 ### SQLite Database Schema

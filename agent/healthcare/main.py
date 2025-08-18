@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent.healthcare.config.config import Config, ConfigManager
-from agent.healthcare.search.service import SearchService
+from agent.healthcare.search.search_service import SearchService
 from agent.healthcare.storage.database import DatabaseService
 from agent.healthcare.storage.embeddings import EmbeddingService
 
@@ -144,24 +144,105 @@ def add_routes(app: FastAPI) -> None:
 
     @app.get("/health")
     async def health_check():
-        """Health check endpoint."""
+        """Health check endpoint for all services."""
+        from datetime import datetime
+        from sqlmodel import text
+        
+        health_status = {
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": "0.1.0",
+            "services": {}
+        }
+        
         try:
-            # Check database connection
-            if db_service:
-                with db_service.get_session() as session:
-                    # Simple query to test connection
-                    from sqlmodel import text
+            # Check configuration service
+            if hasattr(app.state, 'config') and app.state.config:
+                health_status["services"]["config"] = {
+                    "status": "healthy",
+                    "openai_model": app.state.config.openai_model,
+                    "embedding_model": app.state.config.embedding_model,
+                    "base_data_dir_exists": app.state.config.base_data_dir.exists()
+                }
+            else:
+                health_status["services"]["config"] = {"status": "not_initialized"}
+                health_status["status"] = "degraded"
 
-                    session.exec(text("SELECT 1")).first()
+            # Check database service
+            if hasattr(app.state, 'db_service') and app.state.db_service:
+                try:
+                    with app.state.db_service.get_session() as session:
+                        session.exec(text("SELECT 1")).first()
+                    health_status["services"]["database"] = {"status": "healthy", "connection": "active"}
+                except Exception as e:
+                    health_status["services"]["database"] = {"status": "unhealthy", "error": str(e)}
+                    health_status["status"] = "unhealthy"
+            else:
+                health_status["services"]["database"] = {"status": "not_initialized"}
+                health_status["status"] = "degraded"
 
-            return {
-                "status": "healthy",
-                "database": "connected",
-                "timestamp": ConfigManager.load_config().base_data_dir.exists(),
-            }
+            # Check embedding service
+            if hasattr(app.state, 'embedding_service') and app.state.embedding_service:
+                try:
+                    # Basic health check - verify service is initialized with config
+                    embedding_config = app.state.embedding_service.config
+                    health_status["services"]["embedding"] = {
+                        "status": "healthy",
+                        "model": embedding_config.embedding_model,
+                        "chunk_size": embedding_config.chunk_size,
+                        "chunk_overlap": embedding_config.chunk_overlap
+                    }
+                except Exception as e:
+                    health_status["services"]["embedding"] = {"status": "unhealthy", "error": str(e)}
+                    health_status["status"] = "unhealthy"
+            else:
+                health_status["services"]["embedding"] = {"status": "not_initialized"}
+                health_status["status"] = "degraded"
+
+            # Check search service
+            if hasattr(app.state, 'search_service') and app.state.search_service:
+                try:
+                    # Verify search service has required dependencies
+                    search_config = app.state.search_service.config
+                    health_status["services"]["search"] = {
+                        "status": "healthy",
+                        "embedding_model": search_config.embedding_model,
+                        "vector_db": "chroma"
+                    }
+                except Exception as e:
+                    health_status["services"]["search"] = {"status": "unhealthy", "error": str(e)}
+                    health_status["status"] = "unhealthy"
+            else:
+                health_status["services"]["search"] = {"status": "not_initialized"}
+                health_status["status"] = "degraded"
+
+            # Set overall status based on service health
+            service_statuses = [service.get("status") for service in health_status["services"].values()]
+            if "unhealthy" in service_statuses:
+                health_status["status"] = "unhealthy"
+            elif "not_initialized" in service_statuses:
+                health_status["status"] = "degraded"
+
+            # Return appropriate HTTP status code
+            if health_status["status"] == "unhealthy":
+                raise HTTPException(status_code=503, detail=health_status)
+            elif health_status["status"] == "degraded":
+                raise HTTPException(status_code=503, detail=health_status)
+            
+            return health_status
+
+        except HTTPException:
+            # Re-raise HTTP exceptions with their status
+            raise
         except Exception as e:
-            logger.error(f"Health check failed: {e}")
-            raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
+            logger.error(f"Health check failed: {e}", exc_info=True)
+            raise HTTPException(status_code=503, detail={
+                "status": "unhealthy",
+                "timestamp": datetime.utcnow().isoformat(),
+                "error": "health_check_failed",
+                "message": "An unexpected error occurred during health check",
+                "detail": str(e)
+            })
 
     @app.get("/config")
     async def get_config():

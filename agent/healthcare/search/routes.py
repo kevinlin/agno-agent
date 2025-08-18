@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from agent.healthcare.search.service import SearchResult, SearchService
+from agent.healthcare.search.search_service import SearchResult, SearchService
 
 logger = logging.getLogger(__name__)
 
@@ -170,19 +170,4 @@ async def get_search_stats(
         raise HTTPException(status_code=500, detail="Failed to get search statistics")
 
 
-# Health check endpoint for search service
-@router.get("/search/health")
-async def search_health_check(
-    search_service: SearchService = Depends(get_search_service),
-) -> Dict[str, Any]:
-    """Health check for search service."""
-    try:
-        # Basic health check - verify service is initialized
-        return {
-            "status": "healthy",
-            "service": "search",
-            "embedding_model": search_service.config.embedding_model,
-        }
-    except Exception as e:
-        logger.error(f"Search health check failed: {e}")
-        raise HTTPException(status_code=503, detail="Search service unhealthy")
+

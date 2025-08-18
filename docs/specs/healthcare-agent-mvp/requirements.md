@@ -135,7 +135,25 @@ The Healthcare Agent MVP is a personal health data management system that enable
 11. The system SHALL include unit tests for search functionality, query validation, and result formatting
 12. The system SHALL ensure all search-related tests pass before deployment
 
-### 8. AI Agent Integration
+### 8. System Monitoring and Health Checks
+
+**User Story**: As a system administrator, I want comprehensive health monitoring of all system services, so that I can quickly identify and resolve issues in the healthcare agent system.
+
+**Acceptance Criteria**:
+1. The system SHALL implement GET /health endpoint for comprehensive system health monitoring
+2. The system SHALL expose health status for all services stored in app.state (config, database, embedding, search)
+3. The system SHALL return detailed service information including model configurations and connection status
+4. The system SHALL perform actual connectivity tests for database and vector database services
+5. The system SHALL return appropriate HTTP status codes (200 for healthy, 503 for unhealthy/degraded)
+6. The system SHALL provide structured JSON responses with service-level health details
+7. The system SHALL include timestamp and version information in health responses
+8. The system SHALL differentiate between "healthy", "degraded", and "unhealthy" system states
+9. The system SHALL log health check failures with appropriate error details
+10. The system SHALL handle health check exceptions gracefully with meaningful error responses
+11. The system SHALL include unit tests for health check functionality and error scenarios
+12. The system SHALL ensure all health check tests pass before deployment
+
+### 9. AI Agent Integration
 
 **User Story**: As a healthcare consultant, I want to interact with an AI agent that can answer questions about the patient's medical history, so that I can provide informed insights based on comprehensive data analysis.
 
