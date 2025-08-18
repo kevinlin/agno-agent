@@ -93,7 +93,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 4. Vector Database and Semantic Search Foundation
 
-- [ ] 5.1 Implement vector database integration
+- [ ] 4.1 Implement vector database integration
   - Add chromadb dependency and create `agent/healthcare/storage/embeddings.py`
   - Implement EmbeddingService with Chroma client initialization
   - Add chunk_markdown() for paragraph-based segmentation
@@ -101,7 +101,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 5.8, 5.10, 5.11 (chunking, Chroma storage, collection naming)
   - **Testable Outcome**: Can initialize Chroma, chunk markdown content, store embeddings with metadata
 
-- [ ] 5.2 Add embedding generation and storage
+- [ ] 4.2 Add embedding generation and storage
   - Implement generate_embeddings() using OpenAI embedding model
   - Add store_chunks() method with user and report metadata
   - Implement retry logic for embedding generation failures
@@ -109,7 +109,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 5.9, 5.12, 5.13, 5.14 (embedding generation, vector storage, retry logic, unit tests)
   - **Testable Outcome**: Can generate embeddings for text chunks, store in Chroma with proper metadata
 
-- [ ] 5.3 Integrate embeddings with PDF ingestion pipeline
+- [ ] 4.3 Integrate embeddings with PDF ingestion pipeline
   - Connect embedding generation to PDF conversion workflow
   - Update ingestion endpoint to include vector database storage
   - Add comprehensive integration tests for full ingestion pipeline
@@ -118,7 +118,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 5. Search and Retrieval System
 
-- [ ] 6.1 Implement semantic search service
+- [ ] 5.1 Implement semantic search service
   - Create `agent/healthcare/search/service.py` with SearchService class
   - Implement semantic_search() using Chroma vector database
   - Add user-scoped data retrieval with proper filtering
@@ -126,7 +126,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 7.1, 7.2, 7.3, 7.4 (search endpoint, user restriction, relevance scores, provenance)
   - **Testable Outcome**: Can perform semantic search with user filtering, results include relevance scores and metadata
 
-- [ ] 6.2 Create search API endpoint with validation
+- [ ] 5.2 Create search API endpoint with validation
   - Create `agent/healthcare/search/routes.py` with GET /reports/{user_external_id}/search
   - Add query validation, parameter handling (k parameter)
   - Implement result ranking and JSON response formatting
@@ -134,7 +134,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 7.5, 7.6, 7.7, 7.8, 7.9, 7.10 (result count, query validation, ordering, HTTP codes, JSON formatting)
   - **Testable Outcome**: Search API endpoint returns ranked results, handles all query scenarios properly
 
-- [ ] 6.3 Add comprehensive search testing and integration
+- [ ] 5.3 Add comprehensive search testing and integration
   - Create unit tests for search functionality and query validation
   - Add integration tests for complete search workflow
   - Test error scenarios and edge cases
@@ -143,7 +143,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 6. Image Extraction and Asset Management
 
-- [ ] 4.1 Implement local image extraction
+- [ ] 6.1 Implement local image extraction
   - Add pikepdf dependency and create `agent/healthcare/images/service.py`
   - Implement extract_images_pikepdf() for local image extraction
   - Add page-indexed naming convention (page-003-img-01.png)
@@ -151,7 +151,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 4.1, 4.2, 4.3, 4.4 (image extraction, storage directories, naming, manifest linking)
   - **Testable Outcome**: Can extract images from PDF, save with correct naming, link to manifest placeholders
 
-- [ ] 4.2 Integrate image extraction with conversion workflow
+- [ ] 6.2 Integrate image extraction with conversion workflow
   - Connect image extraction to PDF conversion process
   - Store image metadata in database via ReportAsset records
   - Handle cases where image extraction fails gracefully
@@ -159,7 +159,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 4.5, 4.6, 4.9 (metadata storage, extraction failure handling, unit tests)
   - **Testable Outcome**: Complete PDF ingestion with images extracted and stored, database records created
 
-- [ ] 4.3 Create asset retrieval API endpoint
+- [ ] 6.3 Create asset retrieval API endpoint
   - Create `agent/healthcare/images/routes.py` with GET /reports/{report_id}/assets
   - Implement asset listing with proper user access control
   - Add HTTP status codes and JSON response formatting
