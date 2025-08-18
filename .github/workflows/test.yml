@@ -11,21 +11,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           version: "latest"
+
       - name: Set up Python
         run: uv python install 3.12
+
       - name: Install dependencies
         run: uv sync
+
+      # Make failures show as GitHub annotations
+      - name: Install pytest annotations plugin
+        run: uv pip install pytest-github-actions-annotate-failures
+
       - name: Run code formatting checks
         run: |
           uv run black --check .
           uv run isort --check-only .
+
       - name: Run tests
         run: |
-          uv run pytest tests/ -v --cov=agent --cov-report=term-missing --cov-report=xml
+          mkdir -p reports
+          uv run pytest tests/ -v \
+            --cov=agent --cov-report=term-missing --cov-report=xml \
+            --junitxml=reports/pytest-junit.xml
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+
+      - name: Publish test report
+        uses: dorny/test-reporter@v2
+        if: always()                      # run even if tests failed
+        with:
+          name: Pytest Results
+          path: reports/pytest-junit.xml  # file produced by --junitxml
+          reporter: java-junit            # works for pytest’s JUnit XML
+          use-actions-summary: true       # puts a table in the run Summary
+          fail-on-error: true
