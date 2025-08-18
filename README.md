@@ -68,32 +68,32 @@ Run the different agent levels:
 
 **Level 1: Agents with tools and instructions**
 ```bash
-uv run python agent/level_1_agent.py
+uv run python agent/sample/level_1_agent.py
 ```
 
 **Level 2: Agents with knowledge and storage**
 ```bash
-uv run python agent/level_2_agent.py
+uv run python agent/sample/level_2_agent.py
 ```
 
 **Level 3: Agents with memory and reasoning**
 ```bash
-uv run python agent/level_3_agent.py
+uv run python agent/sample/level_3_agent.py
 ```
 
 **Level 4: Agent Teams that can reason and collaborate**
 ```bash
-uv run python agent/level_4_team.py
+uv run python agent/sample/level_4_team.py
 ```
 
 **Level 5: Agentic Workflows with state and determinism**
 ```bash
-uv run python agent/level_5_workflow.py
+uv run python agent/sample/level_5_workflow.py
 ```
 
 **Run Research Agent**
 ```bash
-uv run python agent/research_agent.py
+uv run python agent/sample/research_agent.py
 ```
 
 **Run Playground Server Locally**
@@ -104,6 +104,11 @@ uv run python playground/playground.py
 ## Project Structure
 
 - `agent/` - Contains all agent implementations
+  - `sample/` - Sample agent implementations demonstrating different levels and features
+  - `healthcare/` - Healthcare Agent MVP implementation
+  - `memory/` - Memory management examples
+  - `session_state/` - Session state management examples
+  - `tool/` - Custom tool implementations
 - `playground/` - Contains playground server
 - `pyproject.toml` - Project configuration and dependencies
 - `.python-version` - Python version specification 
