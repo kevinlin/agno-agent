@@ -9,7 +9,7 @@ agent_storage: str = "data/agents.db"
 
 web_agent = Agent(
     name="Web Agent",
-    model=OpenAIChat(id="gpt-4.1"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[DuckDuckGoTools()],
     instructions=["Always include sources"],
     # Store the agent sessions in a sqlite database
@@ -26,7 +26,7 @@ web_agent = Agent(
 
 finance_agent = Agent(
     name="Finance Agent",
-    model=OpenAIChat(id="gpt-4.1"),
+    model=OpenAIChat(id="gpt-5-mini"),
     tools=[
         YFinanceTools(
             stock_price=True,

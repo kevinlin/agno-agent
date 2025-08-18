@@ -49,7 +49,7 @@ parser_model_agent = Agent(
     model=OpenAIChat(id="gpt-5-mini"),
     description="You write movie scripts.",
     response_model=MovieScript,
-    parser_model=OpenAIChat(id="gpt-4o"),
+    parser_model=OpenAIChat(id="gpt-5-mini"),
 )
 parser_model_agent.print_response(
     "New York", stream=True, stream_intermediate_steps=True
