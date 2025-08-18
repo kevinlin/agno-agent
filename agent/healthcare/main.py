@@ -7,11 +7,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent.healthcare.config.config import Config, ConfigManager
+from agent.healthcare.search.service import SearchService
 from agent.healthcare.storage.database import DatabaseService
+from agent.healthcare.storage.embeddings import EmbeddingService
 
 # Global variables for application state
 config: Config = None
 db_service: DatabaseService = None
+embedding_service: EmbeddingService = None
+search_service: SearchService = None
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +23,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown."""
-    global config, db_service
+    global config, db_service, embedding_service, search_service
 
     try:
         # Startup
@@ -41,6 +45,19 @@ async def lifespan(app: FastAPI):
         db_service = DatabaseService(config)
         db_service.create_tables()
         logger.info("✓ Database initialized")
+
+        # Initialize embedding service
+        embedding_service = EmbeddingService(config)
+        logger.info("✓ Embedding service initialized")
+
+        # Initialize search service
+        search_service = SearchService(config, db_service, embedding_service)
+        logger.info("✓ Search service initialized")
+
+        # Set up service dependencies for routes
+        from agent.healthcare.search import set_search_service
+        set_search_service(search_service)
+        logger.info("✓ Service dependencies configured")
 
         logger.info("Healthcare Agent MVP started successfully!")
 
@@ -110,8 +127,11 @@ def add_routes(app: FastAPI) -> None:
 
     # Include upload routes
     from agent.healthcare.upload.routes import router as upload_router
-
     app.include_router(upload_router)
+
+    # Include search routes
+    from agent.healthcare.search import router as search_router
+    app.include_router(search_router)
 
     @app.get("/")
     async def root():

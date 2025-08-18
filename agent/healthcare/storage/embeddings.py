@@ -254,12 +254,16 @@ class EmbeddingService:
             search_results = []
             if results["documents"] and results["documents"][0]:
                 for i in range(len(results["documents"][0])):
+                    # Convert distance to relevance score (0-1 range)
+                    # Use exponential decay to handle distances > 1.0
+                    distance = results["distances"][0][i]
+                    relevance_score = max(0.0, min(1.0, 1.0 / (1.0 + distance)))
+                    
                     result = {
                         "content": results["documents"][0][i],
                         "metadata": results["metadatas"][0][i],
-                        "distance": results["distances"][0][i],
-                        "relevance_score": 1.0
-                        - results["distances"][0][i],  # Convert distance to relevance
+                        "distance": distance,
+                        "relevance_score": relevance_score,
                     }
                     search_results.append(result)
 

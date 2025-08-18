@@ -118,7 +118,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 5. Search and Retrieval System
 
-- [ ] 5.1 Implement semantic search service
+- [x] 5.1 Implement semantic search service
   - Create `agent/healthcare/search/service.py` with SearchService class
   - Implement semantic_search() using Chroma vector database
   - Add user-scoped data retrieval with proper filtering
@@ -126,7 +126,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 7.1, 7.2, 7.3, 7.4 (search endpoint, user restriction, relevance scores, provenance)
   - **Testable Outcome**: Can perform semantic search with user filtering, results include relevance scores and metadata
 
-- [ ] 5.2 Create search API endpoint with validation
+- [x] 5.2 Create search API endpoint with validation
   - Create `agent/healthcare/search/routes.py` with GET /reports/{user_external_id}/search
   - Add query validation, parameter handling (k parameter)
   - Implement result ranking and JSON response formatting
@@ -134,7 +134,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 7.5, 7.6, 7.7, 7.8, 7.9, 7.10 (result count, query validation, ordering, HTTP codes, JSON formatting)
   - **Testable Outcome**: Search API endpoint returns ranked results, handles all query scenarios properly
 
-- [ ] 5.3 Add comprehensive search testing and integration
+- [x] 5.3 Add comprehensive search testing and integration
   - Create unit tests for search functionality and query validation
   - Add integration tests for complete search workflow
   - Test error scenarios and edge cases
