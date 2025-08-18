@@ -618,7 +618,6 @@ class ErrorResponse(BaseModel):
 
 4. **Processing Errors**
    - PDF corruption: Return 422 with file repair suggestions
-   - Conversion failures: Fallback to text extraction, partial results
    - Image extraction failures: Continue without images, log warnings
 
 ### Error Response Format

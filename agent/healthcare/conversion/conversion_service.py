@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -97,6 +98,7 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
             raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
         logger.info(f"Uploading PDF to OpenAI Files API: {pdf_path.name}")
+        upload_start_time = time.time()
 
         try:
             with open(pdf_path, "rb") as f:
@@ -105,7 +107,8 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
                     purpose="assistants",  # or appropriate purpose for responses API
                 )
 
-            logger.info(f"Successfully uploaded PDF, file_id: {uploaded_file.id}")
+            upload_duration = time.time() - upload_start_time
+            logger.info(f"Successfully uploaded PDF, file_id: {uploaded_file.id} - Upload took {upload_duration:.2f} seconds")
             return uploaded_file.id
 
         except Exception as e:
@@ -130,9 +133,13 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
             openai.APIError: If the conversion fails after retries
         """
         logger.info(f"Converting PDF to Markdown using file_id: {file_id}")
+        conversion_start_time = time.time()
 
         try:
             # Use Responses API with File Input
+            logger.info("Starting OpenAI Responses API call...")
+            start_time = time.time()
+            
             response = self.client.responses.create(
                 model=self.config.openai_model,
                 input=[
@@ -146,57 +153,25 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
                 ],
                 timeout=self.config.request_timeout,
             )
+            
+            api_duration = time.time() - start_time
+            logger.info(f"OpenAI Responses API call completed in {api_duration:.2f} seconds")
 
             # Parse the JSON response from output_text
             result_data = json.loads(response.output_text)
             conversion_result = ConversionResult(**result_data)
+            
+            total_conversion_time = time.time() - conversion_start_time
             logger.info(
-                f"Successfully converted PDF to Markdown ({len(conversion_result.markdown)} chars)"
+                f"Successfully converted PDF to Markdown ({len(conversion_result.markdown)} chars) - "
+                f"Total conversion time: {total_conversion_time:.2f} seconds"
             )
 
             return conversion_result
 
         except Exception as e:
             logger.error(f"Failed to convert PDF to Markdown: {e}")
-            # If conversion or JSON parsing fails, try to make a simple request without structured output
-            try:
-                logger.warning("Attempting fallback conversion without JSON parsing")
-
-                # Make a simpler request
-                response = self.client.responses.create(
-                    model=self.config.openai_model,
-                    input=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "input_text", "text": self.conversion_prompt},
-                                {"type": "input_file", "file_id": file_id},
-                            ],
-                        }
-                    ],
-                    timeout=self.config.request_timeout,
-                )
-
-                # Try to find JSON in the response text
-                response_text = response.output_text
-
-                # Look for JSON block in the response
-                json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
-                if json_match:
-                    result_data = json.loads(json_match.group())
-                    conversion_result = ConversionResult(**result_data)
-                else:
-                    # If no JSON found, create a simple result with the text as markdown
-                    conversion_result = ConversionResult(
-                        markdown=response_text, manifest={"figures": [], "tables": []}
-                    )
-
-                logger.info("Successfully converted PDF using fallback method")
-                return conversion_result
-
-            except Exception as fallback_error:
-                logger.error(f"Fallback conversion also failed: {fallback_error}")
-                raise
+            raise
 
     def save_markdown(self, markdown: str, report_dir: Path) -> Path:
         """Save converted Markdown content to file.
