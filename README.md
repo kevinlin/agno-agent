@@ -101,12 +101,6 @@ uv run python agent/research_agent.py
 uv run python playground/playground.py
 ```
 
-## Dependencies
-
-- `agno>=1.7.0` - The Agno AI agent framework
-- `black>=24.0.0` - Python code formatter
-- `isort>=5.13.2` - Python import sorting tool
-
 ## Project Structure
 
 - `agent/` - Contains all agent implementations
