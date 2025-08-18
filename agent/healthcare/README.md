@@ -197,14 +197,16 @@ The application can be configured via environment variables:
 
 This is an MVP implementation. Current status based on the task list:
 
-### ✅ Completed (Tasks 1.1-1.3)
+### ✅ Completed (Tasks 1.1-1.4, 2.1-2.3, 3.1-3.3)
 - [x] Basic project structure and configuration
 - [x] Database models and storage layer
 - [x] FastAPI application foundation with health checks
+- [x] Comprehensive README documentation
+- [x] PDF upload service and endpoints
+- [x] OpenAI integration for PDF conversion (Files API + Responses API)
+- [x] Comprehensive unit and integration testing
 
 ### 🚧 In Progress / Pending
-- [ ] PDF upload service and endpoints (Tasks 2.1-2.3)
-- [ ] OpenAI integration for PDF conversion (Tasks 3.1-3.3)
 - [ ] Image extraction and asset management (Tasks 4.1-4.3)
 - [ ] Vector database and embeddings (Tasks 5.1-5.3)
 - [ ] Search and retrieval system (Tasks 6.1-6.3)

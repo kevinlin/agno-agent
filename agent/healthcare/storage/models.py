@@ -1,9 +1,14 @@
 """Database models for healthcare agent using SQLModel."""
 
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional
 
 from sqlmodel import Field, SQLModel, UniqueConstraint
+
+
+def utc_now() -> datetime:
+    """Get current UTC datetime using the recommended approach."""
+    return datetime.now(UTC)
 
 
 class User(SQLModel, table=True):
@@ -11,7 +16,7 @@ class User(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     external_id: str = Field(unique=True, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 class MedicalReport(SQLModel, table=True):
@@ -25,7 +30,7 @@ class MedicalReport(SQLModel, table=True):
     markdown_path: str
     images_dir: Optional[str] = None
     meta_json: str  # JSON-encoded manifest
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     __table_args__ = (UniqueConstraint("user_id", "file_hash"),)
 
@@ -39,4 +44,4 @@ class ReportAsset(SQLModel, table=True):
     path: str
     alt_text: Optional[str] = None
     page_number: Optional[int] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
