@@ -168,6 +168,3 @@ async def get_search_stats(
     except Exception as e:
         logger.error(f"Failed to get search stats: {e}")
         raise HTTPException(status_code=500, detail="Failed to get search statistics")
-
-
-

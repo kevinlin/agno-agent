@@ -378,14 +378,12 @@ class TestSearchService:
             markdown_path="/path/to/markdown",
             created_at=datetime.now(),
         )
-        
+
         # Mock session.get for report enrichment
         mock_session.get.return_value = mock_report
 
         # Test with whitespace in inputs
-        results = search_service.semantic_search(
-            "  user123  ", "  blood pressure  ", 5
-        )
+        results = search_service.semantic_search("  user123  ", "  blood pressure  ", 5)
 
         # Verify embedding service was called with stripped values
         mock_embedding_service.search_similar.assert_called_once_with(
@@ -402,7 +400,7 @@ class TestSearchService:
         mock_session = Mock()
         mock_session.exec.return_value.first.return_value = None
         self._mock_session_context(mock_db_service, mock_session)
-        
+
         # Test with None user_external_id - should strip to empty string and fail validation
         with pytest.raises(ValueError, match="User not found"):
             search_service.semantic_search(None, "valid query", 5)
@@ -435,9 +433,7 @@ class TestSearchService:
         assert stats["reports_count"] == 0
         assert stats["total_chunks"] == 10
 
-    def test_get_search_stats_handles_none_input(
-        self, search_service, mock_db_service
-    ):
+    def test_get_search_stats_handles_none_input(self, search_service, mock_db_service):
         """Test that get_search_stats handles None input gracefully."""
         # Mock database session to return no user found
         mock_session = Mock()
@@ -455,6 +451,6 @@ class TestSearchService:
         # Test with only whitespace - should be stripped to empty and return False
         assert search_service.validate_query("   ") is False
         assert search_service.validate_query("\t\n  ") is False
-        
+
         # Test with valid query with whitespace - should pass
         assert search_service.validate_query("  valid query  ") is True

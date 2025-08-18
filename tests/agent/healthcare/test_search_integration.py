@@ -211,8 +211,6 @@ class TestSearchIntegration:
         assert response.status_code == 500
         assert "Failed to get search statistics" in response.json()["detail"]
 
-
-
     def test_search_response_format_validation(self, client, mock_search_service):
         """Test that search response matches expected format."""
         search_results = [
