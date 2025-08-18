@@ -1,6 +1,6 @@
 # Healthcare Agent – Functional Requirements & Design&#x20;
 
-> **Objective**: Build an AI agent (Agno) that ingests medical reports in **PDF**, converts them to **Markdown** (including tables + image handling), stores canonical artifacts in **SQLite**, supports **multiple reports per user**, and enables retrieval + RAG-backed Q&A across a user’s longitudinal health data. \*\*Docling is replaced by OpenAI’s Responses API with \*\****File Inputs*** for the PDF→Markdown conversion step.
+> **Objective**: Build an AI agent (Agno) that ingests medical reports in **PDF**, converts them to **Markdown** (including tables + image handling), stores canonical artifacts in **SQLite**, supports **multiple reports per user**, and enables retrieval + RAG-backed Q&A across a user’s longitudinal health data. **Docling is replaced by OpenAI’s Responses API with File Inputs** for the PDF→Markdown conversion step.
 
 ## 1) Context & Goals
 
