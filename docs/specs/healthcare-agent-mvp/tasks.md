@@ -143,15 +143,15 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 6. Image Extraction and Asset Management
 
-- [ ] 6.1 Implement local image extraction
-  - Add pikepdf dependency and create `agent/healthcare/images/service.py`
+- [x] 6.1 Implement local image extraction
+  - Add pikepdf dependency and create `agent/healthcare/images/image_service.py`
   - Implement extract_images_pikepdf() for local image extraction
   - Add page-indexed naming convention (page-003-img-01.png)
   - Create AssetMetadata dataclass and basic linking to manifest
   - **Requirements**: 4.1, 4.2, 4.3, 4.4 (image extraction, storage directories, naming, manifest linking)
   - **Testable Outcome**: Can extract images from PDF, save with correct naming, link to manifest placeholders
 
-- [ ] 6.2 Integrate image extraction with conversion workflow
+- [x] 6.2 Integrate image extraction with conversion workflow
   - Connect image extraction to PDF conversion process
   - Store image metadata in database via ReportAsset records
   - Handle cases where image extraction fails gracefully
@@ -159,7 +159,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 4.5, 4.6, 4.9 (metadata storage, extraction failure handling, unit tests)
   - **Testable Outcome**: Complete PDF ingestion with images extracted and stored, database records created
 
-- [ ] 6.3 Create asset retrieval API endpoint
+- [x] 6.3 Create asset retrieval API endpoint
   - Create `agent/healthcare/images/routes.py` with GET /reports/{report_id}/assets
   - Implement asset listing with proper user access control
   - Add HTTP status codes and JSON response formatting

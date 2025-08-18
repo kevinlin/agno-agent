@@ -12,6 +12,7 @@ from agent.healthcare.conversion.conversion_service import (
     ConversionResult,
     PDFConversionService,
 )
+from agent.healthcare.images import AssetMetadata
 
 
 @pytest.fixture
@@ -333,3 +334,133 @@ Dr. François Müller, MD
             assert "José García" in saved_content
             assert "37.2°C" in saved_content
             assert "SpO₂" in saved_content
+
+    @pytest.mark.integration
+    def test_image_extraction_integration(
+        self, config, sample_pdf_content, expected_conversion_result
+    ):
+        """Test integration of image extraction with PDF conversion."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create test PDF file
+            pdf_path = temp_path / "test_with_images.pdf"
+            pdf_path.write_bytes(sample_pdf_content)
+
+            # Create report directory
+            report_dir = temp_path / "report_with_images"
+
+            # Mock OpenAI client
+            mock_client = Mock()
+            mock_file = Mock()
+            mock_file.id = "file-image-test-789"
+            mock_client.files.create.return_value = mock_file
+
+            mock_response = Mock()
+            mock_response.output_text = json.dumps(
+                {
+                    "markdown": expected_conversion_result.markdown,
+                    "manifest": expected_conversion_result.manifest,
+                }
+            )
+            mock_client.responses.create.return_value = mock_response
+
+            # Create service
+            service = PDFConversionService(config, mock_client)
+
+            # Mock image extraction service
+            mock_extracted_images = [
+                AssetMetadata(
+                    kind="image",
+                    original_path=None,
+                    stored_path=report_dir / "images" / "page-002-img-01.png",
+                    alt_text="Chest X-ray showing clear lungs",
+                    page_number=2,
+                    caption="Chest X-ray showing clear lungs",
+                    index=1,
+                )
+            ]
+
+            with patch.object(
+                service.image_service, "extract_and_process"
+            ) as mock_extract:
+                mock_extract.return_value = mock_extracted_images
+
+                # Run conversion workflow
+                import asyncio
+
+                result = asyncio.run(service.process_pdf(pdf_path, report_dir))
+
+                # Verify image extraction was called
+                mock_extract.assert_called_once()
+                call_args = mock_extract.call_args
+                assert call_args[0][0] == pdf_path  # pdf_path
+                assert (
+                    call_args[0][1] == expected_conversion_result.manifest
+                )  # manifest
+                assert call_args[0][2] == report_dir / "images"  # images_dir
+
+                # Verify extracted images are included in result
+                assert len(result.extracted_images) == 1
+                assert result.extracted_images[0].kind == "image"
+                assert (
+                    result.extracted_images[0].alt_text
+                    == "Chest X-ray showing clear lungs"
+                )
+                assert result.extracted_images[0].page_number == 2
+
+    @pytest.mark.integration
+    def test_image_extraction_failure_handling(
+        self, config, sample_pdf_content, expected_conversion_result
+    ):
+        """Test handling of image extraction failures."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create test PDF file
+            pdf_path = temp_path / "test_extraction_failure.pdf"
+            pdf_path.write_bytes(sample_pdf_content)
+
+            # Create report directory
+            report_dir = temp_path / "report_extraction_failure"
+
+            # Mock OpenAI client
+            mock_client = Mock()
+            mock_file = Mock()
+            mock_file.id = "file-extraction-failure-999"
+            mock_client.files.create.return_value = mock_file
+
+            mock_response = Mock()
+            mock_response.output_text = json.dumps(
+                {
+                    "markdown": expected_conversion_result.markdown,
+                    "manifest": expected_conversion_result.manifest,
+                }
+            )
+            mock_client.responses.create.return_value = mock_response
+
+            # Create service
+            service = PDFConversionService(config, mock_client)
+
+            # Mock image extraction service to fail
+            with patch.object(
+                service.image_service, "extract_and_process"
+            ) as mock_extract:
+                mock_extract.side_effect = Exception("Image extraction failed")
+
+                # Run conversion workflow - should not fail despite image extraction failure
+                import asyncio
+
+                result = asyncio.run(service.process_pdf(pdf_path, report_dir))
+
+                # Verify conversion succeeded despite image extraction failure
+                assert isinstance(result, ConversionResult)
+                assert result.markdown == expected_conversion_result.markdown
+                assert result.manifest == expected_conversion_result.manifest
+
+                # Verify no images were extracted due to failure
+                assert len(result.extracted_images) == 0
+
+                # Verify markdown was still saved
+                markdown_file = report_dir / "report.md"
+                assert markdown_file.exists()

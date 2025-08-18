@@ -18,6 +18,7 @@ from tenacity import (
 )
 
 from agent.healthcare.config.config import Config
+from agent.healthcare.images import AssetMetadata, ImageExtractionService
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ class ConversionResult(BaseModel):
 
     markdown: str
     manifest: dict  # {"figures": List[Figure], "tables": List[TableRef]}
+    extracted_images: list[AssetMetadata] = []  # List of extracted image metadata
 
 
 class PDFConversionService:
@@ -59,6 +61,7 @@ class PDFConversionService:
         """
         self.config = config
         self.client = openai_client or OpenAI(api_key=config.openai_api_key)
+        self.image_service = ImageExtractionService()
 
         # Conversion prompt template
         self.conversion_prompt = """You are a document conversion engine. Given the attached PDF, output:
@@ -209,7 +212,7 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
             report_dir: Directory to save the converted content
 
         Returns:
-            ConversionResult containing markdown and manifest
+            ConversionResult containing markdown, manifest, and extracted images
 
         Raises:
             Exception: If any step in the pipeline fails
@@ -226,7 +229,23 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
             # Step 3: Save Markdown to disk
             markdown_path = self.save_markdown(conversion_result.markdown, report_dir)
 
-            logger.info(f"Successfully completed PDF processing pipeline")
+            # Step 4: Extract images from PDF
+            images_dir = report_dir / "images"
+            try:
+                extracted_images = self.image_service.extract_and_process(
+                    pdf_path, conversion_result.manifest, images_dir
+                )
+                conversion_result.extracted_images = extracted_images
+                logger.info(f"Successfully extracted {len(extracted_images)} images")
+            except Exception as image_error:
+                logger.warning(
+                    f"Image extraction failed, continuing without images: {image_error}"
+                )
+                conversion_result.extracted_images = []
+
+            logger.info(
+                f"Successfully completed PDF processing pipeline with {len(conversion_result.extracted_images)} images"
+            )
             return conversion_result
 
         except Exception as e:

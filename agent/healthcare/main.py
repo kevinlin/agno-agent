@@ -146,43 +146,50 @@ def add_routes(app: FastAPI) -> None:
     async def health_check():
         """Health check endpoint for all services."""
         from datetime import datetime
+
         from sqlmodel import text
-        
+
         health_status = {
             "status": "healthy",
             "timestamp": datetime.utcnow().isoformat(),
             "version": "0.1.0",
-            "services": {}
+            "services": {},
         }
-        
+
         try:
             # Check configuration service
-            if hasattr(app.state, 'config') and app.state.config:
+            if hasattr(app.state, "config") and app.state.config:
                 health_status["services"]["config"] = {
                     "status": "healthy",
                     "openai_model": app.state.config.openai_model,
                     "embedding_model": app.state.config.embedding_model,
-                    "base_data_dir_exists": app.state.config.base_data_dir.exists()
+                    "base_data_dir_exists": app.state.config.base_data_dir.exists(),
                 }
             else:
                 health_status["services"]["config"] = {"status": "not_initialized"}
                 health_status["status"] = "degraded"
 
             # Check database service
-            if hasattr(app.state, 'db_service') and app.state.db_service:
+            if hasattr(app.state, "db_service") and app.state.db_service:
                 try:
                     with app.state.db_service.get_session() as session:
                         session.exec(text("SELECT 1")).first()
-                    health_status["services"]["database"] = {"status": "healthy", "connection": "active"}
+                    health_status["services"]["database"] = {
+                        "status": "healthy",
+                        "connection": "active",
+                    }
                 except Exception as e:
-                    health_status["services"]["database"] = {"status": "unhealthy", "error": str(e)}
+                    health_status["services"]["database"] = {
+                        "status": "unhealthy",
+                        "error": str(e),
+                    }
                     health_status["status"] = "unhealthy"
             else:
                 health_status["services"]["database"] = {"status": "not_initialized"}
                 health_status["status"] = "degraded"
 
             # Check embedding service
-            if hasattr(app.state, 'embedding_service') and app.state.embedding_service:
+            if hasattr(app.state, "embedding_service") and app.state.embedding_service:
                 try:
                     # Basic health check - verify service is initialized with config
                     embedding_config = app.state.embedding_service.config
@@ -190,34 +197,42 @@ def add_routes(app: FastAPI) -> None:
                         "status": "healthy",
                         "model": embedding_config.embedding_model,
                         "chunk_size": embedding_config.chunk_size,
-                        "chunk_overlap": embedding_config.chunk_overlap
+                        "chunk_overlap": embedding_config.chunk_overlap,
                     }
                 except Exception as e:
-                    health_status["services"]["embedding"] = {"status": "unhealthy", "error": str(e)}
+                    health_status["services"]["embedding"] = {
+                        "status": "unhealthy",
+                        "error": str(e),
+                    }
                     health_status["status"] = "unhealthy"
             else:
                 health_status["services"]["embedding"] = {"status": "not_initialized"}
                 health_status["status"] = "degraded"
 
             # Check search service
-            if hasattr(app.state, 'search_service') and app.state.search_service:
+            if hasattr(app.state, "search_service") and app.state.search_service:
                 try:
                     # Verify search service has required dependencies
                     search_config = app.state.search_service.config
                     health_status["services"]["search"] = {
                         "status": "healthy",
                         "embedding_model": search_config.embedding_model,
-                        "vector_db": "chroma"
+                        "vector_db": "chroma",
                     }
                 except Exception as e:
-                    health_status["services"]["search"] = {"status": "unhealthy", "error": str(e)}
+                    health_status["services"]["search"] = {
+                        "status": "unhealthy",
+                        "error": str(e),
+                    }
                     health_status["status"] = "unhealthy"
             else:
                 health_status["services"]["search"] = {"status": "not_initialized"}
                 health_status["status"] = "degraded"
 
             # Set overall status based on service health
-            service_statuses = [service.get("status") for service in health_status["services"].values()]
+            service_statuses = [
+                service.get("status") for service in health_status["services"].values()
+            ]
             if "unhealthy" in service_statuses:
                 health_status["status"] = "unhealthy"
             elif "not_initialized" in service_statuses:
@@ -228,7 +243,7 @@ def add_routes(app: FastAPI) -> None:
                 raise HTTPException(status_code=503, detail=health_status)
             elif health_status["status"] == "degraded":
                 raise HTTPException(status_code=503, detail=health_status)
-            
+
             return health_status
 
         except HTTPException:
@@ -236,13 +251,16 @@ def add_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error(f"Health check failed: {e}", exc_info=True)
-            raise HTTPException(status_code=503, detail={
-                "status": "unhealthy",
-                "timestamp": datetime.utcnow().isoformat(),
-                "error": "health_check_failed",
-                "message": "An unexpected error occurred during health check",
-                "detail": str(e)
-            })
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "status": "unhealthy",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "error": "health_check_failed",
+                    "message": "An unexpected error occurred during health check",
+                    "detail": str(e),
+                },
+            )
 
     @app.get("/config")
     async def get_config():

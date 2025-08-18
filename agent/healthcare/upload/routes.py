@@ -135,6 +135,30 @@ async def ingest_pdf(
                 user_id=user_id, report_data=report_data
             )
 
+            # Create asset records for extracted images
+            if conversion_result.extracted_images:
+                logger.info(
+                    f"Creating asset records for {len(conversion_result.extracted_images)} images"
+                )
+                try:
+                    asset_data_list = []
+                    for img_metadata in conversion_result.extracted_images:
+                        asset_data = {
+                            "kind": img_metadata.kind,
+                            "path": str(img_metadata.stored_path),
+                            "alt_text": img_metadata.alt_text,
+                        }
+                        asset_data_list.append(asset_data)
+
+                    db_service.create_report_assets(medical_report.id, asset_data_list)
+                    logger.info(
+                        f"Created {len(asset_data_list)} asset records for report {medical_report.id}"
+                    )
+
+                except Exception as asset_error:
+                    logger.error(f"Failed to create asset records: {asset_error}")
+                    # Continue processing - asset creation failure shouldn't fail the whole upload
+
             # Generate and store embeddings for the converted markdown
             logger.info(f"Generating embeddings for report_id={medical_report.id}")
             try:
@@ -180,6 +204,7 @@ async def ingest_pdf(
                     "file_hash": file_hash,
                     "markdown_generated": True,
                     "embeddings_generated": embeddings_generated,
+                    "images_extracted": len(conversion_result.extracted_images),
                     "manifest": conversion_result.manifest,
                     "duplicate": False,
                 },
