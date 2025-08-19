@@ -183,6 +183,26 @@ For development, start the server with auto-reload:
 python -m agent.healthcare.cli start --reload --log-level debug
 ```
 
+### Chroma DB Administration
+
+For development and testing purposes, you can use the Chroma DB admin interface to inspect and manage your vector database:
+
+1. **Start the Chroma DB Admin container**:
+   ```bash
+   docker run --rm -p 3001:3001 fengzhichao/chromadb-admin
+   ```
+
+2. **Access the admin interface**:
+   Open your browser and navigate to: http://localhost:3001/
+
+3. **Connect to your local Chroma instance**:
+   - **Chroma connection string**: `http://host.docker.internal:8100`
+   - **Tenant**: `default_tenant`
+   - **Database**: `default_database`
+   - **Auth Type**: `No Auth`
+
+This allows you to browse collections, inspect embeddings, and debug vector search functionality during development.
+
 ## Configuration Options
 
 The application can be configured via environment variables:
