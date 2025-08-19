@@ -70,7 +70,7 @@ class PDFConversionService:
    - Use ATX headings (#, ##, ###) reflecting the original structure.
    - Convert tables to Markdown tables. For very wide tables, use a fenced block with TSV inside.
    - When you encounter images/figures, insert placeholders using this format:
-     ![<short descriptive caption>](assets/page-<PAGE_3DIGITS>-img-<IDX_2DIGITS>.png)
+     ![<short descriptive caption>](images/page-<PAGE_3DIGITS>-img-<IDX_2DIGITS>.png)
      Also include a figure caption line immediately after the image.
    - Add page anchors like: <a id="page-<PAGE_3DIGITS>"></a>
 
