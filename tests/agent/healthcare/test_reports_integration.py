@@ -89,7 +89,9 @@ class TestReportsIntegration:
     def test_list_reports_user_not_found(self, client, mock_report_service):
         """Test report listing when user not found."""
         # Setup mock to raise ValueError
-        mock_report_service.list_user_reports.side_effect = ValueError("User not found: nonexistent_user")
+        mock_report_service.list_user_reports.side_effect = ValueError(
+            "User not found: nonexistent_user"
+        )
 
         # Make request
         response = client.get("/reports/nonexistent_user")
@@ -102,7 +104,9 @@ class TestReportsIntegration:
     def test_list_reports_validation_error(self, client, mock_report_service):
         """Test report listing with validation error."""
         # Setup mock to raise ValueError
-        mock_report_service.list_user_reports.side_effect = ValueError("User external ID is required")
+        mock_report_service.list_user_reports.side_effect = ValueError(
+            "User external ID is required"
+        )
 
         # Make request
         response = client.get("/reports/test_user")
@@ -115,7 +119,9 @@ class TestReportsIntegration:
     def test_list_reports_runtime_error(self, client, mock_report_service):
         """Test report listing with runtime error."""
         # Setup mock to raise RuntimeError
-        mock_report_service.list_user_reports.side_effect = RuntimeError("Report listing failed: database error")
+        mock_report_service.list_user_reports.side_effect = RuntimeError(
+            "Report listing failed: database error"
+        )
 
         # Make request
         response = client.get("/reports/test_user")
@@ -128,7 +134,9 @@ class TestReportsIntegration:
     def test_list_reports_unexpected_error(self, client, mock_report_service):
         """Test report listing with unexpected error."""
         # Setup mock to raise unexpected exception
-        mock_report_service.list_user_reports.side_effect = Exception("Unexpected error")
+        mock_report_service.list_user_reports.side_effect = Exception(
+            "Unexpected error"
+        )
 
         # Make request
         response = client.get("/reports/test_user")
@@ -160,13 +168,17 @@ class TestReportsIntegration:
         assert data["content_length"] == len(markdown_content)
 
         # Verify service calls
-        mock_report_service.get_report_markdown.assert_called_once_with(123, "test_user")
+        mock_report_service.get_report_markdown.assert_called_once_with(
+            123, "test_user"
+        )
         mock_report_service.get_report_summary.assert_called_once_with(123, "test_user")
 
     def test_get_report_markdown_access_denied(self, client, mock_report_service):
         """Test markdown retrieval with access denied."""
         # Setup mock to raise access denied error
-        mock_report_service.get_report_markdown.side_effect = ValueError("Access denied to report 123 for user test_user")
+        mock_report_service.get_report_markdown.side_effect = ValueError(
+            "Access denied to report 123 for user test_user"
+        )
 
         # Make request
         response = client.get("/reports/123/markdown?user_external_id=test_user")
@@ -179,7 +191,9 @@ class TestReportsIntegration:
     def test_get_report_markdown_not_found(self, client, mock_report_service):
         """Test markdown retrieval when report not found."""
         # Setup mock to raise not found error
-        mock_report_service.get_report_markdown.side_effect = ValueError("Report not found: 999")
+        mock_report_service.get_report_markdown.side_effect = ValueError(
+            "Report not found: 999"
+        )
 
         # Make request
         response = client.get("/reports/999/markdown?user_external_id=test_user")
@@ -192,7 +206,9 @@ class TestReportsIntegration:
     def test_get_report_markdown_file_not_found(self, client, mock_report_service):
         """Test markdown retrieval when file not found."""
         # Setup mock to raise FileNotFoundError
-        mock_report_service.get_report_markdown.side_effect = FileNotFoundError("Markdown file not found: /path/to/file.md")
+        mock_report_service.get_report_markdown.side_effect = FileNotFoundError(
+            "Markdown file not found: /path/to/file.md"
+        )
 
         # Make request
         response = client.get("/reports/123/markdown?user_external_id=test_user")
@@ -262,7 +278,9 @@ class TestReportsIntegration:
     def test_list_report_assets_access_denied(self, client, mock_report_service):
         """Test asset listing with access denied."""
         # Setup mock to raise access denied error
-        mock_report_service.list_report_assets.side_effect = ValueError("Access denied to report 123 for user test_user")
+        mock_report_service.list_report_assets.side_effect = ValueError(
+            "Access denied to report 123 for user test_user"
+        )
 
         # Make request
         response = client.get("/reports/123/assets?user_external_id=test_user")
@@ -335,7 +353,9 @@ class TestReportsIntegration:
     def test_get_report_stats_user_not_found(self, client, mock_report_service):
         """Test report statistics when user not found."""
         # Setup mock to raise ValueError
-        mock_report_service.get_report_stats.side_effect = ValueError("User not found: nonexistent_user")
+        mock_report_service.get_report_stats.side_effect = ValueError(
+            "User not found: nonexistent_user"
+        )
 
         # Make request
         response = client.get("/reports/nonexistent_user/stats")
@@ -349,12 +369,12 @@ class TestReportsIntegration:
         """Test endpoints when report service is not initialized."""
         # Create app without report service in state
         app = create_app()
-        
+
         # Add report routes but don't set up the service in app state
         from agent.healthcare.reports import router as reports_router
 
         app.include_router(reports_router)
-        
+
         client_no_service = TestClient(app)
 
         # Make request
@@ -393,7 +413,9 @@ class TestReportsIntegration:
     def test_error_response_format(self, client, mock_report_service):
         """Test that error responses follow consistent format."""
         # Setup mock to raise ValueError
-        mock_report_service.list_user_reports.side_effect = ValueError("Test error message")
+        mock_report_service.list_user_reports.side_effect = ValueError(
+            "Test error message"
+        )
 
         # Make request
         response = client.get("/reports/test_user")

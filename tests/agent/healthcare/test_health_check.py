@@ -166,7 +166,12 @@ class TestHealthCheckEndpoint:
         assert services["reports"]["status"] == "not_initialized"
 
     def test_health_check_database_connection_failure(
-        self, client, mock_config, mock_embedding_service, mock_search_service, mock_report_service
+        self,
+        client,
+        mock_config,
+        mock_embedding_service,
+        mock_search_service,
+        mock_report_service,
     ):
         """Test health check when database connection fails."""
         # Create a failing database service
@@ -198,7 +203,12 @@ class TestHealthCheckEndpoint:
         assert services["reports"]["status"] == "healthy"
 
     def test_health_check_embedding_service_failure(
-        self, client, mock_config, mock_db_service, mock_search_service, mock_report_service
+        self,
+        client,
+        mock_config,
+        mock_db_service,
+        mock_search_service,
+        mock_report_service,
     ):
         """Test health check when embedding service fails."""
         # Create a failing embedding service
@@ -230,7 +240,12 @@ class TestHealthCheckEndpoint:
         assert services["reports"]["status"] == "healthy"
 
     def test_health_check_search_service_failure(
-        self, client, mock_config, mock_db_service, mock_embedding_service, mock_report_service
+        self,
+        client,
+        mock_config,
+        mock_db_service,
+        mock_embedding_service,
+        mock_report_service,
     ):
         """Test health check when search service fails."""
         # Create a failing search service

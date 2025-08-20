@@ -20,7 +20,7 @@ class ReportService:
 
     def __init__(self, config: Config, db_service: DatabaseService):
         """Initialize report service.
-        
+
         Args:
             config: Application configuration
             db_service: Database service instance
@@ -30,14 +30,14 @@ class ReportService:
 
     def validate_user_access(self, report_id: int, user_external_id: str) -> bool:
         """Validate that a user has access to a specific report.
-        
+
         Args:
             report_id: Report ID to check access for
             user_external_id: User external ID to validate
-            
+
         Returns:
             True if user has access, False otherwise
-            
+
         Raises:
             ValueError: If user or report not found
         """
@@ -67,13 +67,13 @@ class ReportService:
 
     def list_user_reports(self, user_external_id: str) -> List[Dict]:
         """List all reports for a user.
-        
+
         Args:
             user_external_id: User external ID
-            
+
         Returns:
             List of report summaries with metadata
-            
+
         Raises:
             ValueError: If user not found
             RuntimeError: If operation fails
@@ -81,7 +81,7 @@ class ReportService:
         try:
             # Strip whitespace from input
             user_external_id = user_external_id.strip() if user_external_id else ""
-            
+
             if not user_external_id:
                 raise ValueError("User external ID is required")
 
@@ -105,14 +105,18 @@ class ReportService:
                 for report in reports:
                     try:
                         # Parse metadata JSON
-                        meta_data = json.loads(report.meta_json) if report.meta_json else {}
-                        
+                        meta_data = (
+                            json.loads(report.meta_json) if report.meta_json else {}
+                        )
+
                         summary = {
                             "id": report.id,
                             "filename": report.filename,
                             "created_at": report.created_at.isoformat(),
                             "language": report.language,
-                            "file_hash": report.file_hash[:12],  # Shortened hash for display
+                            "file_hash": report.file_hash[
+                                :12
+                            ],  # Shortened hash for display
                             "has_images": bool(report.images_dir),
                             "manifest": meta_data.get("manifest", {}),
                         }
@@ -131,7 +135,9 @@ class ReportService:
                         }
                         report_summaries.append(summary)
 
-                logger.info(f"Listed {len(report_summaries)} reports for user {user_external_id}")
+                logger.info(
+                    f"Listed {len(report_summaries)} reports for user {user_external_id}"
+                )
                 return report_summaries
 
         except ValueError:
@@ -143,14 +149,14 @@ class ReportService:
 
     def get_report_markdown(self, report_id: int, user_external_id: str) -> str:
         """Get the markdown content for a specific report.
-        
+
         Args:
             report_id: Report ID to retrieve
             user_external_id: User external ID for access validation
-            
+
         Returns:
             Markdown content as string
-            
+
         Raises:
             ValueError: If user not found or access denied
             FileNotFoundError: If markdown file not found
@@ -159,13 +165,15 @@ class ReportService:
         try:
             # Strip whitespace from input
             user_external_id = user_external_id.strip() if user_external_id else ""
-            
+
             if not user_external_id:
                 raise ValueError("User external ID is required")
 
             # Validate access first
             if not self.validate_user_access(report_id, user_external_id):
-                raise ValueError(f"Access denied to report {report_id} for user {user_external_id}")
+                raise ValueError(
+                    f"Access denied to report {report_id} for user {user_external_id}"
+                )
 
             with self.db_service.get_session() as session:
                 # Get report metadata
@@ -182,13 +190,17 @@ class ReportService:
                 try:
                     with open(markdown_path, "r", encoding="utf-8") as f:
                         content = f.read()
-                    
-                    logger.info(f"Retrieved markdown for report {report_id}, size: {len(content)} chars")
+
+                    logger.info(
+                        f"Retrieved markdown for report {report_id}, size: {len(content)} chars"
+                    )
                     return content
-                    
+
                 except UnicodeDecodeError as e:
                     logger.error(f"Encoding error reading markdown file: {e}")
-                    raise RuntimeError(f"Could not read markdown file due to encoding issues")
+                    raise RuntimeError(
+                        f"Could not read markdown file due to encoding issues"
+                    )
 
         except (ValueError, FileNotFoundError):
             # Re-raise validation and file not found errors
@@ -199,14 +211,14 @@ class ReportService:
 
     def list_report_assets(self, report_id: int, user_external_id: str) -> List[Dict]:
         """List all assets for a specific report.
-        
+
         Args:
             report_id: Report ID to list assets for
             user_external_id: User external ID for access validation
-            
+
         Returns:
             List of asset information dictionaries
-            
+
         Raises:
             ValueError: If user not found or access denied
             RuntimeError: If operation fails
@@ -214,13 +226,15 @@ class ReportService:
         try:
             # Strip whitespace from input
             user_external_id = user_external_id.strip() if user_external_id else ""
-            
+
             if not user_external_id:
                 raise ValueError("User external ID is required")
 
             # Validate access first
             if not self.validate_user_access(report_id, user_external_id):
-                raise ValueError(f"Access denied to report {report_id} for user {user_external_id}")
+                raise ValueError(
+                    f"Access denied to report {report_id} for user {user_external_id}"
+                )
 
             with self.db_service.get_session() as session:
                 # Get all assets for the report
@@ -279,14 +293,14 @@ class ReportService:
 
     def get_report_summary(self, report_id: int, user_external_id: str) -> Dict:
         """Get detailed summary information for a specific report.
-        
+
         Args:
             report_id: Report ID to get summary for
             user_external_id: User external ID for access validation
-            
+
         Returns:
             Detailed report summary dictionary
-            
+
         Raises:
             ValueError: If user not found or access denied
             RuntimeError: If operation fails
@@ -294,13 +308,15 @@ class ReportService:
         try:
             # Strip whitespace from input
             user_external_id = user_external_id.strip() if user_external_id else ""
-            
+
             if not user_external_id:
                 raise ValueError("User external ID is required")
 
             # Validate access first
             if not self.validate_user_access(report_id, user_external_id):
-                raise ValueError(f"Access denied to report {report_id} for user {user_external_id}")
+                raise ValueError(
+                    f"Access denied to report {report_id} for user {user_external_id}"
+                )
 
             with self.db_service.get_session() as session:
                 # Get report
@@ -309,9 +325,11 @@ class ReportService:
                     raise ValueError(f"Report not found: {report_id}")
 
                 # Get asset count
-                asset_count = len(session.exec(
-                    select(ReportAsset).where(ReportAsset.report_id == report_id)
-                ).all())
+                asset_count = len(
+                    session.exec(
+                        select(ReportAsset).where(ReportAsset.report_id == report_id)
+                    ).all()
+                )
 
                 # Check file sizes
                 markdown_size = 0
@@ -354,13 +372,13 @@ class ReportService:
 
     def get_report_stats(self, user_external_id: str) -> Dict:
         """Get statistics for all reports of a user.
-        
+
         Args:
             user_external_id: User external ID
-            
+
         Returns:
             Dictionary with user report statistics
-            
+
         Raises:
             ValueError: If user not found
             RuntimeError: If operation fails
@@ -368,7 +386,7 @@ class ReportService:
         try:
             # Strip whitespace from input
             user_external_id = user_external_id.strip() if user_external_id else ""
-            
+
             if not user_external_id:
                 raise ValueError("User external ID is required")
 
@@ -417,7 +435,9 @@ class ReportService:
                     "user_created_at": user.created_at.isoformat(),
                 }
 
-                logger.info(f"Generated stats for user {user_external_id}: {total_reports} reports")
+                logger.info(
+                    f"Generated stats for user {user_external_id}: {total_reports} reports"
+                )
                 return stats
 
         except ValueError:

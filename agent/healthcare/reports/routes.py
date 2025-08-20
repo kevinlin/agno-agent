@@ -24,7 +24,7 @@ def get_report_service(request: Request) -> ReportService:
 
 class ReportSummary(BaseModel):
     """API response model for report summary."""
-    
+
     id: int
     filename: str
     created_at: str  # ISO format datetime
@@ -36,7 +36,7 @@ class ReportSummary(BaseModel):
 
 class ReportListResponse(BaseModel):
     """API response model for report listing."""
-    
+
     reports: List[ReportSummary]
     total: int
     user_external_id: str
@@ -44,7 +44,7 @@ class ReportListResponse(BaseModel):
 
 class MarkdownResponse(BaseModel):
     """API response model for markdown content."""
-    
+
     report_id: int
     filename: str
     content: str
@@ -54,7 +54,7 @@ class MarkdownResponse(BaseModel):
 
 class AssetInfo(BaseModel):
     """API response model for asset information."""
-    
+
     id: int
     kind: str
     filename: str
@@ -68,7 +68,7 @@ class AssetInfo(BaseModel):
 
 class AssetListResponse(BaseModel):
     """API response model for asset listing."""
-    
+
     assets: List[AssetInfo]
     total: int
     report_id: int
@@ -76,7 +76,7 @@ class AssetListResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """API response model for errors."""
-    
+
     error: str
     message: str
     details: Dict[str, Any] = Field(default_factory=dict)
@@ -96,25 +96,25 @@ async def list_reports(
     report_service: ReportService = Depends(get_report_service),
 ) -> ReportListResponse:
     """List all medical reports for a user.
-    
+
     Returns a list of all medical reports belonging to the specified user,
     with summary information including metadata and creation dates.
-    
+
     Args:
         user_external_id: External user identifier
-        
+
     Returns:
         ReportListResponse with list of report summaries
-        
+
     Raises:
         HTTPException: For validation errors, user not found, or operation failures
     """
     try:
         logger.info(f"Listing reports for user: {user_external_id}")
-        
+
         # Get user reports
         report_summaries = report_service.list_user_reports(user_external_id)
-        
+
         # Convert to API response format
         api_reports = []
         for summary in report_summaries:
@@ -128,16 +128,16 @@ async def list_reports(
                 manifest=summary["manifest"],
             )
             api_reports.append(api_report)
-        
+
         response = ReportListResponse(
             reports=api_reports,
             total=len(api_reports),
             user_external_id=user_external_id,
         )
-        
+
         logger.info(f"Listed {len(api_reports)} reports for user {user_external_id}")
         return response
-        
+
     except ValueError as e:
         logger.warning(f"Report listing validation error: {e}")
         if "not found" in str(e).lower():
@@ -164,33 +164,37 @@ async def list_reports(
 )
 async def get_report_markdown(
     report_id: int,
-    user_external_id: str = Query(..., description="External user identifier for access validation"),
+    user_external_id: str = Query(
+        ..., description="External user identifier for access validation"
+    ),
     report_service: ReportService = Depends(get_report_service),
 ) -> MarkdownResponse:
     """Get the markdown content for a specific report.
-    
+
     Returns the full markdown content of the specified report after validating
     that the user has access to it.
-    
+
     Args:
         report_id: Report ID to retrieve markdown for
         user_external_id: External user identifier for access validation
-        
+
     Returns:
         MarkdownResponse with markdown content and metadata
-        
+
     Raises:
         HTTPException: For validation errors, access denied, file not found, or operation failures
     """
     try:
-        logger.info(f"Retrieving markdown for report {report_id}, user {user_external_id}")
-        
+        logger.info(
+            f"Retrieving markdown for report {report_id}, user {user_external_id}"
+        )
+
         # Get markdown content (includes access validation)
         content = report_service.get_report_markdown(report_id, user_external_id)
-        
+
         # Get report summary for additional metadata
         report_summary = report_service.get_report_summary(report_id, user_external_id)
-        
+
         response = MarkdownResponse(
             report_id=report_id,
             filename=report_summary["filename"],
@@ -198,10 +202,12 @@ async def get_report_markdown(
             content_length=len(content),
             created_at=report_summary["created_at"],
         )
-        
-        logger.info(f"Retrieved markdown for report {report_id}, size: {len(content)} chars")
+
+        logger.info(
+            f"Retrieved markdown for report {report_id}, size: {len(content)} chars"
+        )
         return response
-        
+
     except ValueError as e:
         logger.warning(f"Markdown retrieval validation error: {e}")
         error_msg = str(e).lower()
@@ -234,30 +240,32 @@ async def get_report_markdown(
 )
 async def list_report_assets(
     report_id: int,
-    user_external_id: str = Query(..., description="External user identifier for access validation"),
+    user_external_id: str = Query(
+        ..., description="External user identifier for access validation"
+    ),
     report_service: ReportService = Depends(get_report_service),
 ) -> AssetListResponse:
     """List all assets for a specific report.
-    
+
     Returns a list of all assets (images, tables, etc.) associated with the
     specified report after validating user access.
-    
+
     Args:
         report_id: Report ID to list assets for
         user_external_id: External user identifier for access validation
-        
+
     Returns:
         AssetListResponse with list of asset information
-        
+
     Raises:
         HTTPException: For validation errors, access denied, report not found, or operation failures
     """
     try:
         logger.info(f"Listing assets for report {report_id}, user {user_external_id}")
-        
+
         # Get report assets (includes access validation)
         asset_info = report_service.list_report_assets(report_id, user_external_id)
-        
+
         # Convert to API response format
         api_assets = []
         for asset in asset_info:
@@ -273,16 +281,16 @@ async def list_report_assets(
                 file_size=asset["file_size"],
             )
             api_assets.append(api_asset)
-        
+
         response = AssetListResponse(
             assets=api_assets,
             total=len(api_assets),
             report_id=report_id,
         )
-        
+
         logger.info(f"Listed {len(api_assets)} assets for report {report_id}")
         return response
-        
+
     except ValueError as e:
         logger.warning(f"Asset listing validation error: {e}")
         error_msg = str(e).lower()
@@ -311,33 +319,35 @@ async def list_report_assets(
 )
 async def get_report_summary(
     report_id: int,
-    user_external_id: str = Query(..., description="External user identifier for access validation"),
+    user_external_id: str = Query(
+        ..., description="External user identifier for access validation"
+    ),
     report_service: ReportService = Depends(get_report_service),
 ) -> Dict[str, Any]:
     """Get detailed summary information for a specific report.
-    
+
     Returns comprehensive information about the specified report including
     file sizes, asset counts, and metadata after validating user access.
-    
+
     Args:
         report_id: Report ID to get summary for
         user_external_id: External user identifier for access validation
-        
+
     Returns:
         Dictionary with detailed report summary
-        
+
     Raises:
         HTTPException: For validation errors, access denied, report not found, or operation failures
     """
     try:
         logger.info(f"Getting summary for report {report_id}, user {user_external_id}")
-        
+
         # Get report summary (includes access validation)
         summary = report_service.get_report_summary(report_id, user_external_id)
-        
+
         logger.info(f"Retrieved summary for report {report_id}")
         return summary
-        
+
     except ValueError as e:
         logger.warning(f"Summary retrieval validation error: {e}")
         error_msg = str(e).lower()
@@ -368,28 +378,30 @@ async def get_report_stats(
     report_service: ReportService = Depends(get_report_service),
 ) -> Dict[str, Any]:
     """Get statistics for all reports of a user.
-    
+
     Returns aggregate statistics about all reports belonging to the specified user,
     including counts, sizes, and language distribution.
-    
+
     Args:
         user_external_id: External user identifier
-        
+
     Returns:
         Dictionary with user report statistics
-        
+
     Raises:
         HTTPException: For validation errors, user not found, or operation failures
     """
     try:
         logger.info(f"Getting report stats for user: {user_external_id}")
-        
+
         # Get report statistics
         stats = report_service.get_report_stats(user_external_id)
-        
-        logger.info(f"Retrieved stats for user {user_external_id}: {stats.get('total_reports', 0)} reports")
+
+        logger.info(
+            f"Retrieved stats for user {user_external_id}: {stats.get('total_reports', 0)} reports"
+        )
         return stats
-        
+
     except ValueError as e:
         logger.warning(f"Stats retrieval validation error: {e}")
         if "not found" in str(e).lower():
