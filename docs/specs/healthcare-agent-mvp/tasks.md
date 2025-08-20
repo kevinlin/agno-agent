@@ -169,7 +169,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 7. Report Management and Content Retrieval
 
-- [ ] 7.1 Implement report service layer
+- [x] 7.1 Implement report service layer
   - Create `agent/healthcare/reports/service.py` with ReportService class
   - Implement list_user_reports() and get_report_markdown() methods
   - Add validate_user_access() for access control
@@ -177,14 +177,14 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 6.3, 6.5, 6.8 (report metadata, user access control, unit tests)
   - **Testable Outcome**: Can list user reports, retrieve markdown content, access control enforced
 
-- [ ] 7.2 Create report management API endpoints
+- [x] 7.2 Create report management API endpoints
   - Create `agent/healthcare/reports/routes.py` with report listing and retrieval endpoints
   - Implement GET /reports/{user_external_id} and GET /reports/{report_id}/markdown
   - Add request validation, error handling, and JSON response formatting
   - **Requirements**: 6.1, 6.2, 6.4, 6.6, 6.7 (listing endpoint, markdown retrieval, error handling, JSON formatting, validation)
   - **Testable Outcome**: Report management APIs work correctly, proper error handling for missing reports
 
-- [ ] 7.3 Add report management testing and integration
+- [x] 7.3 Add report management testing and integration
   - Create comprehensive unit tests for all retrieval endpoints
   - Add integration tests for report management workflow
   - Test user access control and error scenarios

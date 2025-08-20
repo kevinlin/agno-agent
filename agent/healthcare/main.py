@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent.healthcare.config.config import Config, ConfigManager
+from agent.healthcare.reports.service import ReportService
 from agent.healthcare.search.search_service import SearchService
 from agent.healthcare.storage.database import DatabaseService
 from agent.healthcare.storage.embeddings import EmbeddingService
@@ -16,6 +17,7 @@ config: Config = None
 db_service: DatabaseService = None
 embedding_service: EmbeddingService = None
 search_service: SearchService = None
+report_service: ReportService = None
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown."""
-    global config, db_service, embedding_service, search_service
+    global config, db_service, embedding_service, search_service, report_service
 
     try:
         # Startup
@@ -54,11 +56,16 @@ async def lifespan(app: FastAPI):
         search_service = SearchService(config, db_service, embedding_service)
         logger.info("✓ Search service initialized")
 
+        # Initialize report service
+        report_service = ReportService(config, db_service)
+        logger.info("✓ Report service initialized")
+
         # Store services in app state for dependency injection
         app.state.config = config
         app.state.db_service = db_service
         app.state.embedding_service = embedding_service
         app.state.search_service = search_service
+        app.state.report_service = report_service
         logger.info("✓ Services stored in application state")
 
         logger.info("Healthcare Agent MVP started successfully!")
@@ -136,6 +143,11 @@ def add_routes(app: FastAPI) -> None:
     from agent.healthcare.search import router as search_router
 
     app.include_router(search_router)
+
+    # Include report management routes
+    from agent.healthcare.reports.routes import router as reports_router
+
+    app.include_router(reports_router)
 
     @app.get("/")
     async def root():
@@ -227,6 +239,26 @@ def add_routes(app: FastAPI) -> None:
                     health_status["status"] = "unhealthy"
             else:
                 health_status["services"]["search"] = {"status": "not_initialized"}
+                health_status["status"] = "degraded"
+
+            # Check report service
+            if hasattr(app.state, "report_service") and app.state.report_service:
+                try:
+                    # Verify report service has required dependencies
+                    report_config = app.state.report_service.config
+                    health_status["services"]["reports"] = {
+                        "status": "healthy",
+                        "base_data_dir": str(report_config.base_data_dir),
+                        "reports_dir": str(report_config.reports_dir),
+                    }
+                except Exception as e:
+                    health_status["services"]["reports"] = {
+                        "status": "unhealthy",
+                        "error": str(e),
+                    }
+                    health_status["status"] = "unhealthy"
+            else:
+                health_status["services"]["reports"] = {"status": "not_initialized"}
                 health_status["status"] = "degraded"
 
             # Set overall status based on service health

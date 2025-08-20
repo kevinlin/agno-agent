@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from agent.healthcare.config.config import Config
 from agent.healthcare.main import add_routes, create_app
+from agent.healthcare.reports.service import ReportService
 from agent.healthcare.search.search_service import SearchService
 from agent.healthcare.storage.database import DatabaseService
 from agent.healthcare.storage.embeddings import EmbeddingService
@@ -69,6 +70,13 @@ class TestHealthCheckEndpoint:
         search_service.config = mock_config
         return search_service
 
+    @pytest.fixture
+    def mock_report_service(self, mock_config):
+        """Mock report service."""
+        report_service = Mock(spec=ReportService)
+        report_service.config = mock_config
+        return report_service
+
     def test_health_check_all_services_healthy(
         self,
         client,
@@ -76,6 +84,7 @@ class TestHealthCheckEndpoint:
         mock_db_service,
         mock_embedding_service,
         mock_search_service,
+        mock_report_service,
     ):
         """Test health check when all services are healthy."""
         # Set up app state with all services
@@ -83,6 +92,7 @@ class TestHealthCheckEndpoint:
         client.app.state.db_service = mock_db_service
         client.app.state.embedding_service = mock_embedding_service
         client.app.state.search_service = mock_search_service
+        client.app.state.report_service = mock_report_service
 
         response = client.get("/health")
 
@@ -119,6 +129,11 @@ class TestHealthCheckEndpoint:
         assert services["search"]["embedding_model"] == "text-embedding-3-large"
         assert services["search"]["vector_db"] == "chroma"
 
+        # Report service
+        assert services["reports"]["status"] == "healthy"
+        assert "base_data_dir" in services["reports"]
+        assert "reports_dir" in services["reports"]
+
     def test_health_check_services_not_initialized(self, client):
         """Test health check when services are not initialized."""
         # Clear app state to simulate services not initialized
@@ -130,6 +145,8 @@ class TestHealthCheckEndpoint:
             delattr(client.app.state, "embedding_service")
         if hasattr(client.app.state, "search_service"):
             delattr(client.app.state, "search_service")
+        if hasattr(client.app.state, "report_service"):
+            delattr(client.app.state, "report_service")
 
         response = client.get("/health")
 
@@ -146,9 +163,10 @@ class TestHealthCheckEndpoint:
         assert services["database"]["status"] == "not_initialized"
         assert services["embedding"]["status"] == "not_initialized"
         assert services["search"]["status"] == "not_initialized"
+        assert services["reports"]["status"] == "not_initialized"
 
     def test_health_check_database_connection_failure(
-        self, client, mock_config, mock_embedding_service, mock_search_service
+        self, client, mock_config, mock_embedding_service, mock_search_service, mock_report_service
     ):
         """Test health check when database connection fails."""
         # Create a failing database service
@@ -160,6 +178,7 @@ class TestHealthCheckEndpoint:
         client.app.state.db_service = failing_db_service
         client.app.state.embedding_service = mock_embedding_service
         client.app.state.search_service = mock_search_service
+        client.app.state.report_service = mock_report_service
 
         response = client.get("/health")
 
@@ -176,9 +195,10 @@ class TestHealthCheckEndpoint:
         assert "Connection refused" in services["database"]["error"]
         assert services["embedding"]["status"] == "healthy"
         assert services["search"]["status"] == "healthy"
+        assert services["reports"]["status"] == "healthy"
 
     def test_health_check_embedding_service_failure(
-        self, client, mock_config, mock_db_service, mock_search_service
+        self, client, mock_config, mock_db_service, mock_search_service, mock_report_service
     ):
         """Test health check when embedding service fails."""
         # Create a failing embedding service
@@ -190,6 +210,7 @@ class TestHealthCheckEndpoint:
         client.app.state.db_service = mock_db_service
         client.app.state.embedding_service = failing_embedding_service
         client.app.state.search_service = mock_search_service
+        client.app.state.report_service = mock_report_service
 
         response = client.get("/health")
 
@@ -206,9 +227,10 @@ class TestHealthCheckEndpoint:
         assert services["embedding"]["status"] == "unhealthy"
         assert "error" in services["embedding"]
         assert services["search"]["status"] == "healthy"
+        assert services["reports"]["status"] == "healthy"
 
     def test_health_check_search_service_failure(
-        self, client, mock_config, mock_db_service, mock_embedding_service
+        self, client, mock_config, mock_db_service, mock_embedding_service, mock_report_service
     ):
         """Test health check when search service fails."""
         # Create a failing search service
@@ -219,6 +241,7 @@ class TestHealthCheckEndpoint:
         client.app.state.config = mock_config
         client.app.state.db_service = mock_db_service
         client.app.state.embedding_service = mock_embedding_service
+        client.app.state.report_service = mock_report_service
         client.app.state.search_service = failing_search_service
 
         response = client.get("/health")
@@ -236,6 +259,7 @@ class TestHealthCheckEndpoint:
         assert services["embedding"]["status"] == "healthy"
         assert services["search"]["status"] == "unhealthy"
         assert "error" in services["search"]
+        assert services["reports"]["status"] == "healthy"
 
     def test_health_check_mixed_service_states(
         self, client, mock_config, mock_db_service, mock_embedding_service
@@ -245,9 +269,11 @@ class TestHealthCheckEndpoint:
         client.app.state.config = mock_config
         client.app.state.db_service = mock_db_service
         client.app.state.embedding_service = mock_embedding_service
-        # Don't set search_service to simulate it not being initialized
+        # Don't set search_service or report_service to simulate them not being initialized
         if hasattr(client.app.state, "search_service"):
             delattr(client.app.state, "search_service")
+        if hasattr(client.app.state, "report_service"):
+            delattr(client.app.state, "report_service")
 
         response = client.get("/health")
 
@@ -263,6 +289,7 @@ class TestHealthCheckEndpoint:
         assert services["database"]["status"] == "healthy"
         assert services["embedding"]["status"] == "healthy"
         assert services["search"]["status"] == "not_initialized"
+        assert services["reports"]["status"] == "not_initialized"
 
     def test_health_check_response_format(
         self,
@@ -271,12 +298,14 @@ class TestHealthCheckEndpoint:
         mock_db_service,
         mock_embedding_service,
         mock_search_service,
+        mock_report_service,
     ):
         """Test that health check response has the correct format."""
         # Set up app state with all services
         client.app.state.config = mock_config
         client.app.state.db_service = mock_db_service
         client.app.state.embedding_service = mock_embedding_service
+        client.app.state.report_service = mock_report_service
         client.app.state.search_service = mock_search_service
 
         response = client.get("/health")
