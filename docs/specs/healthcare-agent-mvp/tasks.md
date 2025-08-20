@@ -193,7 +193,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 8. AI Agent Integration with Medical Toolkit
 
-- [ ] 8.1 Implement Agno agent medical toolkit
+- [x] 8.1 Implement Agno agent medical toolkit
   - Add agno dependency and create `agent/healthcare/agent/toolkit.py`
   - Implement MedicalToolkit with ingest_pdf, list_reports, search_medical_data tools
   - Add proper error handling and response formatting for tools
@@ -201,7 +201,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 8.4, 8.5, 8.8 (medical toolkit, search capabilities, unit tests)
   - **Testable Outcome**: Medical toolkit tools work correctly, can interact with existing services
 
-- [ ] 8.2 Create healthcare agent configuration and service
+- [x] 8.2 Create healthcare agent configuration and service
   - Create `agent/healthcare/agent/service.py` with HealthcareAgent class
   - Implement create_healthcare_agent() with proper Agno configuration
   - Configure OpenAI chat model (gpt-5) and AgentKnowledge with Chroma
