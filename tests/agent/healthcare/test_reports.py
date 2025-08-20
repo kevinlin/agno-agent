@@ -102,7 +102,9 @@ class TestReportService:
         with pytest.raises(ValueError, match="User not found"):
             report_service.validate_user_access(123, "nonexistent_user")
 
-    def test_validate_user_access_report_not_found(self, report_service, mock_db_service):
+    def test_validate_user_access_report_not_found(
+        self, report_service, mock_db_service
+    ):
         """Test user access validation when report not found."""
         # Setup
         mock_session = Mock()
@@ -153,7 +155,10 @@ class TestReportService:
         # Mock reports query - return on all() call
         mock_reports_result = Mock()
         mock_reports_result.all.return_value = [mock_report1, mock_report2]
-        mock_session.exec.side_effect = [mock_session.exec.return_value, mock_reports_result]
+        mock_session.exec.side_effect = [
+            mock_session.exec.return_value,
+            mock_reports_result,
+        ]
 
         # Test
         result = report_service.list_user_reports("test_user")
@@ -293,7 +298,10 @@ class TestReportService:
         # Mock assets query
         mock_assets_result = Mock()
         mock_assets_result.all.return_value = [mock_asset1, mock_asset2]
-        mock_session.exec.side_effect = [mock_session.exec.return_value, mock_assets_result]
+        mock_session.exec.side_effect = [
+            mock_session.exec.return_value,
+            mock_assets_result,
+        ]
 
         # Mock file existence
         with patch("pathlib.Path.exists") as mock_exists:
@@ -342,7 +350,10 @@ class TestReportService:
         # Mock asset count query
         mock_assets_result = Mock()
         mock_assets_result.all.return_value = [Mock(), Mock()]  # 2 assets
-        mock_session.exec.side_effect = [mock_session.exec.return_value, mock_assets_result]
+        mock_session.exec.side_effect = [
+            mock_session.exec.return_value,
+            mock_assets_result,
+        ]
 
         # Mock file checking
         with patch("pathlib.Path.exists", return_value=True):
@@ -432,7 +443,10 @@ class TestReportService:
         # Mock empty reports result
         mock_reports_result = Mock()
         mock_reports_result.all.return_value = []
-        mock_session.exec.side_effect = [mock_session.exec.return_value, mock_reports_result]
+        mock_session.exec.side_effect = [
+            mock_session.exec.return_value,
+            mock_reports_result,
+        ]
 
         # Test with leading/trailing whitespace
         result = report_service.list_user_reports("  test_user  ")
@@ -443,7 +457,9 @@ class TestReportService:
     def test_runtime_error_handling(self, report_service, mock_db_service):
         """Test that database errors are properly converted to RuntimeError."""
         # Setup to throw exception
-        mock_db_service.get_session.side_effect = Exception("Database connection failed")
+        mock_db_service.get_session.side_effect = Exception(
+            "Database connection failed"
+        )
 
         # Test
         with pytest.raises(RuntimeError, match="Report listing failed"):
