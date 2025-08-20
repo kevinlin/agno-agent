@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from sqlmodel import select
+
 from agent.healthcare.config.config import Config
 from agent.healthcare.reports.service import ReportService
 from agent.healthcare.search.search_service import SearchService
@@ -165,11 +167,9 @@ class TestDatabaseOperationsIntegration:
 
         # Verify assets were created
         with self.db_service.get_session() as session:
-            assets = (
-                session.query(ReportAsset)
-                .filter(ReportAsset.report_id == report.id)
-                .all()
-            )
+            assets = session.exec(
+                select(ReportAsset).where(ReportAsset.report_id == report.id)
+            ).all()
 
             assert len(assets) == 3
 
@@ -213,19 +213,15 @@ class TestDatabaseOperationsIntegration:
 
         # Verify each user only sees their own reports
         with self.db_service.get_session() as session:
-            user1_reports = (
-                session.query(MedicalReport)
-                .filter(MedicalReport.user_id == user1.id)
-                .all()
-            )
+            user1_reports = session.exec(
+                select(MedicalReport).where(MedicalReport.user_id == user1.id)
+            ).all()
             assert len(user1_reports) == 1
             assert user1_reports[0].id == report1.id
 
-            user2_reports = (
-                session.query(MedicalReport)
-                .filter(MedicalReport.user_id == user2.id)
-                .all()
-            )
+            user2_reports = session.exec(
+                select(MedicalReport).where(MedicalReport.user_id == user2.id)
+            ).all()
             assert len(user2_reports) == 1
             assert user2_reports[0].id == report2.id
 
@@ -303,7 +299,7 @@ class TestDatabaseOperationsIntegration:
 
         # Verify all users were created
         with self.db_service.get_session() as session:
-            users = session.query(User).filter(User.id.in_(user_ids)).all()
+            users = session.exec(select(User).where(User.id.in_(user_ids))).all()
             assert len(users) == 5
 
         # Test concurrent-like access
@@ -391,7 +387,7 @@ class TestDatabaseOperationsIntegration:
         # Time bulk retrieval
         start_time = time.time()
         with self.db_service.get_session() as session:
-            all_reports = session.query(MedicalReport).all()
+            all_reports = session.exec(select(MedicalReport)).all()
         retrieval_time = time.time() - start_time
 
         assert len(all_reports) >= 10
@@ -432,11 +428,9 @@ class TestDatabaseOperationsIntegration:
             assert db_report is not None
 
             # Check assets exist
-            assets = (
-                session.query(ReportAsset)
-                .filter(ReportAsset.report_id == report.id)
-                .all()
-            )
+            assets = session.exec(
+                select(ReportAsset).where(ReportAsset.report_id == report.id)
+            ).all()
             assert len(assets) == 1
 
             # Check foreign key relationship
