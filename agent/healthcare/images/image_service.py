@@ -281,3 +281,17 @@ class ImageExtractionService:
             logger.error(f"Image extraction and processing failed for {pdf_path}: {e}")
             # Return empty list to allow processing to continue
             return []
+
+
+def extract_images_from_pdf(pdf_path: Path, output_dir: Path) -> List[AssetMetadata]:
+    """Extract images from PDF file.
+
+    Args:
+        pdf_path: Path to the PDF file
+        output_dir: Directory to save extracted images
+
+    Returns:
+        List of extracted image metadata
+    """
+    service = ImageExtractionService()
+    return service.extract_images_pikepdf(pdf_path, output_dir)

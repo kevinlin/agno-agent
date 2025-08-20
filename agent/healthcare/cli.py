@@ -108,6 +108,7 @@ def status():
         click.echo(f"Embedding Model: {config.embedding_model}")
         click.echo(f"Data Directory: {config.base_data_dir}")
         click.echo(f"Database Path: {config.medical_db_path}")
+        click.echo(f"Agent DB Path: {config.agent_db_path}")
         click.echo(f"Log Level: {config.log_level}")
 
         # Check directory existence
@@ -121,12 +122,110 @@ def status():
             status = "✓" if path.exists() else "✗"
             click.echo(f"  {status} {name}: {path}")
 
-        # Check database
-        db_status = "✓" if config.medical_db_path.exists() else "✗"
-        click.echo(f"  {db_status} Database: {config.medical_db_path}")
+        # Check databases
+        medical_db_status = "✓" if config.medical_db_path.exists() else "✗"
+        agent_db_status = "✓" if config.agent_db_path.exists() else "✗"
+        click.echo(f"  {medical_db_status} Medical Database: {config.medical_db_path}")
+        click.echo(f"  {agent_db_status} Agent Database: {config.agent_db_path}")
 
     except Exception as e:
         click.echo(f"Error checking status: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.option("--force", is_flag=True, help="Force cleanup without confirmation")
+def cleanup(force: bool):
+    """Clean up temporary files and reset data directories."""
+    try:
+        config = ConfigManager.load_config()
+
+        if not force:
+            click.confirm(
+                f"This will remove all data in {config.base_data_dir}. Continue?",
+                abort=True,
+            )
+
+        # Remove data directories
+        import shutil
+
+        if config.base_data_dir.exists():
+            shutil.rmtree(config.base_data_dir)
+            click.echo(f"✓ Removed data directory: {config.base_data_dir}")
+
+        # Recreate directories
+        ConfigManager.initialize_directories(config)
+        click.echo(f"✓ Recreated clean data directories")
+
+        click.echo("Cleanup completed successfully")
+
+    except Exception as e:
+        click.echo(f"Error during cleanup: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.option("--user-id", required=True, help="User external ID to check")
+def user_reports(user_id: str):
+    """List reports for a specific user."""
+    try:
+        config = ConfigManager.load_config()
+        db_service = DatabaseService(config)
+
+        from agent.healthcare.reports.service import ReportService
+
+        report_service = ReportService(config, db_service)
+
+        reports = report_service.list_user_reports(user_id)
+
+        if not reports:
+            click.echo(f"No reports found for user: {user_id}")
+        else:
+            click.echo(f"Reports for user: {user_id}")
+            click.echo("=" * 40)
+            for report in reports:
+                click.echo(f"ID: {report['id']}")
+                click.echo(f"Filename: {report['filename']}")
+                click.echo(f"Created: {report['created_at']}")
+                click.echo("-" * 40)
+
+        db_service.close()
+
+    except Exception as e:
+        click.echo(f"Error retrieving reports: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+def health():
+    """Check health of all services."""
+    try:
+        import time
+
+        import requests
+
+        # Start a temporary server in background to check health
+        click.echo("Checking service health...")
+
+        try:
+            response = requests.get("http://localhost:8000/health", timeout=5)
+            if response.status_code == 200:
+                health_data = response.json()
+                click.echo("✓ Application is healthy")
+
+                for service, details in health_data.get("services", {}).items():
+                    status = details.get("status", "unknown")
+                    icon = "✓" if status == "healthy" else "✗"
+                    click.echo(f"  {icon} {service}: {status}")
+            else:
+                click.echo(f"✗ Application health check failed: {response.status_code}")
+
+        except requests.ConnectionError:
+            click.echo("✗ Application is not running")
+            click.echo("  Start the server with: healthcare-agent start")
+
+    except Exception as e:
+        click.echo(f"Error checking health: {e}", err=True)
         sys.exit(1)
 
 

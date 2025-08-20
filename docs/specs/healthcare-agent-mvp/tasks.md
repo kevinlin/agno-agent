@@ -209,7 +209,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Requirements**: 8.1, 8.2, 8.3, 8.6 (Agno agent, SQLite storage, Chroma integration, conversation history)
   - **Testable Outcome**: Agent initializes correctly, can access knowledge base, maintains conversation history
 
-- [ ] 8.3 Integrate agent with application and add testing
+- [x] 8.3 Integrate agent with application and add testing
   - Add agent endpoints to main FastAPI application
   - Implement agent error handling with meaningful responses
   - Create comprehensive unit tests for agent integration
@@ -219,14 +219,14 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 ### 9. Application Integration and End-to-End Workflow
 
-- [ ] 9.1 Complete FastAPI application assembly
+- [x] 9.1 Complete FastAPI application assembly
   - Integrate all router modules (upload, search, reports, images, agent)
   - Add comprehensive error handling and middleware
   - Implement dependency injection for all services
   - Create application CLI for server management
   - **Testable Outcome**: Complete application starts successfully, all endpoints accessible, proper dependency injection
 
-- [ ] 9.2 Create comprehensive integration test suite
+- [x] 9.2 Create comprehensive integration test suite
   - Create `tests/agent/healthcare/test_integration_full_workflow.py`
   - Test complete PDF upload → conversion → storage → search → agent query workflow
   - Create `tests/agent/healthcare/test_integration_api_endpoints.py` for all API endpoints

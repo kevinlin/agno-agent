@@ -204,11 +204,15 @@ class HealthcareAgent:
 
             # Retrieve session from storage
             if agent.storage:
-                sessions = agent.storage.get_sessions(session_id=session_id)
-                if sessions:
-                    # Get the most recent session
-                    latest_session = max(sessions, key=lambda s: s.created_at)
-                    return latest_session.memory or []
+                try:
+                    sessions = agent.storage.get_all_sessions(user_id=session_id)
+                    if sessions and len(sessions) > 0:
+                        # Get the most recent session
+                        latest_session = max(sessions, key=lambda s: s.created_at)
+                        return latest_session.memory or []
+                except Exception as e:
+                    logger.debug(f"Error retrieving sessions: {e}")
+                    return []
 
             return []
 
@@ -251,7 +255,7 @@ class HealthcareAgent:
             # Clear session history if storage is available
             if agent.storage:
                 # Delete sessions for this session ID
-                agent.storage.delete_sessions(session_id=session_id)
+                agent.storage.delete_session(session_id=session_id)
                 logger.info(f"Cleared conversation history for user {user_external_id}")
                 return True
 

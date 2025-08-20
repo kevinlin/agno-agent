@@ -179,7 +179,7 @@ class TestHealthcareAgent:
             {"role": "user", "content": "Hello"},
             {"role": "assistant", "content": "Hi there!"},
         ]
-        mock_storage.get_sessions.return_value = [mock_session]
+        mock_storage.get_all_sessions.return_value = [mock_session]
         mock_agent_instance.storage = mock_storage
         mock_agent.return_value = mock_agent_instance
 
@@ -194,7 +194,7 @@ class TestHealthcareAgent:
         assert history[1]["content"] == "Hi there!"
 
         # Verify storage was called correctly
-        mock_storage.get_sessions.assert_called_once_with(session_id="user123")
+        mock_storage.get_all_sessions.assert_called_once_with(user_id="user123")
 
     @patch("agent.healthcare.agent.service.Agent")
     def test_get_conversation_history_no_sessions(self, mock_agent):
@@ -202,7 +202,7 @@ class TestHealthcareAgent:
         # Setup mock agent with empty storage
         mock_agent_instance = Mock()
         mock_storage = Mock()
-        mock_storage.get_sessions.return_value = []
+        mock_storage.get_all_sessions.return_value = []
         mock_agent_instance.storage = mock_storage
         mock_agent.return_value = mock_agent_instance
 
@@ -247,7 +247,7 @@ class TestHealthcareAgent:
         assert result is True
 
         # Verify storage was called correctly
-        mock_storage.delete_sessions.assert_called_once_with(session_id="user123")
+        mock_storage.delete_session.assert_called_once_with(session_id="user123")
 
     @patch("agent.healthcare.agent.service.Agent")
     def test_clear_conversation_history_no_storage(self, mock_agent):
@@ -281,9 +281,7 @@ class TestHealthcareAgent:
         assert result is True
 
         # Verify storage was called with custom session ID
-        mock_storage.delete_sessions.assert_called_once_with(
-            session_id="custom_session"
-        )
+        mock_storage.delete_session.assert_called_once_with(session_id="custom_session")
 
     def test_get_agent_stats_no_agent(self):
         """Test get_agent_stats when agent is not initialized."""

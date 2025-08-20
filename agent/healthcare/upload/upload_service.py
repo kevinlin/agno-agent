@@ -217,13 +217,14 @@ class PDFUploadService:
         try:
             upload_dir = self.config.uploads_dir
             if not upload_dir.exists():
-                return {"total_files": 0, "total_size": 0}
+                return {"total_uploads": 0, "total_files": 0, "total_size": 0}
 
             files = list(upload_dir.glob("*.pdf"))
             total_size = sum(f.stat().st_size for f in files if f.is_file())
 
             return {
-                "total_files": len(files),
+                "total_uploads": len(files),
+                "total_files": len(files),  # Keep for backward compatibility
                 "total_size": total_size,
                 "upload_directory": str(upload_dir),
             }

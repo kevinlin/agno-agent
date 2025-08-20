@@ -3,7 +3,7 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 
 @dataclass
@@ -12,7 +12,7 @@ class Config:
 
     # API Configuration
     openai_api_key: str
-    openai_model: str = "gpt-5"
+    openai_model: str = "gpt-5-mini"
     embedding_model: str = "text-embedding-3-large"
 
     # Storage Paths
@@ -48,7 +48,7 @@ class ConfigManager:
 
         return Config(
             openai_api_key=openai_api_key,
-            openai_model=os.getenv("OPENAI_MODEL", "gpt-5-mini"),
+            openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-large"),
             base_data_dir=Path(os.getenv("DATA_DIR", "data")),
             uploads_dir=Path(os.getenv("UPLOADS_DIR", "data/uploads")),
@@ -113,4 +113,107 @@ class ConfigManager:
         if config.request_timeout <= 0:
             raise ValueError("request_timeout must be positive")
 
-        print("✓ Configuration validation passed")
+    @staticmethod
+    def check_external_dependencies() -> List[str]:
+        """Check external dependencies and services.
+
+        Returns:
+            List of dependency warnings
+        """
+        warnings = []
+
+        # Check required Python packages
+        required_packages = [
+            "fastapi",
+            "uvicorn",
+            "sqlmodel",
+            "pydantic",
+            "chromadb",
+            "pikepdf",
+            "click",
+            "pytest",
+        ]
+
+        for package in required_packages:
+            try:
+                __import__(package)
+            except ImportError:
+                warnings.append(f"Required package not available: {package}")
+
+        return warnings
+
+    @staticmethod
+    def get_system_info() -> dict:
+        """Get system information for diagnostics.
+
+        Returns:
+            Dictionary with system information
+        """
+        import platform
+        import sys
+
+        info = {
+            "python_version": sys.version,
+            "platform": platform.platform(),
+            "architecture": platform.architecture(),
+            "processor": platform.processor(),
+            "hostname": platform.node(),
+        }
+
+        # Memory information
+        try:
+            import psutil
+
+            memory = psutil.virtual_memory()
+            info["total_memory_gb"] = round(memory.total / (1024**3), 2)
+            info["available_memory_gb"] = round(memory.available / (1024**3), 2)
+            info["memory_percent"] = memory.percent
+        except ImportError:
+            info["memory_info"] = "psutil not available"
+
+        # Disk information
+        try:
+            import shutil
+
+            disk_usage = shutil.disk_usage("/")
+            info["total_disk_gb"] = round(disk_usage.total / (1024**3), 2)
+            info["free_disk_gb"] = round(disk_usage.free / (1024**3), 2)
+            info["disk_usage_percent"] = round(
+                (disk_usage.used / disk_usage.total) * 100, 2
+            )
+        except Exception:
+            info["disk_info"] = "Not available"
+
+        return info
+
+    @staticmethod
+    def validate_production_readiness(config: Config) -> List[str]:
+        """Check if configuration is ready for production use.
+
+        Args:
+            config: Configuration to validate
+
+        Returns:
+            List of production readiness warnings
+        """
+        warnings = []
+
+        # Check for test/development settings
+        if config.openai_api_key.startswith("test-"):
+            warnings.append("Using test API key - not suitable for production")
+
+        if config.log_level.upper() == "DEBUG":
+            warnings.append("Debug logging enabled - may impact performance")
+
+        # Check security settings
+        if not hasattr(config, "secret_key") or not config.openai_api_key:
+            warnings.append("API key validation should be more robust for production")
+
+        # Check resource limits
+        if config.chunk_size > 2000:
+            warnings.append("Large chunk_size may increase API costs")
+
+        if config.max_retries > 5:
+            warnings.append("High max_retries may cause long response times")
+
+        return warnings

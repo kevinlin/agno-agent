@@ -3,10 +3,21 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from agent.healthcare.agent.service import HealthcareAgent
 from agent.healthcare.config.config import Config, ConfigManager
+from agent.healthcare.config.logging_config import (
+    get_healthcare_logger,
+    log_shutdown_info,
+    log_startup_info,
+    setup_healthcare_logging,
+    setup_performance_monitoring,
+    setup_security_logging,
+)
 from agent.healthcare.reports.service import ReportService
 from agent.healthcare.search.search_service import SearchService
 from agent.healthcare.storage.database import DatabaseService
@@ -18,14 +29,15 @@ db_service: DatabaseService = None
 embedding_service: EmbeddingService = None
 search_service: SearchService = None
 report_service: ReportService = None
+healthcare_agent: HealthcareAgent = None
 
-logger = logging.getLogger(__name__)
+logger = get_healthcare_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown."""
-    global config, db_service, embedding_service, search_service, report_service
+    global config, db_service, embedding_service, search_service, report_service, healthcare_agent
 
     try:
         # Startup
@@ -33,6 +45,19 @@ async def lifespan(app: FastAPI):
 
         # Load configuration
         config = ConfigManager.load_config()
+
+        # Setup enhanced logging first
+        setup_healthcare_logging(
+            log_level=config.log_level,
+            log_format=config.log_format,
+            enable_file_logging=True,
+            enable_structured_logging=False,
+        )
+        setup_performance_monitoring()
+        setup_security_logging()
+
+        # Log startup information
+        log_startup_info(config)
         logger.info("✓ Configuration loaded")
 
         # Initialize directories
@@ -42,6 +67,27 @@ async def lifespan(app: FastAPI):
         # Validate environment
         ConfigManager.validate_environment(config)
         logger.info("✓ Environment validated")
+
+        # Check external dependencies
+        dep_warnings = ConfigManager.check_external_dependencies()
+        if dep_warnings:
+            for warning in dep_warnings:
+                logger.warning(f"Dependency warning: {warning}")
+
+        # Check production readiness
+        prod_warnings = ConfigManager.validate_production_readiness(config)
+        if prod_warnings:
+            for warning in prod_warnings:
+                logger.warning(f"Production readiness: {warning}")
+
+        # Log system information
+        sys_info = ConfigManager.get_system_info()
+        logger.info(f"System: {sys_info.get('platform', 'Unknown')}")
+        logger.info(f"Python: {sys_info.get('python_version', 'Unknown')}")
+        if "available_memory_gb" in sys_info:
+            logger.info(f"Memory: {sys_info['available_memory_gb']}GB available")
+        if "free_disk_gb" in sys_info:
+            logger.info(f"Disk: {sys_info['free_disk_gb']}GB free")
 
         # Initialize database
         db_service = DatabaseService(config)
@@ -60,12 +106,22 @@ async def lifespan(app: FastAPI):
         report_service = ReportService(config, db_service)
         logger.info("✓ Report service initialized")
 
+        # Initialize healthcare agent service
+        healthcare_agent = HealthcareAgent(
+            config=config,
+            db_service=db_service,
+            search_service=search_service,
+            report_service=report_service,
+        )
+        logger.info("✓ Healthcare agent service initialized")
+
         # Store services in app state for dependency injection
         app.state.config = config
         app.state.db_service = db_service
         app.state.embedding_service = embedding_service
         app.state.search_service = search_service
         app.state.report_service = report_service
+        app.state.healthcare_agent = healthcare_agent
         logger.info("✓ Services stored in application state")
 
         logger.info("Healthcare Agent MVP started successfully!")
@@ -81,7 +137,7 @@ async def lifespan(app: FastAPI):
         if db_service:
             db_service.close()
             logger.info("✓ Database connections closed")
-        logger.info("Healthcare Agent MVP shutdown complete")
+        log_shutdown_info()
 
 
 def setup_logging(config: Config) -> None:
@@ -128,7 +184,88 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Add custom error handling
+    add_error_handlers(app)
+
     return app
+
+
+def add_error_handlers(app: FastAPI) -> None:
+    """Add comprehensive error handlers to the FastAPI app."""
+
+    @app.exception_handler(ValueError)
+    async def value_error_handler(request: Request, exc: ValueError):
+        """Handle ValueError exceptions."""
+        logger.warning(f"Validation error on {request.url}: {exc}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "error": "validation_error",
+                "message": str(exc),
+                "detail": "The provided input is invalid",
+                "path": str(request.url),
+            },
+        )
+
+    @app.exception_handler(FileNotFoundError)
+    async def file_not_found_handler(request: Request, exc: FileNotFoundError):
+        """Handle FileNotFoundError exceptions."""
+        logger.warning(f"File not found on {request.url}: {exc}")
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "error": "file_not_found",
+                "message": "The requested resource was not found",
+                "detail": str(exc),
+                "path": str(request.url),
+            },
+        )
+
+    @app.exception_handler(PermissionError)
+    async def permission_error_handler(request: Request, exc: PermissionError):
+        """Handle PermissionError exceptions."""
+        logger.error(f"Permission error on {request.url}: {exc}")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={
+                "error": "permission_denied",
+                "message": "Access denied to the requested resource",
+                "detail": "Insufficient permissions",
+                "path": str(request.url),
+            },
+        )
+
+    @app.exception_handler(RuntimeError)
+    async def runtime_error_handler(request: Request, exc: RuntimeError):
+        """Handle RuntimeError exceptions."""
+        logger.error(f"Runtime error on {request.url}: {exc}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "error": "processing_error",
+                "message": "An error occurred while processing your request",
+                "detail": str(exc),
+                "path": str(request.url),
+            },
+        )
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        """Handle all other unexpected exceptions."""
+        logger.error(f"Unhandled exception on {request.url}: {exc}", exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "error": "internal_server_error",
+                "message": "An unexpected error occurred",
+                "detail": (
+                    str(exc)
+                    if hasattr(app, "debug") and app.debug
+                    else "Internal server error"
+                ),
+                "path": str(request.url),
+            },
+        )
 
 
 def add_routes(app: FastAPI) -> None:
@@ -140,7 +277,7 @@ def add_routes(app: FastAPI) -> None:
     app.include_router(upload_router)
 
     # Include search routes
-    from agent.healthcare.search import router as search_router
+    from agent.healthcare.search.routes import router as search_router
 
     app.include_router(search_router)
 
@@ -148,6 +285,16 @@ def add_routes(app: FastAPI) -> None:
     from agent.healthcare.reports.routes import router as reports_router
 
     app.include_router(reports_router)
+
+    # Include image routes
+    from agent.healthcare.images.routes import router as images_router
+
+    app.include_router(images_router)
+
+    # Include AI agent routes
+    from agent.healthcare.agent.routes import router as agent_router
+
+    app.include_router(agent_router)
 
     @app.get("/")
     async def root():
@@ -163,7 +310,7 @@ def add_routes(app: FastAPI) -> None:
 
         health_status = {
             "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "version": "0.1.0",
             "services": {},
         }
@@ -314,17 +461,6 @@ def add_routes(app: FastAPI) -> None:
                 "reports_dir": str(config.reports_dir),
                 "chroma_dir": str(config.chroma_dir),
             },
-        }
-
-    # Global exception handler
-    @app.exception_handler(Exception)
-    async def global_exception_handler(request, exc):
-        """Handle unexpected exceptions."""
-        logger.error(f"Unhandled exception: {exc}", exc_info=True)
-        return {
-            "error": "internal_server_error",
-            "message": "An unexpected error occurred",
-            "detail": str(exc) if app.debug else "Internal server error",
         }
 
 
