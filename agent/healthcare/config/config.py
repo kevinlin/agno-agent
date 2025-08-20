@@ -29,7 +29,7 @@ class Config:
     chunk_size: int = 1000
     chunk_overlap: int = 200
     max_retries: int = 3
-    request_timeout: int = 120
+    request_timeout: int = 300
 
     # Logging Configuration
     log_level: str = "INFO"
