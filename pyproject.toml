@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A series of AI agents built using Agno framework"
 requires-python = ">=3.12"
 dependencies = [
-    "agno>=1.7.0",
+    "agno>=1.7.12",
     "black>=24.0.0",
     "chromadb>=0.4.0",
     "click>=8.0.0",
