@@ -44,7 +44,7 @@ class TestAgentIntegration:
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch("agent.healthcare.agent.service.HealthcareAgent")
+    @patch("agent.healthcare.agent.agent_service.HealthcareAgent")
     def test_agent_chat_with_medical_toolkit(self, mock_healthcare_agent):
         """Test agent chat workflow with medical toolkit integration."""
         # Mock healthcare agent service directly
@@ -80,7 +80,7 @@ class TestAgentIntegration:
         mock_config.return_value = self.mock_config
 
         with patch(
-            "agent.healthcare.agent.service.HealthcareAgent"
+            "agent.healthcare.agent.agent_service.HealthcareAgent"
         ) as mock_agent_service:
             # Mock agent response that includes toolkit usage
             mock_agent = Mock()
@@ -113,7 +113,7 @@ class TestAgentIntegration:
         mock_config.return_value = self.mock_config
 
         with patch(
-            "agent.healthcare.agent.service.HealthcareAgent"
+            "agent.healthcare.agent.agent_service.HealthcareAgent"
         ) as mock_agent_service:
             # Mock agent response that includes search results
             mock_agent = Mock()
@@ -148,7 +148,7 @@ class TestAgentIntegration:
         mock_config.return_value = self.mock_config
 
         with patch(
-            "agent.healthcare.agent.service.HealthcareAgent"
+            "agent.healthcare.agent.agent_service.HealthcareAgent"
         ) as mock_agent_service:
             # Mock agent response that includes report listing
             mock_agent = Mock()
@@ -183,7 +183,7 @@ class TestAgentIntegration:
         mock_config.return_value = self.mock_config
 
         with patch(
-            "agent.healthcare.agent.service.HealthcareAgent"
+            "agent.healthcare.agent.agent_service.HealthcareAgent"
         ) as mock_agent_service:
             mock_agent = Mock()
 
@@ -231,7 +231,7 @@ class TestAgentIntegration:
         mock_config.return_value = self.mock_config
 
         with patch(
-            "agent.healthcare.agent.service.HealthcareAgent"
+            "agent.healthcare.agent.agent_service.HealthcareAgent"
         ) as mock_agent_service:
             # Mock agent to raise a medical toolkit error
             mock_agent = Mock()
@@ -264,7 +264,7 @@ class TestAgentIntegration:
         mock_config.return_value = self.mock_config
 
         with patch(
-            "agent.healthcare.agent.service.HealthcareAgent"
+            "agent.healthcare.agent.agent_service.HealthcareAgent"
         ) as mock_agent_service:
             mock_agent = Mock()
 
@@ -311,7 +311,7 @@ class TestAgentIntegration:
         mock_config.return_value = self.mock_config
 
         with patch(
-            "agent.healthcare.agent.service.HealthcareAgent"
+            "agent.healthcare.agent.agent_service.HealthcareAgent"
         ) as mock_agent_service:
             mock_agent = Mock()
             mock_agent_service.return_value = mock_agent
@@ -364,7 +364,7 @@ class TestAgentIntegration:
         mock_config.return_value = self.mock_config
 
         with patch(
-            "agent.healthcare.agent.service.HealthcareAgent"
+            "agent.healthcare.agent.agent_service.HealthcareAgent"
         ) as mock_agent_service:
             mock_agent = Mock()
             mock_agent.process_query.return_value = (

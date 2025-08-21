@@ -8,7 +8,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from agent.healthcare.agent.service import HealthcareAgent
+from agent.healthcare.agent.agent_service import HealthcareAgent
 from agent.healthcare.config.config import Config, ConfigManager
 from agent.healthcare.config.logging_config import (
     get_healthcare_logger,

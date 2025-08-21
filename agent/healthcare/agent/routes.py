@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from agent.healthcare.agent.service import HealthcareAgent
+from agent.healthcare.agent.agent_service import HealthcareAgent
 from agent.healthcare.config.config import Config, ConfigManager
 from agent.healthcare.reports.service import ReportService
 from agent.healthcare.search.search_service import SearchService

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from agent.healthcare.agent.service import (
+from agent.healthcare.agent.agent_service import (
     HealthcareAgent,
     create_healthcare_agent_service,
 )
@@ -56,7 +56,7 @@ class TestHealthcareAgent:
         assert hasattr(self.agent_service, "_create_healthcare_agent")
         assert callable(self.agent_service._create_healthcare_agent)
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_create_healthcare_agent_failure(self, mock_agent):
         """Test healthcare agent creation failure."""
         # Setup mock to raise exception
@@ -66,7 +66,7 @@ class TestHealthcareAgent:
         with pytest.raises(RuntimeError, match="Agent initialization failed"):
             self.agent_service._create_healthcare_agent()
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_get_agent_creates_once(self, mock_agent):
         """Test that get_agent creates agent only once."""
         mock_agent_instance = Mock()
@@ -99,7 +99,7 @@ class TestHealthcareAgent:
         with pytest.raises(ValueError, match="Query is required"):
             self.agent_service.process_query("user123", "   ")
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_process_query_success(self, mock_agent):
         """Test successful query processing."""
         # Setup mock agent
@@ -124,7 +124,7 @@ class TestHealthcareAgent:
             stream=False,
         )
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_process_query_with_session_id(self, mock_agent):
         """Test query processing with custom session ID."""
         # Setup mock agent
@@ -147,7 +147,7 @@ class TestHealthcareAgent:
             message="[User: user123] Query", session_id="custom_session", stream=False
         )
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_process_query_agent_error(self, mock_agent):
         """Test query processing with agent error."""
         # Setup mock agent to raise error
@@ -167,7 +167,7 @@ class TestHealthcareAgent:
         with pytest.raises(ValueError, match="User external ID is required"):
             self.agent_service.get_conversation_history("   ")
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_get_conversation_history_success(self, mock_agent):
         """Test successful conversation history retrieval."""
         # Setup mock agent with storage
@@ -196,7 +196,7 @@ class TestHealthcareAgent:
         # Verify storage was called correctly
         mock_storage.get_all_sessions.assert_called_once_with(user_id="user123")
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_get_conversation_history_no_sessions(self, mock_agent):
         """Test conversation history retrieval with no sessions."""
         # Setup mock agent with empty storage
@@ -212,7 +212,7 @@ class TestHealthcareAgent:
         # Verify empty history
         assert history == []
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_get_conversation_history_no_storage(self, mock_agent):
         """Test conversation history retrieval with no storage."""
         # Setup mock agent without storage
@@ -231,7 +231,7 @@ class TestHealthcareAgent:
         with pytest.raises(ValueError, match="User external ID is required"):
             self.agent_service.clear_conversation_history("")
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_clear_conversation_history_success(self, mock_agent):
         """Test successful conversation history clearing."""
         # Setup mock agent with storage
@@ -249,7 +249,7 @@ class TestHealthcareAgent:
         # Verify storage was called correctly
         mock_storage.delete_session.assert_called_once_with(session_id="user123")
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_clear_conversation_history_no_storage(self, mock_agent):
         """Test conversation history clearing with no storage."""
         # Setup mock agent without storage
@@ -263,7 +263,7 @@ class TestHealthcareAgent:
         # Verify result
         assert result is False
 
-    @patch("agent.healthcare.agent.service.Agent")
+    @patch("agent.healthcare.agent.agent_service.Agent")
     def test_clear_conversation_history_with_session_id(self, mock_agent):
         """Test conversation history clearing with custom session ID."""
         # Setup mock agent with storage
