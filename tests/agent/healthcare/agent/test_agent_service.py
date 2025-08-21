@@ -20,7 +20,7 @@ class TestHealthcareAgent:
         # Mock configuration
         self.config = Config(
             openai_api_key="test-key",
-            openai_model="gpt-4o-mini",
+            openai_model="gpt-5-mini",
             embedding_model="text-embedding-3-large",
             base_data_dir=Path("test_data"),
             chroma_dir=Path("test_data/chroma"),
@@ -288,7 +288,7 @@ class TestHealthcareAgent:
         stats = self.agent_service.get_agent_stats()
 
         assert stats["agent_name"] == "Healthcare Assistant"
-        assert stats["model"] == "gpt-4o-mini"
+        assert stats["model"] == "gpt-5-mini"
         assert stats["embedding_model"] == "text-embedding-3-large"
         assert stats["vector_db"] == "ChromaDB"
         assert stats["storage"] == "SQLite"
@@ -319,7 +319,7 @@ class TestHealthcareAgent:
         stats = self.agent_service.get_agent_stats()
 
         assert stats["agent_name"] == "Healthcare Assistant"
-        assert stats["model"] == "gpt-4o-mini"
+        assert stats["model"] == "gpt-5-mini"
         assert len(stats["toolkit_functions"]) == 5
         assert "ingest_pdf" in stats["toolkit_functions"]
         assert "list_reports" in stats["toolkit_functions"]

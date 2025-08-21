@@ -25,7 +25,7 @@ class TestAgentRoutesSimple:
         # Mock configuration
         self.mock_config = Config(
             openai_api_key="test-key",
-            openai_model="gpt-4o-mini",
+            openai_model="gpt-5-mini",
             embedding_model="text-embedding-3-large",
             base_data_dir=Path("test_data"),
         )
@@ -221,7 +221,7 @@ class TestAgentRoutesSimple:
         # Configure mock agent
         mock_config = {
             "agent_name": "Healthcare Assistant",
-            "model": "gpt-4o-mini",
+            "model": "gpt-5-mini",
             "embedding_model": "text-embedding-3-large",
             "vector_db": "ChromaDB",
             "storage": "SQLite",
@@ -240,7 +240,7 @@ class TestAgentRoutesSimple:
         response_data = response.json()
 
         assert response_data["agent_name"] == "Healthcare Assistant"
-        assert response_data["model"] == "gpt-4o-mini"
+        assert response_data["model"] == "gpt-5-mini"
         assert response_data["embedding_model"] == "text-embedding-3-large"
         assert response_data["vector_db"] == "ChromaDB"
         assert response_data["storage"] == "SQLite"

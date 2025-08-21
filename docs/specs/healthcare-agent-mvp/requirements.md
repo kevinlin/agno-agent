@@ -159,7 +159,7 @@ The Healthcare Agent MVP is a personal health data management system that enable
 **User Story**: As a healthcare consultant, I want to interact with an AI agent that can answer questions about the patient's medical history, so that I can provide informed insights based on comprehensive data analysis.
 
 **Acceptance Criteria**:
-1. The system SHALL implement Agno agent with OpenAI chat model (gpt-4o-mini by default)
+1. The system SHALL implement Agno agent with OpenAI chat model (gpt-5-mini by default)
 2. The system SHALL configure agent with SQLite storage for conversation history using separate agent database (`data/healthcare_agent.db`)
 3. The system SHALL integrate AgentKnowledge with Chroma vector database for medical reports collection
 4. The system SHALL implement custom MedicalToolkit with comprehensive tools: ingest_pdf, list_reports, search_medical_data, get_report_content, and get_report_summary

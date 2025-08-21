@@ -33,7 +33,7 @@ class TestHealthCheckEndpoint:
     def mock_config(self):
         """Mock configuration."""
         config = Mock(spec=Config)
-        config.openai_model = "gpt-4o-mini"
+        config.openai_model = "gpt-5-mini"
         config.embedding_model = "text-embedding-3-large"
         config.base_data_dir.exists.return_value = True
         config.chunk_size = 1000
@@ -110,7 +110,7 @@ class TestHealthCheckEndpoint:
 
         # Config service
         assert services["config"]["status"] == "healthy"
-        assert services["config"]["openai_model"] == "gpt-4o-mini"
+        assert services["config"]["openai_model"] == "gpt-5-mini"
         assert services["config"]["embedding_model"] == "text-embedding-3-large"
         assert services["config"]["base_data_dir_exists"] is True
 

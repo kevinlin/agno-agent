@@ -535,7 +535,7 @@ class HealthcareAgent:
 def _create_healthcare_agent(self) -> Agent:
     # Initialize Memory v2 with SQLite backend
     memory = Memory(
-        model=OpenAIChat(id="gpt-4o-mini"),
+        model=OpenAIChat(id="gpt-5-mini"),
         db=SqliteMemoryDb(
             table_name="user_memories", 
             db_file=str(self.config.agent_db_path)
@@ -729,7 +729,7 @@ async def health_check():
   "services": {
     "config": {
       "status": "healthy",
-      "openai_model": "gpt-4o-mini",
+      "openai_model": "gpt-5-mini",
       "embedding_model": "text-embedding-3-large",
       "base_data_dir_exists": true
     },
@@ -761,7 +761,7 @@ async def health_check():
   "services": {
     "config": {
       "status": "healthy",
-      "openai_model": "gpt-4o-mini",
+      "openai_model": "gpt-5-mini",
       "embedding_model": "text-embedding-3-large",
       "base_data_dir_exists": true
     },
@@ -787,7 +787,7 @@ async def health_check():
   "services": {
     "config": {
       "status": "healthy",
-      "openai_model": "gpt-4o-mini",
+      "openai_model": "gpt-5-mini",
       "embedding_model": "text-embedding-3-large",
       "base_data_dir_exists": true
     },

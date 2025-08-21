@@ -28,7 +28,7 @@ class TestDatabaseOperationsIntegration:
         # Create test configuration
         self.config = Config(
             openai_api_key="test-key",
-            openai_model="gpt-4o-mini",
+            openai_model="gpt-5-mini",
             embedding_model="text-embedding-3-large",
             base_data_dir=self.test_data_dir,
             medical_db_path=self.test_data_dir / "test_medical.db",

@@ -30,7 +30,7 @@ class TestAgentIntegration:
         # Mock configuration
         self.mock_config = Config(
             openai_api_key="test-key",
-            openai_model="gpt-4o-mini",
+            openai_model="gpt-5-mini",
             embedding_model="text-embedding-3-large",
             base_data_dir=self.test_data_dir,
             chroma_dir=self.test_data_dir / "chroma",
@@ -271,7 +271,7 @@ class TestAgentIntegration:
             # Mock comprehensive agent config
             mock_config_data = {
                 "agent_name": "Healthcare Assistant",
-                "model": "gpt-4o-mini",
+                "model": "gpt-5-mini",
                 "embedding_model": "text-embedding-3-large",
                 "vector_db": "ChromaDB",
                 "storage": "SQLite",
@@ -294,7 +294,7 @@ class TestAgentIntegration:
 
             # Verify comprehensive config
             assert response_data["agent_name"] == "Healthcare Assistant"
-            assert response_data["model"] == "gpt-4o-mini"
+            assert response_data["model"] == "gpt-5-mini"
             assert response_data["vector_db"] == "ChromaDB"
             assert response_data["knowledge_base"] == "medical_reports"
 

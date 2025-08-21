@@ -48,7 +48,7 @@ class ConfigManager:
 
         return Config(
             openai_api_key=openai_api_key,
-            openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            openai_model=os.getenv("OPENAI_MODEL", "gpt-5-mini"),
             embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-large"),
             base_data_dir=Path(os.getenv("DATA_DIR", "data")),
             uploads_dir=Path(os.getenv("UPLOADS_DIR", "data/uploads")),
