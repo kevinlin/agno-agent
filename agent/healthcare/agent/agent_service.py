@@ -95,7 +95,13 @@ class HealthcareAgent:
                     table_name="agent_sessions", db_file=str(self.config.agent_db_path)
                 ),
                 knowledge=knowledge,
-                tools=[medical_toolkit],
+                tools=[
+                    medical_toolkit.ingest_pdf,
+                    medical_toolkit.list_reports,
+                    medical_toolkit.get_report_summary,
+                    medical_toolkit.get_report_content,
+                    medical_toolkit.search_medical_data,
+                ],
                 instructions=[
                     "You are a healthcare AI assistant specialized in analyzing medical reports and patient data.",
                     "Always search your knowledge base before answering questions about medical data.",
