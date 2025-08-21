@@ -36,7 +36,8 @@ graph TB
         
         subgraph "Infrastructure Layer"
             FS[File System Storage]
-            DB[(SQLite Database)]
+            DB[(Medical SQLite DB)]
+            AGENTDB[(Agent SQLite DB)]
             VDB[(Chroma Vector DB)]
             CONFIG[Configuration Manager]
         end
@@ -61,6 +62,7 @@ graph TB
     SEARCH --> DB
     AGENT --> VDB
     AGENT --> DB
+    AGENT --> AGENTDB
     CONFIG --> API
 ```
 
@@ -209,7 +211,7 @@ class Config:
     
     # Database Configuration
     medical_db_path: Path = Path("data/medical.db")
-    agent_db_path: Path = Path("data/agent_sessions.db")
+    agent_db_path: Path = Path("data/healthcare_agent.db")  # Separate DB for agent sessions and memories
     
     # Processing Configuration
     chunk_size: int = 1000
@@ -486,15 +488,17 @@ async def list_report_assets(report_id: int, user_external_id: str = Query(...))
 **Location**: `agent/healthcare/agent/`
 
 **Responsibilities**:
-- Agno agent configuration and initialization
-- Custom medical toolkit implementation
-- Conversation history management
+- Agno agent configuration and initialization with Memory v2
+- Custom medical toolkit implementation with comprehensive tools
+- Conversation history management across sessions
 - Agent error handling and response formatting
+- Agent API endpoints for chat, history, and configuration
 
 **Key Classes**:
 ```python
 class MedicalToolkit(Toolkit):
-    def __init__(self, knowledge_base: AgentKnowledge, db_session: Session)
+    def __init__(self, config: Config, db_service: DatabaseService, 
+                 search_service: SearchService, report_service: ReportService)
     
     @tool(name="ingest_pdf")
     def ingest_pdf(self, user_external_id: str, pdf_path: str) -> str
@@ -504,54 +508,102 @@ class MedicalToolkit(Toolkit):
     
     @tool(name="search_medical_data")
     def search_medical_data(self, user_external_id: str, query: str, k: int = 5) -> List[dict]
+    
+    @tool(name="get_report_content")
+    def get_report_content(self, user_external_id: str, report_id: int) -> str
+    
+    @tool(name="get_report_summary")
+    def get_report_summary(self, user_external_id: str, report_id: int) -> str
 
 class HealthcareAgent:
-    def __init__(self, config: Config)
+    def __init__(self, config: Config, db_service: DatabaseService,
+                 search_service: SearchService, report_service: ReportService)
     
-    def initialize_agent(self) -> Agent
+    def get_agent(self) -> Agent
     
-    def load_knowledge_base(self) -> None
+    def _create_healthcare_agent(self) -> Agent
     
-    def process_query(self, user_external_id: str, query: str) -> str
+    def process_query(self, user_external_id: str, query: str, session_id: Optional[str] = None) -> str
     
-    def get_conversation_history(self, user_external_id: str) -> List[dict]
+    def get_conversation_history(self, user_external_id: str, session_id: Optional[str] = None) -> List[dict]
+    
+    def clear_conversation_history(self, user_external_id: str, session_id: Optional[str] = None) -> bool
+    
+    def get_agent_stats(self) -> dict
 
-# Agent Configuration
-def create_healthcare_agent(config: Config) -> Agent:
+# Agent Configuration with Memory v2 and Enhanced Features
+def _create_healthcare_agent(self) -> Agent:
+    # Initialize Memory v2 with SQLite backend
+    memory = Memory(
+        model=OpenAIChat(id="gpt-4o-mini"),
+        db=SqliteMemoryDb(
+            table_name="user_memories", 
+            db_file=str(self.config.agent_db_path)
+        ),
+    )
+    
+    # Initialize conversation storage
+    storage = SqliteStorage(
+        table_name="agent_sessions", 
+        db_file=str(self.config.agent_db_path)
+    )
+    
+    # Create knowledge base with Chroma vector database
     knowledge = AgentKnowledge(
         vector_db=ChromaDb(
             collection="medical_reports",
-            path=str(config.chroma_dir),
-            persistent_client=True
+            path=str(self.config.chroma_dir),
+            persistent_client=True,
         ),
         embedder=OpenAIEmbedder(
-            model=config.embedding_model,
-            dimensions=3072
+            id=self.config.embedding_model,
+            dimensions=3072,
         ),
     )
     
     agent = Agent(
         name="Healthcare Assistant",
-        model=OpenAIChat(id=config.openai_model),
-        storage=SqliteStorage(
-            table_name="agent_sessions",
-            db_file=str(config.agent_db_path)
-        ),
+        model=OpenAIChat(id=self.config.openai_model),
+        memory=memory,
+        enable_agentic_memory=True,
+        enable_user_memories=True,
+        storage=storage,
         knowledge=knowledge,
-        tools=[MedicalToolkit(knowledge, db_session)],
+        tools=[medical_toolkit.ingest_pdf, medical_toolkit.list_reports, 
+               medical_toolkit.get_report_summary, medical_toolkit.get_report_content,
+               medical_toolkit.search_medical_data],
         instructions=[
-            "You are a healthcare AI assistant specialized in analyzing medical reports.",
+            "You are a healthcare AI assistant specialized in analyzing medical reports and patient data.",
             "Always search your knowledge base before answering questions about medical data.",
-            "Provide clear, accurate information with proper source attribution.",
-            "If you don't have enough information, ask clarifying questions.",
-            "Maintain patient privacy and never share data across different users."
+            "Use the medical toolkit tools to access patient reports and search medical information.",
+            "Provide clear, accurate information with proper source attribution and citations.",
+            "If you don't have enough information to answer a question, ask clarifying questions.",
+            "Maintain strict patient privacy and never share data across different users.",
+            "When referencing medical data, always include the source report ID and filename.",
+            "Focus on being helpful while being appropriately cautious about medical advice.",
+            "Remember that you are an assistant to help organize and understand medical information, not provide medical diagnosis or treatment advice.",
         ],
         add_history_to_messages=True,
         num_history_runs=5,
         markdown=True,
+        show_tool_calls=True,
+        add_datetime_to_instructions=True,
     )
     
     return agent
+
+# Agent API Endpoints
+@router.post("/chat", response_model=ChatResponse)
+async def chat_with_agent(request: ChatRequest, agent: HealthcareAgent = Depends(get_healthcare_agent))
+
+@router.get("/history/{user_external_id}", response_model=ConversationHistoryResponse) 
+async def get_conversation_history(user_external_id: str, agent: HealthcareAgent = Depends(get_healthcare_agent))
+
+@router.delete("/history/{user_external_id}")
+async def clear_conversation_history(user_external_id: str, agent: HealthcareAgent = Depends(get_healthcare_agent))
+
+@router.get("/config", response_model=AgentConfigResponse)
+async def get_agent_config(agent: HealthcareAgent = Depends(get_healthcare_agent))
 ```
 
 ## System Health and Monitoring

@@ -23,7 +23,7 @@ class Config:
 
     # Database Configuration
     medical_db_path: Path = Path("data/medical.db")
-    agent_db_path: Path = Path("data/agent_sessions.db")
+    agent_db_path: Path = Path("data/healthcare_agent.db")
 
     # Processing Configuration
     chunk_size: int = 1000
@@ -55,7 +55,7 @@ class ConfigManager:
             reports_dir=Path(os.getenv("REPORTS_DIR", "data/reports")),
             chroma_dir=Path(os.getenv("CHROMA_DIR", "data/chroma")),
             medical_db_path=Path(os.getenv("MEDICAL_DB_PATH", "data/medical.db")),
-            agent_db_path=Path(os.getenv("AGENT_DB_PATH", "data/agent_sessions.db")),
+            agent_db_path=Path(os.getenv("AGENT_DB_PATH", "data/healthcare_agent.db")),
             chunk_size=int(os.getenv("CHUNK_SIZE", "1000")),
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
             max_retries=int(os.getenv("MAX_RETRIES", "3")),

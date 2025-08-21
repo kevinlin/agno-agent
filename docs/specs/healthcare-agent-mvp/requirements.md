@@ -18,15 +18,16 @@ The Healthcare Agent MVP is a personal health data management system that enable
 5. The system SHALL provide setup instructions for local deployment
 6. The system SHALL create necessary directories (`data/uploads/`, `data/reports/`, `data/chroma/`) on first run
 7. The system SHALL create database tables automatically on first run
-8. The system SHALL validate configuration on startup and report missing requirements
-9. The system SHALL support configurable logging levels and output formats
-10. The system SHALL log errors for debugging while protecting sensitive information
-11. The system SHALL use FastAPI dependency injection with app.state for service management
-12. The system SHALL implement proper service lifecycle management with startup/shutdown handlers
-13. The system SHALL include unit tests for configuration validation and deployment setup
-14. The system SHALL ensure all configuration and deployment tests pass before deployment
-15. The system SHALL provide comprehensive README documentation with setup and usage instructions
-16. The system SHALL document API endpoints and generated artifact locations in README
+8. The system SHALL use separate databases for medical data (`data/medical.db`) and agent sessions (`data/healthcare_agent.db`)
+9. The system SHALL validate configuration on startup and report missing requirements
+10. The system SHALL support configurable logging levels and output formats
+11. The system SHALL log errors for debugging while protecting sensitive information
+12. The system SHALL use FastAPI dependency injection with app.state for service management
+13. The system SHALL implement proper service lifecycle management with startup/shutdown handlers
+14. The system SHALL include unit tests for configuration validation and deployment setup
+15. The system SHALL ensure all configuration and deployment tests pass before deployment
+16. The system SHALL provide comprehensive README documentation with setup and usage instructions
+17. The system SHALL document API endpoints and generated artifact locations in README
 
 ### 2. PDF Document Upload
 
@@ -158,12 +159,20 @@ The Healthcare Agent MVP is a personal health data management system that enable
 **User Story**: As a healthcare consultant, I want to interact with an AI agent that can answer questions about the patient's medical history, so that I can provide informed insights based on comprehensive data analysis.
 
 **Acceptance Criteria**:
-1. The system SHALL implement Agno agent with OpenAI chat model (gpt-5)
-2. The system SHALL configure agent with SQLite storage for conversation history
-3. The system SHALL integrate AgentKnowledge with Chroma vector database
-4. The system SHALL implement custom medical toolkit with ingest_pdf and list_reports tools
-5. The system SHALL enable agent to search and retrieve information from user's medical data
-6. The system SHALL maintain conversation context and history across sessions
-7. The system SHALL handle agent errors and provide meaningful responses to users
-8. The system SHALL include unit tests for agent initialization, tool integration, and conversation handling
-9. The system SHALL ensure all agent-related tests pass before deployment
+1. The system SHALL implement Agno agent with OpenAI chat model (gpt-4o-mini by default)
+2. The system SHALL configure agent with SQLite storage for conversation history using separate agent database (`data/healthcare_agent.db`)
+3. The system SHALL integrate AgentKnowledge with Chroma vector database for medical reports collection
+4. The system SHALL implement custom MedicalToolkit with comprehensive tools: ingest_pdf, list_reports, search_medical_data, get_report_content, and get_report_summary
+5. The system SHALL enable agent to search and retrieve information from user's medical data with proper access control
+6. The system SHALL maintain conversation context and history across sessions using Memory v2 with SqliteMemoryDb
+7. The system SHALL implement POST /api/agent/chat endpoint for agent interaction with user_external_id, query, and optional session_id
+8. The system SHALL implement GET /api/agent/history/{user_external_id} endpoint for retrieving conversation history
+9. The system SHALL implement DELETE /api/agent/history/{user_external_id} endpoint for clearing conversation history
+10. The system SHALL implement GET /api/agent/config endpoint for retrieving agent configuration and statistics
+11. The system SHALL provide comprehensive agent instructions focusing on medical data analysis, privacy, and source attribution
+12. The system SHALL enable agentic memory and user memories for enhanced conversation context
+13. The system SHALL show tool calls for transparency in agent operations
+14. The system SHALL handle agent errors and provide meaningful responses to users with proper error classification
+15. The system SHALL include input validation and whitespace stripping for all agent endpoints
+16. The system SHALL include unit tests for agent initialization, tool integration, conversation handling, and all API endpoints
+17. The system SHALL ensure all agent-related tests pass before deployment

@@ -6,6 +6,8 @@ from typing import Optional
 from agno.agent import Agent
 from agno.embedder.openai import OpenAIEmbedder
 from agno.knowledge import AgentKnowledge
+from agno.memory.v2.db.sqlite import SqliteMemoryDb
+from agno.memory.v2.memory import Memory
 from agno.models.openai import OpenAIChat
 from agno.storage.sqlite import SqliteStorage
 from agno.vectordb.chroma import ChromaDb
@@ -66,6 +68,20 @@ class HealthcareAgent:
             RuntimeError: If agent creation fails
         """
         try:
+            # Initialize memory.v2
+            memory = Memory(
+                # Use any model for creating memories
+                model=OpenAIChat(id="gpt-5-mini"),
+                db=SqliteMemoryDb(
+                    table_name="user_memories", db_file=str(self.config.agent_db_path)
+                ),
+            )
+
+            # Initialize storage
+            storage = SqliteStorage(
+                table_name="agent_sessions", db_file=str(self.config.agent_db_path)
+            )
+
             # Create knowledge base with Chroma vector database
             knowledge = AgentKnowledge(
                 vector_db=ChromaDb(
@@ -91,9 +107,10 @@ class HealthcareAgent:
             agent = Agent(
                 name="Healthcare Assistant",
                 model=OpenAIChat(id=self.config.openai_model),
-                storage=SqliteStorage(
-                    table_name="agent_sessions", db_file=str(self.config.agent_db_path)
-                ),
+                memory=memory,
+                enable_agentic_memory=True,
+                enable_user_memories=True,
+                storage=storage,
                 knowledge=knowledge,
                 tools=[
                     medical_toolkit.ingest_pdf,

@@ -16,7 +16,7 @@ from agent.healthcare.storage.embeddings import EmbeddingService
 def create_minimal_config():
     """Create a minimal configuration for playground use."""
     return Config(
-        openai_api_key=os.getenv("OPENAI_API_KEY", "your-key-here"),
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
         openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
         embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-large"),
         base_data_dir=Path("data"),
