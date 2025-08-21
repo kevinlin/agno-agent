@@ -11,7 +11,7 @@ from agent.healthcare.search.search_service import SearchResult, SearchService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api", tags=["search"])
+router = APIRouter(prefix="/api/search", tags=["search"])
 
 
 def get_search_service(request: Request) -> SearchService:
@@ -51,7 +51,7 @@ class ErrorResponse(BaseModel):
 
 
 @router.get(
-    "/{user_external_id}/search",
+    "/{user_external_id}",
     response_model=SearchResponse,
     responses={
         400: {"model": ErrorResponse, "description": "Invalid query parameters"},
@@ -127,7 +127,7 @@ async def search_reports(
 
 
 @router.get(
-    "/{user_external_id}/search/stats",
+    "/{user_external_id}/stats",
     responses={
         404: {"model": ErrorResponse, "description": "User not found"},
         500: {"model": ErrorResponse, "description": "Failed to get stats"},

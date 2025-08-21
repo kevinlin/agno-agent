@@ -122,7 +122,7 @@ The Healthcare Agent MVP is a personal health data management system that enable
 **User Story**: As a patient, I want to search across all my medical reports using natural language queries, so that I can quickly find relevant health information from my historical data.
 
 **Acceptance Criteria**:
-1. The system SHALL implement GET /api/{user_external_id}/search endpoint with query parameters
+1. The system SHALL implement GET /api/search/{user_external_id} endpoint with query parameters
 2. The system SHALL restrict search results to the authenticated user's data only
 3. The system SHALL return search results with relevance scores and source metadata
 4. The system SHALL include provenance information (report_id, chunk_index) in results

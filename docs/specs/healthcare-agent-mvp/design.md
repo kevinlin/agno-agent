@@ -91,7 +91,7 @@ sequenceDiagram
     API-->>U: {"report_id": 123}
     
     Note over U,VDB: Search & Retrieval Flow
-    U->>API: GET /api/{user_id}/search?q=blood pressure
+    U->>API: GET /api/search/{user_id}?q=blood pressure
     API->>VDB: Semantic search with user filter
     VDB-->>API: Relevant chunks with metadata
     API-->>U: Search results with provenance
@@ -439,7 +439,7 @@ class SearchService:
     def enrich_with_metadata(self, raw_results: List, user_id: int) -> List[SearchResult]
 
 # FastAPI Endpoints  
-@router.get("/api/{user_external_id}/search")
+@router.get("/api/search/{user_external_id}")
 async def search_reports(
     user_external_id: str,
     q: str = Query(..., min_length=1),
