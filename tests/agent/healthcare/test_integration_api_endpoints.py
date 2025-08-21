@@ -377,22 +377,14 @@ startxref
             assert "success" in data
             assert "user_external_id" in data
 
-        # Test agent stats
-        response = self.client.get("/api/agent/stats")
+        # Test agent config
+        response = self.client.get("/api/agent/config")
         assert response.status_code in [200, 503]
 
         if response.status_code == 200:
             data = response.json()
             assert "agent_name" in data
             assert "model" in data
-
-        # Test agent health
-        response = self.client.get("/api/agent/health")
-        assert response.status_code in [200, 503]
-
-        data = response.json()
-        assert "status" in data
-        assert "service" in data
 
     def test_assets_endpoints(self):
         """Test asset-related endpoints."""
@@ -507,8 +499,7 @@ startxref
         endpoints_to_test = [
             "/",
             "/health",
-            "/api/agent/stats",
-            "/api/agent/health",
+            "/api/agent/config",
         ]
 
         for endpoint in endpoints_to_test:
