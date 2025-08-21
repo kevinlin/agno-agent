@@ -33,7 +33,7 @@ A personal health data management system that enables users to upload medical re
    Create a `.env` file in the project root or export environment variables:
    ```bash
    export OPENAI_API_KEY="your-openai-api-key-here"
-   export OPENAI_MODEL="gpt-4o-mini"  # Optional, defaults to gpt-5-mini
+   export OPENAI_MODEL="gpt-5-mini"  # Optional, defaults to gpt-5-mini
    export LOG_LEVEL="INFO"            # Optional, defaults to INFO
    ```
 
