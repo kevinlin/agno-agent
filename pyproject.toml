@@ -17,6 +17,7 @@ dependencies = [
     "pandas>=2.3.0",
     "pathlib>=1.0.1",
     "pikepdf>=8.0.0",
+    "psutil>=7.0.0",
     "pylance>=0.30.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.21.0",
