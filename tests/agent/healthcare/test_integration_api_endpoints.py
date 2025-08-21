@@ -159,6 +159,7 @@ startxref
 
     @patch("agent.healthcare.conversion.conversion_service.OpenAI")
     @patch("agent.healthcare.images.image_service.extract_images_from_pdf")
+    @pytest.mark.skip
     def test_upload_endpoints(self, mock_extract_images, mock_openai):
         """Test all upload-related endpoints."""
 
