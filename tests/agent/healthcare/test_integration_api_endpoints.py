@@ -19,6 +19,7 @@ class TestAPIEndpointsIntegration:
         """Set up test fixtures for each test."""
         # Set test environment variables
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["EXA_API_KEY"] = "test-key"
 
         # Create temporary directory for test data
         self.temp_dir = tempfile.mkdtemp()
@@ -159,7 +160,6 @@ startxref
 
     @patch("agent.healthcare.conversion.conversion_service.OpenAI")
     @patch("agent.healthcare.images.image_service.extract_images_from_pdf")
-    @pytest.mark.skip
     def test_upload_endpoints(self, mock_extract_images, mock_openai):
         """Test all upload-related endpoints."""
 
@@ -263,7 +263,7 @@ startxref
 
         # Test search with valid query
         response = self.client.get(
-            f"/reports/{self.test_user_id}/search",
+            f"/api/{self.test_user_id}/search",
             params={"q": "medical report", "k": 5},
         )
         assert response.status_code in [200, 503]  # Allow for service unavailable
@@ -277,19 +277,19 @@ startxref
 
         # Test search with empty query
         response = self.client.get(
-            f"/reports/{self.test_user_id}/search", params={"q": "", "k": 5}
+            f"/api/{self.test_user_id}/search", params={"q": "", "k": 5}
         )
         assert response.status_code in [400, 422, 503]  # Allow for service unavailable
 
         # Test search with invalid k parameter
         response = self.client.get(
-            f"/reports/{self.test_user_id}/search", params={"q": "test", "k": 0}
+            f"/api/{self.test_user_id}/search", params={"q": "test", "k": 0}
         )
         assert response.status_code in [400, 422, 503]  # Allow for service unavailable
 
         # Test search with very large k parameter
         response = self.client.get(
-            f"/reports/{self.test_user_id}/search", params={"q": "test", "k": 1000}
+            f"/api/{self.test_user_id}/search", params={"q": "test", "k": 1000}
         )
         assert response.status_code in [
             200,
@@ -299,7 +299,7 @@ startxref
         ]  # Allow for service unavailable
 
         # Test search stats
-        response = self.client.get(f"/reports/{self.test_user_id}/search/stats")
+        response = self.client.get(f"/api/{self.test_user_id}/search/stats")
         assert response.status_code in [200, 503]  # Allow for service unavailable
 
         if response.status_code == 200:
@@ -406,7 +406,7 @@ startxref
             # Upload endpoints
             {"method": "POST", "url": "/api/upload", "data": {}, "files": {}},
             # Reports endpoints
-            {"method": "GET", "url": "/reports//search", "params": {"q": "test"}},
+            {"method": "GET", "url": "/api//search", "params": {"q": "test"}},
             {"method": "GET", "url": "/reports/999/markdown", "params": {}},
             # Agent endpoints
             {"method": "POST", "url": "/api/agent/chat", "json": {}},
@@ -530,7 +530,7 @@ startxref
                 "data": {"user_external_id": "", "query": "test"},
             },
             {
-                "endpoint": "/reports/test_user/search",
+                "endpoint": "/api/test_user/search",
                 "method": "GET",
                 "params": {"q": "", "k": 5},
             },

@@ -161,7 +161,7 @@ startxref
 
         # Step 4: Test semantic search functionality
         search_response = self.client.get(
-            f"/reports/{user_external_id}/search",
+            f"/api/{user_external_id}/search",
             params={"q": "blood pressure", "k": 5},
         )
         assert search_response.status_code in [
@@ -249,7 +249,7 @@ startxref
 
         # Test 3: Search with invalid user
         search_response = self.client.get(
-            "/reports/nonexistent_user/search", params={"q": "test query"}
+            "/api/nonexistent_user/search", params={"q": "test query"}
         )
         assert search_response.status_code in [
             200,
@@ -340,7 +340,7 @@ startxref
 
             # Verify we can search across both documents
             search_response = self.client.get(
-                f"/reports/{user_external_id}/search",
+                f"/api/{user_external_id}/search",
                 params={"q": "cholesterol blood pressure", "k": 10},
             )
             assert search_response.status_code in [
@@ -452,7 +452,7 @@ startxref
 
             # Verify search results are isolated
             user1_search = self.client.get(
-                "/reports/user1/search", params={"q": "medical data"}
+                "/api/user1/search", params={"q": "medical data"}
             )
             assert user1_search.status_code in [
                 200,
@@ -460,7 +460,7 @@ startxref
             ]  # Allow for service unavailable
 
             user2_search = self.client.get(
-                "/reports/user2/search", params={"q": "medical data"}
+                "/api/user2/search", params={"q": "medical data"}
             )
             assert user2_search.status_code in [
                 200,

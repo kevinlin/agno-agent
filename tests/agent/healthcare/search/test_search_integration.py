@@ -69,7 +69,7 @@ class TestSearchIntegration:
         mock_search_service.semantic_search.return_value = search_results
 
         # Make request
-        response = client.get("/reports/user123/search?q=blood%20pressure&k=5")
+        response = client.get("/api/user123/search?q=blood%20pressure&k=5")
 
         # Verify response
         assert response.status_code == 200
@@ -98,7 +98,7 @@ class TestSearchIntegration:
         """Test search with no results."""
         mock_search_service.semantic_search.return_value = []
 
-        response = client.get("/reports/user123/search?q=nonexistent")
+        response = client.get("/api/user123/search?q=nonexistent")
 
         assert response.status_code == 200
         data = response.json()
@@ -107,35 +107,35 @@ class TestSearchIntegration:
 
     def test_search_reports_missing_query(self, client):
         """Test search without query parameter."""
-        response = client.get("/reports/user123/search")
+        response = client.get("/api/user123/search")
         assert response.status_code == 422  # Validation error
 
     def test_search_reports_empty_query(self, client):
         """Test search with empty query."""
-        response = client.get("/reports/user123/search?q=")
+        response = client.get("/api/user123/search?q=")
         assert response.status_code == 422  # Validation error
 
     def test_search_reports_query_too_long(self, client):
         """Test search with query too long."""
         long_query = "a" * 1001
-        response = client.get(f"/reports/user123/search?q={long_query}")
+        response = client.get(f"/api/user123/search?q={long_query}")
         assert response.status_code == 422  # Validation error
 
     def test_search_reports_invalid_k_parameter(self, client):
         """Test search with invalid k parameter."""
         # k too small
-        response = client.get("/reports/user123/search?q=test&k=0")
+        response = client.get("/api/user123/search?q=test&k=0")
         assert response.status_code == 422
 
         # k too large
-        response = client.get("/reports/user123/search?q=test&k=21")
+        response = client.get("/api/user123/search?q=test&k=21")
         assert response.status_code == 422
 
     def test_search_reports_default_k_parameter(self, client, mock_search_service):
         """Test search with default k parameter."""
         mock_search_service.semantic_search.return_value = []
 
-        response = client.get("/reports/user123/search?q=test")
+        response = client.get("/api/user123/search?q=test")
         assert response.status_code == 200
 
         # Verify default k=5 was used
@@ -149,7 +149,7 @@ class TestSearchIntegration:
             "User not found: nonexistent"
         )
 
-        response = client.get("/reports/nonexistent/search?q=test")
+        response = client.get("/api/nonexistent/search?q=test")
         assert response.status_code == 400
         assert "User not found" in response.json()["detail"]
 
@@ -159,7 +159,7 @@ class TestSearchIntegration:
             "Search operation failed"
         )
 
-        response = client.get("/reports/user123/search?q=test")
+        response = client.get("/api/user123/search?q=test")
         assert response.status_code == 500
         assert "Search operation failed" in response.json()["detail"]
 
@@ -167,7 +167,7 @@ class TestSearchIntegration:
         """Test search with unexpected error."""
         mock_search_service.semantic_search.side_effect = Exception("Unexpected error")
 
-        response = client.get("/reports/user123/search?q=test")
+        response = client.get("/api/user123/search?q=test")
         assert response.status_code == 500
         assert "Internal search error" in response.json()["detail"]
 
@@ -181,7 +181,7 @@ class TestSearchIntegration:
         }
         mock_search_service.get_search_stats.return_value = stats
 
-        response = client.get("/reports/user123/search/stats")
+        response = client.get("/api/user123/search/stats")
         assert response.status_code == 200
         assert response.json() == stats
 
@@ -189,7 +189,7 @@ class TestSearchIntegration:
         """Test search stats with non-existent user."""
         mock_search_service.get_search_stats.return_value = {"error": "User not found"}
 
-        response = client.get("/reports/nonexistent/search/stats")
+        response = client.get("/api/nonexistent/search/stats")
         assert response.status_code == 404
         assert "User not found" in response.json()["detail"]
 
@@ -199,7 +199,7 @@ class TestSearchIntegration:
             "error": "Database connection failed"
         }
 
-        response = client.get("/reports/user123/search/stats")
+        response = client.get("/api/user123/search/stats")
         assert response.status_code == 500
         assert "Database connection failed" in response.json()["detail"]
 
@@ -207,7 +207,7 @@ class TestSearchIntegration:
         """Test search stats with unexpected exception."""
         mock_search_service.get_search_stats.side_effect = Exception("Unexpected error")
 
-        response = client.get("/reports/user123/search/stats")
+        response = client.get("/api/user123/search/stats")
         assert response.status_code == 500
         assert "Failed to get search statistics" in response.json()["detail"]
 
@@ -227,7 +227,7 @@ class TestSearchIntegration:
         ]
         mock_search_service.semantic_search.return_value = search_results
 
-        response = client.get("/reports/user123/search?q=test")
+        response = client.get("/api/user123/search?q=test")
         assert response.status_code == 200
 
         data = response.json()
@@ -264,7 +264,7 @@ class TestSearchIntegration:
 
         # Test with URL-encoded query containing spaces and special characters
         encoded_query = "blood%20pressure%20%26%20diabetes"
-        response = client.get(f"/reports/user123/search?q={encoded_query}")
+        response = client.get(f"/api/user123/search?q={encoded_query}")
 
         assert response.status_code == 200
 

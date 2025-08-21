@@ -11,7 +11,7 @@ from agent.healthcare.search.search_service import SearchResult, SearchService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/reports", tags=["search"])
+router = APIRouter(prefix="/api", tags=["search"])
 
 
 def get_search_service(request: Request) -> SearchService:
