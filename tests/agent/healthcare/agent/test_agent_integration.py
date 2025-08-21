@@ -259,8 +259,8 @@ class TestAgentIntegration:
                 assert "An error occurred while processing" in response_data["message"]
 
     @patch("agent.healthcare.agent.routes.ConfigManager.load_config")
-    def test_agent_stats_integration(self, mock_config):
-        """Test agent stats integration with toolkit information."""
+    def test_agent_config_integration(self, mock_config):
+        """Test agent config integration with toolkit information."""
         mock_config.return_value = self.mock_config
 
         with patch(
@@ -268,8 +268,8 @@ class TestAgentIntegration:
         ) as mock_agent_service:
             mock_agent = Mock()
 
-            # Mock comprehensive agent stats
-            mock_stats = {
+            # Mock comprehensive agent config
+            mock_config_data = {
                 "agent_name": "Healthcare Assistant",
                 "model": "gpt-4o-mini",
                 "embedding_model": "text-embedding-3-large",
@@ -284,15 +284,15 @@ class TestAgentIntegration:
                     "get_report_summary",
                 ],
             }
-            mock_agent.get_agent_stats.return_value = mock_stats
+            mock_agent.get_agent_stats.return_value = mock_config_data
             mock_agent_service.return_value = mock_agent
 
-            response = self.client.get("/api/agent/stats")
+            response = self.client.get("/api/agent/config")
 
             assert response.status_code == 200
             response_data = response.json()
 
-            # Verify comprehensive stats
+            # Verify comprehensive config
             assert response_data["agent_name"] == "Healthcare Assistant"
             assert response_data["model"] == "gpt-4o-mini"
             assert response_data["vector_db"] == "ChromaDB"

@@ -216,10 +216,10 @@ class TestAgentRoutesSimple:
             session_id="session456",
         )
 
-    def test_get_agent_stats_success(self):
-        """Test successful agent stats retrieval."""
+    def test_get_agent_config_success(self):
+        """Test successful agent config retrieval."""
         # Configure mock agent
-        mock_stats = {
+        mock_config = {
             "agent_name": "Healthcare Assistant",
             "model": "gpt-4o-mini",
             "embedding_model": "text-embedding-3-large",
@@ -228,12 +228,12 @@ class TestAgentRoutesSimple:
             "knowledge_base": "medical_reports",
             "toolkit_functions": ["ingest_pdf", "list_reports", "search_medical_data"],
         }
-        self.mock_agent.get_agent_stats.return_value = mock_stats
+        self.mock_agent.get_agent_stats.return_value = mock_config
 
         # Override dependencies
         self.override_dependencies()
 
-        response = self.client.get("/api/agent/stats")
+        response = self.client.get("/api/agent/config")
 
         # Verify response
         assert response.status_code == 200
@@ -247,24 +247,24 @@ class TestAgentRoutesSimple:
         assert response_data["knowledge_base"] == "medical_reports"
         assert len(response_data["toolkit_functions"]) == 3
 
-    def test_get_agent_stats_error(self):
-        """Test agent stats retrieval with error."""
-        # Configure mock agent to return error stats
-        mock_stats = {"error": "Agent not initialized"}
-        self.mock_agent.get_agent_stats.return_value = mock_stats
+    def test_get_agent_config_error(self):
+        """Test agent config retrieval with error."""
+        # Configure mock agent to return error config
+        mock_config = {"error": "Agent not initialized"}
+        self.mock_agent.get_agent_stats.return_value = mock_config
 
         # Override dependencies
         self.override_dependencies()
 
-        response = self.client.get("/api/agent/stats")
+        response = self.client.get("/api/agent/config")
 
         # Verify error response
         assert response.status_code == 503
         response_data = response.json()
 
-        assert response_data["error"] == "stats_error"
+        assert response_data["error"] == "config_error"
         assert (
-            "Unable to retrieve complete agent statistics" in response_data["message"]
+            "Unable to retrieve complete agent configuration" in response_data["message"]
         )
 
     def test_chat_with_agent_invalid_request(self):
@@ -318,45 +318,4 @@ class TestAgentRoutesSimple:
             assert response_data["query"] == "Test query"
             assert response_data["session_id"] == "session456"
 
-    def test_agent_health_check_success(self):
-        """Test successful agent health check."""
-        # Use patch for the health check since it doesn't use the agent dependency
-        from unittest.mock import patch
 
-        with patch(
-            "agent.healthcare.agent.routes.ConfigManager.load_config"
-        ) as mock_load_config:
-            mock_load_config.return_value = self.mock_config
-
-            response = self.client.get("/api/agent/health")
-
-            # Verify response
-            assert response.status_code == 200
-            response_data = response.json()
-
-            assert response_data["status"] == "healthy"
-            assert response_data["service"] == "healthcare_agent"
-            assert "timestamp" in response_data
-            assert response_data["config"]["openai_model"] == "gpt-4o-mini"
-            assert (
-                response_data["config"]["embedding_model"] == "text-embedding-3-large"
-            )
-
-    def test_agent_health_check_failure(self):
-        """Test agent health check failure."""
-        from unittest.mock import patch
-
-        with patch(
-            "agent.healthcare.agent.routes.ConfigManager.load_config"
-        ) as mock_load_config:
-            mock_load_config.side_effect = Exception("Configuration error")
-
-            response = self.client.get("/api/agent/health")
-
-            # Verify error response
-            assert response.status_code == 503
-            response_data = response.json()
-
-            assert response_data["status"] == "unhealthy"
-            assert response_data["service"] == "healthcare_agent"
-            assert "Configuration error" in response_data["error"]

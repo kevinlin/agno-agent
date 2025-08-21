@@ -48,8 +48,8 @@ class ConversationHistoryResponse(BaseModel):
     total_messages: int = Field(..., description="Total number of messages in history")
 
 
-class AgentStatsResponse(BaseModel):
-    """Response model for agent statistics."""
+class AgentConfigResponse(BaseModel):
+    """Response model for agent configuration."""
 
     agent_name: str = Field(..., description="Name of the AI agent")
     model: str = Field(..., description="OpenAI model being used")
@@ -285,74 +285,36 @@ async def clear_conversation_history(
         return handle_agent_error(e, "clear_history", user_external_id)
 
 
-@router.get("/stats", response_model=AgentStatsResponse)
-async def get_agent_stats(
+@router.get("/config", response_model=AgentConfigResponse)
+async def get_agent_config(
     agent: Annotated[HealthcareAgent, Depends(get_healthcare_agent)],
 ) -> JSONResponse:
-    """Get statistics and information about the healthcare agent.
+    """Get configuration and information about the healthcare agent.
 
     Returns information about the agent configuration, available tools,
     and system status for monitoring and debugging purposes.
     """
     try:
-        # Get agent statistics
-        stats = agent.get_agent_stats()
+        # Get agent configuration
+        config = agent.get_agent_stats()
 
         # Handle error case
-        if "error" in stats:
-            logger.warning(f"Agent stats returned error: {stats['error']}")
+        if "error" in config:
+            logger.warning(f"Agent config returned error: {config['error']}")
             return JSONResponse(
                 status_code=503,
                 content={
-                    "error": "stats_error",
-                    "message": "Unable to retrieve complete agent statistics",
-                    "details": stats,
+                    "error": "config_error",
+                    "message": "Unable to retrieve complete agent configuration",
+                    "details": config,
                 },
             )
 
         # Prepare successful response
-        stats_response = AgentStatsResponse(**stats)
+        config_response = AgentConfigResponse(**config)
 
-        logger.info("Agent stats retrieved successfully")
-        return JSONResponse(status_code=200, content=stats_response.model_dump())
-
-    except Exception as e:
-        return handle_agent_error(e, "get_stats")
-
-
-@router.get("/health")
-async def agent_health_check() -> JSONResponse:
-    """Health check endpoint for the agent service.
-
-    Returns the health status of the agent service and its dependencies.
-    This is a lightweight check that doesn't require full agent initialization.
-    """
-    try:
-        # Basic health check - verify configuration can be loaded
-        config = ConfigManager.load_config()
-
-        health_status = {
-            "status": "healthy",
-            "service": "healthcare_agent",
-            "timestamp": "2024-01-15T10:30:00Z",  # In production, use datetime.utcnow().isoformat()
-            "config": {
-                "openai_model": config.openai_model,
-                "embedding_model": config.embedding_model,
-                "data_dir_exists": config.base_data_dir.exists(),
-            },
-        }
-
-        logger.info("Agent health check passed")
-        return JSONResponse(status_code=200, content=health_status)
+        logger.info("Agent config retrieved successfully")
+        return JSONResponse(status_code=200, content=config_response.model_dump())
 
     except Exception as e:
-        logger.error(f"Agent health check failed: {e}")
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "unhealthy",
-                "service": "healthcare_agent",
-                "error": str(e),
-                "timestamp": "2024-01-15T10:30:00Z",
-            },
-        )
+        return handle_agent_error(e, "get_config")
