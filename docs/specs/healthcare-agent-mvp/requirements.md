@@ -76,7 +76,7 @@ The Healthcare Agent MVP is a personal health data management system that enable
 4. The system SHALL link extracted images to Markdown placeholders from the manifest
 5. The system SHALL store image metadata (path, caption, alt text) in the database
 6. The system SHALL handle cases where image extraction fails by preserving text captions
-7. The system SHALL implement GET /reports/{report_id}/assets endpoint for listing assets
+7. The system SHALL implement GET /api/reports/{report_id}/assets endpoint for listing assets
 8. The system SHALL return appropriate HTTP status codes for asset retrieval operations
 9. The system SHALL include unit tests for image extraction, file naming, and metadata storage
 10. The system SHALL ensure all asset management tests pass before deployment
@@ -107,8 +107,8 @@ The Healthcare Agent MVP is a personal health data management system that enable
 **User Story**: As a patient, I want to list and view my uploaded medical reports, so that I can browse my history and access specific documents.
 
 **Acceptance Criteria**:
-1. The system SHALL implement GET /reports/{user_external_id} endpoint for listing reports
-2. The system SHALL implement GET /reports/{report_id}/markdown endpoint for retrieving content
+1. The system SHALL implement GET /api/reports/{user_external_id} endpoint for listing reports
+2. The system SHALL implement GET /api/reports/{report_id}/markdown endpoint for retrieving content
 3. The system SHALL return report metadata including ID, filename, and upload date
 4. The system SHALL handle cases where requested reports don't exist with appropriate HTTP status codes
 5. The system SHALL ensure users can only access their own reports

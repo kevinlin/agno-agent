@@ -221,7 +221,7 @@ startxref
         """Test all reports-related endpoints."""
 
         # Test listing reports for non-existent user
-        response = self.client.get(f"/reports/{self.test_user_id}")
+        response = self.client.get(f"/api/reports/{self.test_user_id}")
         assert response.status_code in [
             200,
             503,
@@ -234,24 +234,24 @@ startxref
 
         # Test getting markdown for non-existent report
         response = self.client.get(
-            "/reports/999/markdown", params={"user_external_id": self.test_user_id}
+            "/api/reports/999/markdown", params={"user_external_id": self.test_user_id}
         )
         assert response.status_code in [404, 400, 503]  # Allow for service unavailable
 
         # Test getting assets for non-existent report
         response = self.client.get(
-            "/reports/999/assets", params={"user_external_id": self.test_user_id}
+            "/api/reports/999/assets", params={"user_external_id": self.test_user_id}
         )
         assert response.status_code in [404, 400, 503]  # Allow for service unavailable
 
         # Test getting summary for non-existent report
         response = self.client.get(
-            "/reports/999/summary", params={"user_external_id": self.test_user_id}
+            "/api/reports/999/summary", params={"user_external_id": self.test_user_id}
         )
         assert response.status_code in [404, 400, 503]  # Allow for service unavailable
 
         # Test reports stats
-        response = self.client.get(f"/reports/{self.test_user_id}/stats")
+        response = self.client.get(f"/api/reports/{self.test_user_id}/stats")
         assert response.status_code in [200, 503]  # Allow for service unavailable
 
         if response.status_code == 200:

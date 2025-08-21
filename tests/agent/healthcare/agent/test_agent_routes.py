@@ -264,7 +264,8 @@ class TestAgentRoutesSimple:
 
         assert response_data["error"] == "config_error"
         assert (
-            "Unable to retrieve complete agent configuration" in response_data["message"]
+            "Unable to retrieve complete agent configuration"
+            in response_data["message"]
         )
 
     def test_chat_with_agent_invalid_request(self):
@@ -317,5 +318,3 @@ class TestAgentRoutesSimple:
             assert response_data["user_external_id"] == "user123"
             assert response_data["query"] == "Test query"
             assert response_data["session_id"] == "session456"
-
-

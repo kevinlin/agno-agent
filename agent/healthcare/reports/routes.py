@@ -12,7 +12,7 @@ from agent.healthcare.reports.service import ReportService
 logger = logging.getLogger(__name__)
 
 # Create router for report management endpoints
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter(prefix="/api/reports", tags=["reports"])
 
 
 def get_report_service(request: Request) -> ReportService:
@@ -150,6 +150,57 @@ async def list_reports(
     except Exception as e:
         logger.error(f"Unexpected report listing error: {e}")
         raise HTTPException(status_code=500, detail="Internal report listing error")
+
+
+@router.get(
+    "/{user_external_id}/stats",
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid user ID"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+        500: {"model": ErrorResponse, "description": "Stats retrieval failed"},
+    },
+)
+async def get_report_stats(
+    user_external_id: str,
+    report_service: ReportService = Depends(get_report_service),
+) -> Dict[str, Any]:
+    """Get statistics for all reports of a user.
+
+    Returns aggregate statistics about all reports belonging to the specified user,
+    including counts, sizes, and language distribution.
+
+    Args:
+        user_external_id: External user identifier
+
+    Returns:
+        Dictionary with user report statistics
+
+    Raises:
+        HTTPException: For validation errors, user not found, or operation failures
+    """
+    try:
+        logger.info(f"Getting report stats for user: {user_external_id}")
+
+        # Get report statistics
+        stats = report_service.get_report_stats(user_external_id)
+
+        logger.info(
+            f"Retrieved stats for user {user_external_id}: {stats.get('total_reports', 0)} reports"
+        )
+        return stats
+
+    except ValueError as e:
+        logger.warning(f"Stats retrieval validation error: {e}")
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=404, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        logger.error(f"Stats retrieval operation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logger.error(f"Unexpected stats retrieval error: {e}")
+        raise HTTPException(status_code=500, detail="Internal stats retrieval error")
 
 
 @router.get(
@@ -363,54 +414,3 @@ async def get_report_summary(
     except Exception as e:
         logger.error(f"Unexpected summary retrieval error: {e}")
         raise HTTPException(status_code=500, detail="Internal summary retrieval error")
-
-
-@router.get(
-    "/{user_external_id}/stats",
-    responses={
-        400: {"model": ErrorResponse, "description": "Invalid user ID"},
-        404: {"model": ErrorResponse, "description": "User not found"},
-        500: {"model": ErrorResponse, "description": "Stats retrieval failed"},
-    },
-)
-async def get_report_stats(
-    user_external_id: str,
-    report_service: ReportService = Depends(get_report_service),
-) -> Dict[str, Any]:
-    """Get statistics for all reports of a user.
-
-    Returns aggregate statistics about all reports belonging to the specified user,
-    including counts, sizes, and language distribution.
-
-    Args:
-        user_external_id: External user identifier
-
-    Returns:
-        Dictionary with user report statistics
-
-    Raises:
-        HTTPException: For validation errors, user not found, or operation failures
-    """
-    try:
-        logger.info(f"Getting report stats for user: {user_external_id}")
-
-        # Get report statistics
-        stats = report_service.get_report_stats(user_external_id)
-
-        logger.info(
-            f"Retrieved stats for user {user_external_id}: {stats.get('total_reports', 0)} reports"
-        )
-        return stats
-
-    except ValueError as e:
-        logger.warning(f"Stats retrieval validation error: {e}")
-        if "not found" in str(e).lower():
-            raise HTTPException(status_code=404, detail=str(e))
-        else:
-            raise HTTPException(status_code=400, detail=str(e))
-    except RuntimeError as e:
-        logger.error(f"Stats retrieval operation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        logger.error(f"Unexpected stats retrieval error: {e}")
-        raise HTTPException(status_code=500, detail="Internal stats retrieval error")

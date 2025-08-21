@@ -6,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-
 from sqlmodel import select
 
 from agent.healthcare.config.config import Config

@@ -69,7 +69,7 @@ class TestReportsIntegration:
         ]
 
         # Make request
-        response = client.get("/reports/test_user")
+        response = client.get("/api/reports/test_user")
 
         # Assertions
         assert response.status_code == 200
@@ -94,7 +94,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/nonexistent_user")
+        response = client.get("/api/reports/nonexistent_user")
 
         # Assertions
         assert response.status_code == 404
@@ -109,7 +109,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/test_user")
+        response = client.get("/api/reports/test_user")
 
         # Assertions
         assert response.status_code == 400
@@ -124,7 +124,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/test_user")
+        response = client.get("/api/reports/test_user")
 
         # Assertions
         assert response.status_code == 500
@@ -139,7 +139,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/test_user")
+        response = client.get("/api/reports/test_user")
 
         # Assertions
         assert response.status_code == 500
@@ -157,7 +157,7 @@ class TestReportsIntegration:
         }
 
         # Make request
-        response = client.get("/reports/123/markdown?user_external_id=test_user")
+        response = client.get("/api/reports/123/markdown?user_external_id=test_user")
 
         # Assertions
         assert response.status_code == 200
@@ -181,7 +181,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/123/markdown?user_external_id=test_user")
+        response = client.get("/api/reports/123/markdown?user_external_id=test_user")
 
         # Assertions
         assert response.status_code == 403
@@ -196,7 +196,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/999/markdown?user_external_id=test_user")
+        response = client.get("/api/reports/999/markdown?user_external_id=test_user")
 
         # Assertions
         assert response.status_code == 404
@@ -211,7 +211,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/123/markdown?user_external_id=test_user")
+        response = client.get("/api/reports/123/markdown?user_external_id=test_user")
 
         # Assertions
         assert response.status_code == 404
@@ -221,7 +221,7 @@ class TestReportsIntegration:
     def test_get_report_markdown_missing_user_id(self, client, mock_report_service):
         """Test markdown retrieval without user_external_id parameter."""
         # Make request without user_external_id
-        response = client.get("/reports/123/markdown")
+        response = client.get("/api/reports/123/markdown")
 
         # Assertions
         assert response.status_code == 422  # Validation error
@@ -257,7 +257,7 @@ class TestReportsIntegration:
         ]
 
         # Make request
-        response = client.get("/reports/123/assets?user_external_id=test_user")
+        response = client.get("/api/reports/123/assets?user_external_id=test_user")
 
         # Assertions
         assert response.status_code == 200
@@ -283,7 +283,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/123/assets?user_external_id=test_user")
+        response = client.get("/api/reports/123/assets?user_external_id=test_user")
 
         # Assertions
         assert response.status_code == 403
@@ -308,7 +308,7 @@ class TestReportsIntegration:
         }
 
         # Make request
-        response = client.get("/reports/123/summary?user_external_id=test_user")
+        response = client.get("/api/reports/123/summary?user_external_id=test_user")
 
         # Assertions
         assert response.status_code == 200
@@ -336,7 +336,7 @@ class TestReportsIntegration:
         }
 
         # Make request
-        response = client.get("/reports/test_user/stats")
+        response = client.get("/api/reports/test_user/stats")
 
         # Assertions
         assert response.status_code == 200
@@ -358,7 +358,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/nonexistent_user/stats")
+        response = client.get("/api/reports/nonexistent_user/stats")
 
         # Assertions
         assert response.status_code == 404
@@ -378,7 +378,7 @@ class TestReportsIntegration:
         client_no_service = TestClient(app)
 
         # Make request
-        response = client_no_service.get("/reports/test_user")
+        response = client_no_service.get("/api/reports/test_user")
 
         # Assertions
         assert response.status_code == 503
@@ -401,7 +401,7 @@ class TestReportsIntegration:
         ]
 
         # Make request
-        response = client.get("/reports/test_user")
+        response = client.get("/api/reports/test_user")
 
         # Should succeed because all required fields are present
         assert response.status_code == 200
@@ -418,7 +418,7 @@ class TestReportsIntegration:
         )
 
         # Make request
-        response = client.get("/reports/test_user")
+        response = client.get("/api/reports/test_user")
 
         # Assertions
         assert response.status_code == 400
@@ -429,7 +429,9 @@ class TestReportsIntegration:
     def test_route_parameter_validation(self, client, mock_report_service):
         """Test route parameter validation."""
         # Test with invalid report_id (non-integer)
-        response = client.get("/reports/invalid_id/markdown?user_external_id=test_user")
+        response = client.get(
+            "/api/reports/invalid_id/markdown?user_external_id=test_user"
+        )
 
         # Should return validation error
         assert response.status_code == 422
@@ -440,9 +442,9 @@ class TestReportsIntegration:
         """Test query parameter validation."""
         # Test endpoints that require user_external_id query parameter
         endpoints = [
-            "/reports/123/markdown",
-            "/reports/123/assets",
-            "/reports/123/summary",
+            "/api/reports/123/markdown",
+            "/api/reports/123/assets",
+            "/api/reports/123/summary",
         ]
 
         for endpoint in endpoints:

@@ -471,13 +471,13 @@ class ReportService:
     def validate_user_access(self, report_id: int, user_external_id: str) -> bool
 
 # FastAPI Endpoints
-@router.get("/reports/{user_external_id}")
+@router.get("/api/reports/{user_external_id}")
 async def list_reports(user_external_id: str) -> JSONResponse
 
-@router.get("/reports/{report_id}/markdown") 
+@router.get("/api/reports/{report_id}/markdown") 
 async def get_report_markdown(report_id: int, user_external_id: str = Query(...)) -> JSONResponse
 
-@router.get("/reports/{report_id}/assets")
+@router.get("/api/reports/{report_id}/assets")
 async def list_report_assets(report_id: int, user_external_id: str = Query(...)) -> JSONResponse
 ```
 
@@ -1014,7 +1014,7 @@ tests/
            report_id = response.json()["report_id"]
            
            # Verify markdown was created
-           markdown_response = await test_client.get(f"/reports/{report_id}/markdown")
+           markdown_response = await test_client.get(f"/api/reports/{report_id}/markdown")
            assert markdown_response.status_code == 200
            
            # Verify search works
