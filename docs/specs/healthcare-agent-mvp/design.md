@@ -494,118 +494,6 @@ async def list_report_assets(report_id: int, user_external_id: str = Query(...))
 - Agent error handling and response formatting
 - Agent API endpoints for chat, history, and configuration
 
-**Key Classes**:
-```python
-class MedicalToolkit(Toolkit):
-    def __init__(self, config: Config, db_service: DatabaseService, 
-                 search_service: SearchService, report_service: ReportService)
-    
-    @tool(name="ingest_pdf")
-    def ingest_pdf(self, user_external_id: str, pdf_path: str) -> str
-    
-    @tool(name="list_reports") 
-    def list_reports(self, user_external_id: str) -> List[str]
-    
-    @tool(name="search_medical_data")
-    def search_medical_data(self, user_external_id: str, query: str, k: int = 5) -> List[dict]
-    
-    @tool(name="get_report_content")
-    def get_report_content(self, user_external_id: str, report_id: int) -> str
-    
-    @tool(name="get_report_summary")
-    def get_report_summary(self, user_external_id: str, report_id: int) -> str
-
-class HealthcareAgent:
-    def __init__(self, config: Config, db_service: DatabaseService,
-                 search_service: SearchService, report_service: ReportService)
-    
-    def get_agent(self) -> Agent
-    
-    def _create_healthcare_agent(self) -> Agent
-    
-    def process_query(self, user_external_id: str, query: str, session_id: Optional[str] = None) -> str
-    
-    def get_conversation_history(self, user_external_id: str, session_id: Optional[str] = None) -> List[dict]
-    
-    def clear_conversation_history(self, user_external_id: str, session_id: Optional[str] = None) -> bool
-    
-    def get_agent_stats(self) -> dict
-
-# Agent Configuration with Memory v2 and Enhanced Features
-def _create_healthcare_agent(self) -> Agent:
-    # Initialize Memory v2 with SQLite backend
-    memory = Memory(
-        model=OpenAIChat(id="gpt-5-mini"),
-        db=SqliteMemoryDb(
-            table_name="user_memories", 
-            db_file=str(self.config.agent_db_path)
-        ),
-    )
-    
-    # Initialize conversation storage
-    storage = SqliteStorage(
-        table_name="agent_sessions", 
-        db_file=str(self.config.agent_db_path)
-    )
-    
-    # Create knowledge base with Chroma vector database
-    knowledge = AgentKnowledge(
-        vector_db=ChromaDb(
-            collection="medical_reports",
-            path=str(self.config.chroma_dir),
-            persistent_client=True,
-        ),
-        embedder=OpenAIEmbedder(
-            id=self.config.embedding_model,
-            dimensions=3072,
-        ),
-    )
-    
-    agent = Agent(
-        name="Healthcare Assistant",
-        model=OpenAIChat(id=self.config.openai_model),
-        memory=memory,
-        enable_agentic_memory=True,
-        enable_user_memories=True,
-        storage=storage,
-        knowledge=knowledge,
-        tools=[medical_toolkit.ingest_pdf, medical_toolkit.list_reports, 
-               medical_toolkit.get_report_summary, medical_toolkit.get_report_content,
-               medical_toolkit.search_medical_data],
-        instructions=[
-            "You are a healthcare AI assistant specialized in analyzing medical reports and patient data.",
-            "Always search your knowledge base before answering questions about medical data.",
-            "Use the medical toolkit tools to access patient reports and search medical information.",
-            "Provide clear, accurate information with proper source attribution and citations.",
-            "If you don't have enough information to answer a question, ask clarifying questions.",
-            "Maintain strict patient privacy and never share data across different users.",
-            "When referencing medical data, always include the source report ID and filename.",
-            "Focus on being helpful while being appropriately cautious about medical advice.",
-            "Remember that you are an assistant to help organize and understand medical information, not provide medical diagnosis or treatment advice.",
-        ],
-        add_history_to_messages=True,
-        num_history_runs=5,
-        markdown=True,
-        show_tool_calls=True,
-        add_datetime_to_instructions=True,
-    )
-    
-    return agent
-
-# Agent API Endpoints
-@router.post("/chat", response_model=ChatResponse)
-async def chat_with_agent(request: ChatRequest, agent: HealthcareAgent = Depends(get_healthcare_agent))
-
-@router.get("/history/{user_external_id}", response_model=ConversationHistoryResponse) 
-async def get_conversation_history(user_external_id: str, agent: HealthcareAgent = Depends(get_healthcare_agent))
-
-@router.delete("/history/{user_external_id}")
-async def clear_conversation_history(user_external_id: str, agent: HealthcareAgent = Depends(get_healthcare_agent))
-
-@router.get("/config", response_model=AgentConfigResponse)
-async def get_agent_config(agent: HealthcareAgent = Depends(get_healthcare_agent))
-```
-
 ## System Health and Monitoring
 
 ### Comprehensive Health Check Implementation
@@ -824,6 +712,76 @@ async def health_check():
 - **Operational Excellence**: Standard monitoring interface for deployment automation
 - **Service Dependencies**: Clear understanding of service initialization status
 - **Configuration Validation**: Verification of critical configuration parameters
+
+## Enhanced Agent Instructions and Behavior
+
+### Agent Instruction Architecture
+
+The healthcare agent uses a structured instruction set organized into six key sections to ensure consistent, high-quality interactions:
+
+#### 1. User Context & Session Management
+- **Priority-Based User ID Detection**: The agent first checks `agent.user_id` property, then falls back to asking the user directly
+- **Interactive User ID Collection**: When no user ID is available, prompts the user with clear instructions referencing the Agno web console 'User Name' field
+- **Session Memory**: Remembers the user-provided ID throughout the current session for consistent access
+- **Validation**: Always validates user_external_id availability before calling medical toolkit functions
+- **Consistent Context Usage**: Uses the determined user ID for all medical toolkit function calls
+
+#### 2. Information Retrieval Strategy
+- **Mandatory Knowledge Base Search**: Always searches the knowledge base using `search_medical_data` before answering medical questions
+- **Comprehensive Tool Usage**: Systematically uses `list_reports`, `get_report_summary`, and `get_report_content` tools
+- **Multi-Report Analysis**: Cross-references information across multiple reports for comprehensive insights
+- **Progressive Search Strategy**: Tries different search terms and broader queries before asking for clarification
+
+#### 3. Response Quality Guidelines
+- **Structured Responses**: Uses clear headings, bullet points, and highlighted key findings
+- **Specific Source Attribution**: Includes exact citations with report ID, filename, and dates
+- **Concise and Actionable**: Provides specific, focused responses without unnecessary information
+- **Visual Organization**: Structures information for optimal readability and comprehension
+
+#### 4. Clarification & Limitations Protocol
+- **Specific Questions**: Asks targeted clarifying questions rather than generic requests
+- **Explicit Limitations**: Acknowledges when medical data is ambiguous or incomplete
+- **Data vs. Clinical Distinction**: Clearly separates what data shows from clinical interpretations
+- **Missing Information Identification**: Specifically states what information is needed to provide complete answers
+
+#### 5. Privacy & Security Enforcement
+- **User Data Isolation**: Maintains strict boundaries between different users' data
+- **Session-Based Access**: Only accesses data for the authenticated user from session context
+- **No Persistent Storage**: Never stores or remembers sensitive medical information beyond current session
+- **Access Control Respect**: Honors data boundaries enforced by the medical toolkit
+
+#### 6. Medical Advice and Consultation Guidelines
+- **Healthcare Consultant Role**: Explicitly authorized to provide medical advice and healthcare suggestions based on examined medical data
+- **Evidence-Based Recommendations**: All medical advice must be grounded in actual medical data from patient reports
+- **Data Citation Requirements**: Clear referencing of source data when providing medical advice
+- **Safety Boundaries**: Refers patients to healthcare providers for complex conditions or potentially serious issues
+- **Harm Prevention**: Does not provide advice that could be harmful; refers to professional consultation when uncertain
+- **Preventive Care Focus**: Emphasizes preventive care, lifestyle recommendations, and data interpretation for health improvement
+
+### Agent Behavior Improvements
+
+**Enhanced User Experience**:
+- More consistent and predictable responses
+- Better source attribution and citation quality
+- Improved readability with structured formatting
+- Authorized medical advice and healthcare suggestions based on actual medical data
+
+**Improved Information Retrieval**:
+- Systematic approach to searching and cross-referencing medical data
+- Progressive search strategies that exhaust available information before asking for clarification
+- Better utilization of all available medical toolkit tools
+
+**Stronger Privacy and Security**:
+- Automatic user context extraction and validation
+- Consistent enforcement of user data boundaries
+- Clear session-based access controls
+
+**Better Error Handling and Clarification**:
+- Specific, targeted clarification questions
+- Explicit acknowledgment of data limitations
+- Clear communication about missing or incomplete information
+
+This enhanced instruction set transforms the healthcare agent from a basic query-response system into a sophisticated healthcare consultant that provides consistent, high-quality medical advice based on examined medical data, while maintaining appropriate safety boundaries and professional standards.
 
 ## Data Models
 

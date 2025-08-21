@@ -156,7 +156,7 @@ The Healthcare Agent MVP is a personal health data management system that enable
 
 ### 9. AI Agent Integration
 
-**User Story**: As a healthcare consultant, I want to interact with an AI agent that can answer questions about the patient's medical history, so that I can provide informed insights based on comprehensive data analysis.
+**User Story**: As a patient, I want to interact with an AI healthcare consultant that can provide medical advice and healthcare suggestions based on my medical history and data, so that I can receive informed guidance for managing my health.
 
 **Acceptance Criteria**:
 1. The system SHALL implement Agno agent with OpenAI chat model (gpt-5-mini by default)
@@ -169,10 +169,17 @@ The Healthcare Agent MVP is a personal health data management system that enable
 8. The system SHALL implement GET /api/agent/history/{user_external_id} endpoint for retrieving conversation history
 9. The system SHALL implement DELETE /api/agent/history/{user_external_id} endpoint for clearing conversation history
 10. The system SHALL implement GET /api/agent/config endpoint for retrieving agent configuration and statistics
-11. The system SHALL provide comprehensive agent instructions focusing on medical data analysis, privacy, and source attribution
-12. The system SHALL enable agentic memory and user memories for enhanced conversation context
-13. The system SHALL show tool calls for transparency in agent operations
-14. The system SHALL handle agent errors and provide meaningful responses to users with proper error classification
-15. The system SHALL include input validation and whitespace stripping for all agent endpoints
-16. The system SHALL include unit tests for agent initialization, tool integration, conversation handling, and all API endpoints
-17. The system SHALL ensure all agent-related tests pass before deployment
+11. The system SHALL configure the agent as a healthcare consultant authorized to provide medical advice and healthcare suggestions based on examined medical data, with appropriate safety boundaries
+12. The system SHALL prioritize agent.user_id as the user_external_id for medical toolkit function calls, and if not available, prompt the user to provide their User ID (available in Agno web console 'User Name' field) and remember it for the session
+13. The system SHALL enforce mandatory knowledge base searches using search_medical_data tool before answering questions about medical data
+14. The system SHALL provide specific, concise, and actionable responses with clear source attribution including report ID, filename, and dates
+15. The system SHALL ask specific clarifying questions when information is insufficient rather than generic requests for clarification
+16. The system SHALL base all medical advice and recommendations on actual medical data from patient reports, with evidence-based reasoning and specific data citations
+17. The system SHALL refer patients to healthcare providers for in-person evaluation when data suggests potentially serious issues or when uncertain about safety of advice
+18. The system SHALL structure responses with clear headings, bullet points, and highlighted key findings for optimal readability
+19. The system SHALL enable agentic memory and user memories for enhanced conversation context
+20. The system SHALL show tool calls for transparency in agent operations
+21. The system SHALL handle agent errors and provide meaningful responses to users with proper error classification
+22. The system SHALL include input validation and whitespace stripping for all agent endpoints
+23. The system SHALL include unit tests for agent initialization, tool integration, conversation handling, and all API endpoints
+24. The system SHALL ensure all agent-related tests pass before deployment
