@@ -118,7 +118,7 @@ startxref
         # Step 1: Upload PDF
         with open(self.sample_pdf_path, "rb") as pdf_file:
             upload_response = self.client.post(
-                "/api/ingest",
+                "/api/upload",
                 data={"user_external_id": user_external_id},
                 files={"file": ("sample_report.pdf", pdf_file, "application/pdf")},
             )
@@ -231,7 +231,7 @@ startxref
 
         # Test 1: Invalid file upload
         invalid_response = self.client.post(
-            "/api/ingest",
+            "/api/upload",
             data={"user_external_id": "test_user"},
             files={"file": ("invalid.txt", b"not a pdf", "text/plain")},
         )
@@ -240,7 +240,7 @@ startxref
         # Test 2: Missing user ID
         with open(self.sample_pdf_path, "rb") as pdf_file:
             missing_user_response = self.client.post(
-                "/api/ingest",
+                "/api/upload",
                 data={},  # Missing user_external_id
                 files={"file": ("sample.pdf", pdf_file, "application/pdf")},
             )
@@ -314,7 +314,7 @@ startxref
 
                 with open(pdf_path, "rb") as pdf_file:
                     upload_response = self.client.post(
-                        "/api/ingest",
+                        "/api/upload",
                         data={"user_external_id": user_external_id},
                         files={
                             "file": (f"report_{i}.pdf", pdf_file, "application/pdf")
@@ -389,7 +389,7 @@ startxref
             # Upload document for user1
             with open(self.sample_pdf_path, "rb") as pdf_file:
                 user1_upload = self.client.post(
-                    "/api/ingest",
+                    "/api/upload",
                     data={"user_external_id": "user1"},
                     files={"file": ("user1_report.pdf", pdf_file, "application/pdf")},
                 )
@@ -404,7 +404,7 @@ startxref
 
             with open(self.sample_pdf_path, "rb") as pdf_file:
                 user2_upload = self.client.post(
-                    "/api/ingest",
+                    "/api/upload",
                     data={"user_external_id": "user2"},
                     files={"file": ("user2_report.pdf", pdf_file, "application/pdf")},
                 )

@@ -128,7 +128,7 @@ class TestUploadConversionEmbeddingIntegration:
         data = {"user_external_id": "test_user_123"}
 
         # Make the request
-        response = test_client.post("/api/ingest", files=files, data=data)
+        response = test_client.post("/api/upload", files=files, data=data)
 
         # Verify response
         assert response.status_code == 200
@@ -200,7 +200,7 @@ class TestUploadConversionEmbeddingIntegration:
         data = {"user_external_id": "test_user_456"}
 
         # Make the request
-        response = test_client.post("/api/ingest", files=files, data=data)
+        response = test_client.post("/api/upload", files=files, data=data)
 
         # Verify response
         assert response.status_code == 200
@@ -248,7 +248,7 @@ class TestUploadConversionEmbeddingIntegration:
         data = {"user_external_id": "test_user_789"}
 
         # Make the request
-        response = test_client.post("/api/ingest", files=files, data=data)
+        response = test_client.post("/api/upload", files=files, data=data)
 
         # Verify response - should still succeed with conversion but fail embeddings
         assert response.status_code == 200
@@ -302,7 +302,7 @@ class TestUploadConversionEmbeddingIntegration:
         data = {"user_external_id": "test_user_duplicate"}
 
         # Upload first time
-        response1 = test_client.post("/api/ingest", files=files, data=data)
+        response1 = test_client.post("/api/upload", files=files, data=data)
         assert response1.status_code == 200
         response1_data = response1.json()
         assert response1_data["duplicate"] is False
@@ -313,7 +313,7 @@ class TestUploadConversionEmbeddingIntegration:
         mock_openai_services["collection"].reset_mock()
 
         # Upload same file again
-        response2 = test_client.post("/api/ingest", files=files, data=data)
+        response2 = test_client.post("/api/upload", files=files, data=data)
         assert response2.status_code == 200
         response2_data = response2.json()
 
@@ -355,7 +355,7 @@ class TestUploadConversionEmbeddingIntegration:
         data = {"user_external_id": "metadata_test_user"}
 
         # Make the request
-        response = test_client.post("/api/ingest", files=files, data=data)
+        response = test_client.post("/api/upload", files=files, data=data)
         assert response.status_code == 200
 
         # Verify Chroma add was called with correct metadata structure

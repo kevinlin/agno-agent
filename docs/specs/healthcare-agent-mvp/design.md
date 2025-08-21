@@ -78,7 +78,7 @@ sequenceDiagram
     participant VDB as Chroma VectorDB
     
     Note over U,VDB: Medical Report PDF Upload & Processing
-    U->>API: POST /ingest (user_external_id, pdf_file)
+    U->>API: POST /upload (user_external_id, pdf_file)
     API->>FS: Save PDF to data/uploads/
     API->>OA: Upload PDF to Files API
     OA-->>API: file_id
@@ -255,8 +255,8 @@ class PDFUploadService:
     async def upload_pdf(self, user_external_id: str, file: UploadFile) -> dict
 
 # FastAPI Endpoints
-@router.post("/ingest")
-async def ingest_pdf(
+@router.post("/upload")
+async def upload_pdf(
     user_external_id: str = Form(...),
     file: UploadFile = File(...)
 ) -> JSONResponse
@@ -1006,7 +1006,7 @@ tests/
    class TestIntegrationFullWorkflow:
        async def test_complete_pdf_ingestion_flow(self, test_client, sample_pdf):
            # Test complete flow from upload to search
-           response = await test_client.post("/ingest", 
+           response = await test_client.post("/upload", 
                data={"user_external_id": "test_user"},
                files={"file": sample_pdf}
            )

@@ -76,7 +76,7 @@ class MedicalToolkit(Toolkit):
 
             return (
                 f"To ingest PDF '{pdf_file.name}', please use the upload endpoint:\n"
-                f"POST /api/ingest with user_external_id='{user_external_id}' and the PDF file.\n"
+                f"POST /api/upload with user_external_id='{user_external_id}' and the PDF file.\n"
                 f"The PDF will be converted to Markdown, images extracted, and embeddings generated automatically."
             )
 

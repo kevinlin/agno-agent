@@ -86,7 +86,7 @@ class TestAgentIntegration:
             mock_agent = Mock()
             mock_agent.process_query.return_value = (
                 "To ingest your PDF, please use the upload endpoint: "
-                "POST /api/ingest with user_external_id='patient123' and the PDF file. "
+                "POST /api/upload with user_external_id='patient123' and the PDF file. "
                 "The PDF will be converted to Markdown, images extracted, and embeddings generated."
             )
             mock_agent_service.return_value = mock_agent

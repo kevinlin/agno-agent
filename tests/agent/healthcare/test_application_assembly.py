@@ -40,7 +40,7 @@ class TestApplicationAssembly:
             "/",  # Root endpoint
             "/health",  # Health check
             "/config",  # Configuration endpoint
-            "/api/ingest",  # Upload routes
+            "/api/upload",  # Upload routes
             "/reports",  # Report and search routes
             "/api/reports",  # Additional report routes
             "/api/agent",  # Agent routes
@@ -122,7 +122,7 @@ class TestApplicationAssembly:
         api_routes = [path for path in route_paths if path.startswith("/api")]
 
         # Should have routes for each API module
-        assert any("/api/ingest" in path for path in api_routes)
+        assert any("/api/upload" in path for path in api_routes)
         assert any("/api/reports" in path for path in api_routes)
         assert any("/api/agent" in path for path in api_routes)
 

@@ -183,7 +183,7 @@ startxref
         # Test PDF upload
         with open(self.sample_pdf_path, "rb") as pdf_file:
             response = self.client.post(
-                "/api/ingest",
+                "/api/upload",
                 data={"user_external_id": self.test_user_id},
                 files={"file": ("test_report.pdf", pdf_file, "application/pdf")},
             )
@@ -202,7 +202,7 @@ startxref
 
         # Test invalid file upload
         invalid_response = self.client.post(
-            "/api/ingest",
+            "/api/upload",
             data={"user_external_id": self.test_user_id},
             files={"file": ("invalid.txt", b"not a pdf", "text/plain")},
         )
@@ -210,7 +210,7 @@ startxref
 
         # Test missing parameters
         missing_user_response = self.client.post(
-            "/api/ingest",
+            "/api/upload",
             data={},
             files={"file": ("test.pdf", b"fake pdf", "application/pdf")},
         )
@@ -403,7 +403,7 @@ startxref
         # Test endpoints with various invalid inputs
         test_cases = [
             # Upload endpoints
-            {"method": "POST", "url": "/api/ingest", "data": {}, "files": {}},
+            {"method": "POST", "url": "/api/upload", "data": {}, "files": {}},
             # Reports endpoints
             {"method": "GET", "url": "/reports//search", "params": {"q": "test"}},
             {"method": "GET", "url": "/reports/999/markdown", "params": {}},
@@ -454,7 +454,7 @@ startxref
 
         # Test preflight request
         response = self.client.options(
-            "/api/ingest",
+            "/api/upload",
             headers={
                 "Origin": "http://localhost:3000",
                 "Access-Control-Request-Method": "POST",
@@ -484,7 +484,7 @@ startxref
         # Test multipart form data for file uploads
         with open(self.sample_pdf_path, "rb") as pdf_file:
             response = self.client.post(
-                "/api/ingest",
+                "/api/upload",
                 data={"user_external_id": self.test_user_id},
                 files={"file": ("test.pdf", pdf_file, "application/pdf")},
             )

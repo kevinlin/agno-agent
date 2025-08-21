@@ -104,7 +104,7 @@ class TestUploadConversionIntegration:
                 mock_conversion_class.return_value = mock_conversion_service
 
                 # Import and test the upload route function
-                from agent.healthcare.upload.routes import ingest_pdf
+                from agent.healthcare.upload.routes import upload_pdf
                 from agent.healthcare.upload.upload_service import PDFUploadService
 
                 # Create services
@@ -122,7 +122,7 @@ class TestUploadConversionIntegration:
                     mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
 
                     # Call the ingest endpoint
-                    result = await ingest_pdf(
+                    result = await upload_pdf(
                         user_external_id="test_user",
                         file=mock_file,
                         upload_service=upload_service,
@@ -188,7 +188,7 @@ class TestUploadConversionIntegration:
                 mock_conversion_class.return_value = mock_conversion_service
 
                 # Import and test the upload route function
-                from agent.healthcare.upload.routes import ingest_pdf
+                from agent.healthcare.upload.routes import upload_pdf
                 from agent.healthcare.upload.upload_service import PDFUploadService
 
                 # Create services
@@ -206,7 +206,7 @@ class TestUploadConversionIntegration:
                     mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
 
                     # Call the ingest endpoint
-                    result = await ingest_pdf(
+                    result = await upload_pdf(
                         user_external_id="test_user",
                         file=mock_file,
                         upload_service=upload_service,
@@ -254,7 +254,7 @@ class TestUploadConversionIntegration:
             db_service.create_tables()
 
             # Import services
-            from agent.healthcare.upload.routes import ingest_pdf
+            from agent.healthcare.upload.routes import upload_pdf
             from agent.healthcare.upload.upload_service import PDFUploadService
 
             # Create services
@@ -274,7 +274,7 @@ class TestUploadConversionIntegration:
                 mock_file2 = MockUploadFile("test_report.pdf", sample_pdf_content)
 
                 # First upload
-                result1 = await ingest_pdf(
+                result1 = await upload_pdf(
                     user_external_id="test_user",
                     file=mock_file1,
                     upload_service=upload_service,
@@ -285,7 +285,7 @@ class TestUploadConversionIntegration:
                 )
 
                 # Second upload (duplicate)
-                result2 = await ingest_pdf(
+                result2 = await upload_pdf(
                     user_external_id="test_user",
                     file=mock_file2,
                     upload_service=upload_service,
@@ -354,7 +354,7 @@ class TestUploadConversionIntegration:
                 mock_conversion_class.return_value = mock_conversion_service
 
                 # Import and test the upload route function
-                from agent.healthcare.upload.routes import ingest_pdf
+                from agent.healthcare.upload.routes import upload_pdf
                 from agent.healthcare.upload.upload_service import PDFUploadService
 
                 # Create services
@@ -372,7 +372,7 @@ class TestUploadConversionIntegration:
                     mock_file = MockUploadFile("test_report.pdf", sample_pdf_content)
 
                     # Call the ingest endpoint
-                    result = await ingest_pdf(
+                    result = await upload_pdf(
                         user_external_id="test_user",
                         file=mock_file,
                         upload_service=upload_service,

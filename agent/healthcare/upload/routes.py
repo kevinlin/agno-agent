@@ -54,8 +54,8 @@ def get_embedding_service(
     return EmbeddingService(config)
 
 
-@router.post("/ingest")
-async def ingest_pdf(
+@router.post("/upload")
+async def upload_pdf(
     user_external_id: Annotated[str, Form(description="External user identifier")],
     file: Annotated[UploadFile, File(description="PDF file to upload")],
     upload_service: Annotated[PDFUploadService, Depends(get_upload_service)],
@@ -67,7 +67,7 @@ async def ingest_pdf(
     config: Annotated[Config, Depends(get_config)],
 ) -> JSONResponse:
     """
-    Ingest a PDF medical report.
+    Upload a PDF medical report.
 
     This endpoint accepts a PDF file upload and processes it for storage.
     It validates the file, computes a hash for deduplication, and stores
@@ -253,9 +253,9 @@ async def ingest_pdf(
         raise
 
     except Exception as e:
-        logger.error(f"Unexpected error in PDF ingest endpoint: {e}", exc_info=True)
+        logger.error(f"Unexpected error in PDF upload endpoint: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="An unexpected error occurred during PDF ingestion"
+            status_code=500, detail="An unexpected error occurred during PDF upload"
         )
 
 

@@ -49,7 +49,7 @@ class TestMedicalToolkit:
             result = self.toolkit.ingest_pdf("user123", str(test_pdf))
 
             # Should return helpful message about using upload endpoint
-            assert "POST /api/ingest" in result
+            assert "POST /api/upload" in result
             assert "user123" in result
             assert "test_report.pdf" in result
 

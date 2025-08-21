@@ -33,7 +33,7 @@ The Healthcare Agent MVP is a personal health data management system that enable
 **User Story**: As a patient, I want to upload my medical report PDFs to the system, so that I can digitize and organize my health records for easy access and analysis.
 
 **Acceptance Criteria**:
-1. The system SHALL implement POST /ingest endpoint for PDF upload with multipart form data
+1. The system SHALL implement POST /upload endpoint for PDF upload with multipart form data
 2. The system SHALL accept PDF files through the REST API endpoint
 3. The system SHALL validate that uploaded files are valid PDF format
 4. The system SHALL compute SHA-256 hash of each uploaded PDF for deduplication

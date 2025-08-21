@@ -91,9 +91,9 @@ Once the server is running, you can access:
 - `GET /config` - Application configuration (non-sensitive)
 
 #### PDF Upload & Processing
-- `POST /ingest` - Upload PDF file for processing
+- `POST /upload` - Upload PDF file for processing
   ```bash
-  curl -X POST "http://localhost:8000/ingest" \
+  curl -X POST "http://localhost:8000/upload" \
     -F "user_external_id=john_doe" \
     -F "file=@path/to/medical_report.pdf"
   ```

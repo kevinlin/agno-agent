@@ -89,7 +89,7 @@ sequenceDiagram
     participant OA as OpenAI API
     participant AG as Agno Agent
     participant DB as SQLite (Medical)
-    U->>API: POST /ingest (user_id, pdf)
+    U->>API: POST /upload (user_id, pdf)
     API->>FS: Save PDF (data/uploads/...)
     API->>OA: files.create(pdf)
     OA-->>API: file_id
@@ -143,7 +143,7 @@ CREATE TABLE report_fields (
 
 ## 6) API Design (FastAPI)
 
-- `POST /ingest` — multipart form (`user_external_id`, `file`) → returns `report_id`
+- `POST /upload` — multipart form (`user_external_id`, `file`) → returns `report_id`
 - `GET /reports/{user_external_id}` — list reports
 - `GET /reports/{report_id}/markdown` — get Markdown
 - `GET /reports/{user_external_id}/search?q=...&k=5` — semantic search
@@ -151,7 +151,7 @@ CREATE TABLE report_fields (
 
 **Request/Response Examples**
 
-`POST /ingest`
+`POST /upload`
 
 ```http
 200 OK

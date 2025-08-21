@@ -68,7 +68,7 @@ class TestUploadIntegration:
         files = {"file": ("test.pdf", sample_pdf_content, "application/pdf")}
         data = {"user_external_id": "test_user_123"}
 
-        response = client.post("/api/ingest", files=files, data=data)
+        response = client.post("/api/upload", files=files, data=data)
 
         assert response.status_code == 200
         result = response.json()
@@ -84,7 +84,7 @@ class TestUploadIntegration:
         files = {"file": ("test.txt", b"not a pdf", "text/plain")}
         data = {"user_external_id": "test_user_123"}
 
-        response = client.post("/api/ingest", files=files, data=data)
+        response = client.post("/api/upload", files=files, data=data)
 
         assert response.status_code == 400
         assert "Only PDF files are allowed" in response.json()["detail"]
@@ -94,7 +94,7 @@ class TestUploadIntegration:
         files = {"file": ("test.pdf", b"not a valid pdf", "application/pdf")}
         data = {"user_external_id": "test_user_123"}
 
-        response = client.post("/api/ingest", files=files, data=data)
+        response = client.post("/api/upload", files=files, data=data)
 
         assert response.status_code == 400
         assert "Invalid PDF file format" in response.json()["detail"]
@@ -106,7 +106,7 @@ class TestUploadIntegration:
         files = {"file": ("large.pdf", large_content, "application/pdf")}
         data = {"user_external_id": "test_user_123"}
 
-        response = client.post("/api/ingest", files=files, data=data)
+        response = client.post("/api/upload", files=files, data=data)
 
         assert response.status_code == 413
         assert "File too large" in response.json()["detail"]
@@ -116,7 +116,7 @@ class TestUploadIntegration:
         files = {"file": ("test.pdf", sample_pdf_content, "application/pdf")}
         # Missing user_external_id
 
-        response = client.post("/api/ingest", files=files)
+        response = client.post("/api/upload", files=files)
 
         assert response.status_code == 422
         # FastAPI validation error for missing required field
@@ -126,7 +126,7 @@ class TestUploadIntegration:
         data = {"user_external_id": "test_user_123"}
         # Missing file
 
-        response = client.post("/api/ingest", data=data)
+        response = client.post("/api/upload", data=data)
 
         assert response.status_code == 422
         # FastAPI validation error for missing required field
@@ -137,12 +137,12 @@ class TestUploadIntegration:
         data = {"user_external_id": "test_user_123"}
 
         # First upload
-        response1 = client.post("/api/ingest", files=files, data=data)
+        response1 = client.post("/api/upload", files=files, data=data)
         assert response1.status_code == 200
         first_result = response1.json()
 
         # Second upload (duplicate)
-        response2 = client.post("/api/ingest", files=files, data=data)
+        response2 = client.post("/api/upload", files=files, data=data)
         assert response2.status_code == 200
         second_result = response2.json()
 
@@ -170,13 +170,13 @@ class TestUploadIntegration:
 
         # Upload for first user
         data1 = {"user_external_id": "user_1"}
-        response1 = client.post("/api/ingest", files=files, data=data1)
+        response1 = client.post("/api/upload", files=files, data=data1)
         assert response1.status_code == 200
         result1 = response1.json()
 
         # Upload same file for second user
         data2 = {"user_external_id": "user_2"}
-        response2 = client.post("/api/ingest", files=files, data=data2)
+        response2 = client.post("/api/upload", files=files, data=data2)
         assert response2.status_code == 200
         result2 = response2.json()
 
@@ -191,12 +191,12 @@ class TestUploadIntegration:
         files = {"file": ("test.PDF", sample_pdf_content, "application/pdf")}
         data = {"user_external_id": "test_user_123"}
 
-        response = client.post("/api/ingest", files=files, data=data)
+        response = client.post("/api/upload", files=files, data=data)
         assert response.status_code == 200
 
         # Test .pdf (lowercase)
         files = {"file": ("test2.pdf", sample_pdf_content, "application/pdf")}
-        response = client.post("/api/ingest", files=files, data=data)
+        response = client.post("/api/upload", files=files, data=data)
         assert response.status_code == 200
 
     def test_upload_workflow_end_to_end(self, client, sample_pdf_content):
@@ -213,7 +213,7 @@ class TestUploadIntegration:
         files = {"file": (filename, sample_pdf_content, "application/pdf")}
         data = {"user_external_id": user_id}
 
-        upload_response = client.post("/api/ingest", files=files, data=data)
+        upload_response = client.post("/api/upload", files=files, data=data)
         assert upload_response.status_code == 200
 
         upload_result = upload_response.json()
@@ -234,7 +234,7 @@ class TestUploadIntegration:
         assert updated_stats["total_size"] > initial_stats["total_size"]
 
         # 5. Verify duplicate detection works
-        duplicate_response = client.post("/api/ingest", files=files, data=data)
+        duplicate_response = client.post("/api/upload", files=files, data=data)
         assert duplicate_response.status_code == 200
 
         duplicate_result = duplicate_response.json()

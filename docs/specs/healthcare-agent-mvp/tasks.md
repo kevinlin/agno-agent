@@ -51,7 +51,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Testable Outcome**: Can validate PDFs, compute consistent hashes, detect duplicates, store files to disk
 
 - [x] 2.2 Create PDF upload REST endpoint
-  - Create `agent/healthcare/upload/routes.py` with POST /ingest endpoint
+  - Create `agent/healthcare/upload/routes.py` with POST /upload endpoint
   - Implement multipart form data handling and basic user management
   - Add request validation and error response formatting
   - Integrate upload service with database to store report metadata
