@@ -127,16 +127,16 @@ data/
 │           └── images/        # Extracted images
 │               ├── page-001-img-01.png
 │               └── ...
-├── chroma/            # Vector database for semantic search
-├── medical.db         # SQLite database (metadata)
-└── agent_sessions.db  # AI agent conversation history
+├── chroma/              # Vector database for semantic search
+├── medical.db           # SQLite database (metadata)
+└── healthcare_agent.db  # AI agent conversation history
 ```
 
 #### Accessing Generated Files
 
 1. **Database**: SQLite files can be viewed with any SQLite browser
    - `data/medical.db` - Contains users, reports, and assets metadata
-   - `data/agent_sessions.db` - AI agent conversation history
+   - `data/healthcare_agent.db` - AI agent conversation history
 
 2. **Processed Reports**: 
    - Markdown files: `data/reports/{user_id}/{file_hash}/report.md`

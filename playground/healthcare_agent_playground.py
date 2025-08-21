@@ -24,7 +24,7 @@ def create_minimal_config():
         reports_dir=Path("data/reports"),
         chroma_dir=Path("data/chroma"),
         medical_db_path=Path("data/medical.db"),
-        agent_db_path=Path("data/agent_sessions.db"),
+        agent_db_path=Path("data/healthcare_agent.db"),
         chunk_size=1000,
         chunk_overlap=200,
         max_retries=3,

@@ -25,7 +25,7 @@ class TestUploadErrorScenarios:
             reports_dir=Path(self.temp_dir) / "data/reports",
             chroma_dir=Path(self.temp_dir) / "data/chroma",
             medical_db_path=Path(self.temp_dir) / "data/medical.db",
-            agent_db_path=Path(self.temp_dir) / "data/agent_sessions.db",
+            agent_db_path=Path(self.temp_dir) / "data/healthcare_agent.db",
         )
 
         self.mock_db_service = MagicMock(spec=DatabaseService)

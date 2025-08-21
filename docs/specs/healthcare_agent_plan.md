@@ -184,7 +184,7 @@ from agno.embedder.openai import OpenAIEmbedder
 
 agent = Agent(
     model=OpenAIChat(id="gpt-5-mini"),
-    storage=SqliteStorage(table_name="agent_sessions", db_file="data/agent_sessions.db"),
+    storage=SqliteStorage(table_name="agent_sessions", db_file="data/healthcare_agent.db"),
     knowledge=AgentKnowledge(
         vector_db=ChromaDb(collection="medical_reports", path="data/chroma", persistent_client=True),
         embedder=OpenAIEmbedder(),

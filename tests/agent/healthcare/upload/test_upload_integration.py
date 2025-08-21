@@ -21,7 +21,7 @@ def temp_config():
         "REPORTS_DIR": f"{temp_dir}/data/reports",
         "CHROMA_DIR": f"{temp_dir}/data/chroma",
         "MEDICAL_DB_PATH": f"{temp_dir}/data/medical.db",
-        "AGENT_DB_PATH": f"{temp_dir}/data/agent_sessions.db",
+        "AGENT_DB_PATH": f"{temp_dir}/data/healthcare_agent.db",
     }
 
 
