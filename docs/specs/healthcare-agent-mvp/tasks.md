@@ -94,7 +94,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 4. Vector Database and Semantic Search Foundation
 
 - [x] 4.1 Implement vector database integration
-  - Add chromadb dependency and create `healthcare/storage/embeddings.py`
+  - Add chromadb dependency and create `healthcare/search/embeddings.py`
   - Implement EmbeddingService with Chroma client initialization
   - Add chunk_markdown() for paragraph-based segmentation
   - Configure persistent storage with proper collection naming

@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from healthcare.config.config import Config
-from healthcare.storage.embeddings import EmbeddingService
+from healthcare.search.embeddings import EmbeddingService
 
 
 @pytest.fixture
@@ -389,7 +389,7 @@ class TestEmbeddingService:
         mock_collection.get.assert_called_once()
         mock_collection.delete.assert_not_called()
 
-    @patch("healthcare.storage.embeddings.retry")
+    @patch("healthcare.search.embeddings.retry")
     def test_generate_embeddings_retry_decorator(
         self, mock_retry, test_config, mock_openai_client, mock_chroma_client
     ):

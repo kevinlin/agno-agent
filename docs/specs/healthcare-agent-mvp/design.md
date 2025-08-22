@@ -349,8 +349,6 @@ class AssetMetadata:
 
 **Responsibilities**:
 - SQLite database operations using SQLModel
-- Vector database management with Chroma
-- Embedding generation and storage
 - Data integrity and relationship management
 
 **Database Models**:
@@ -392,18 +390,6 @@ class DatabaseService:
     def create_medical_report(self, user_id: int, report_data: dict) -> MedicalReport
     
     def create_report_assets(self, report_id: int, assets: List[AssetMetadata]) -> None
-
-class EmbeddingService:
-    def __init__(self, config: Config, chroma_client: chromadb.Client)
-    
-    def chunk_markdown(self, markdown: str) -> List[str]
-    
-    def generate_embeddings(self, chunks: List[str]) -> List[List[float]]
-    
-    def store_chunks(self, chunks: List[str], embeddings: List[List[float]], metadata: dict) -> None
-    
-    @retry(max_attempts=3)
-    def process_report_embeddings(self, markdown_content: str, report_metadata: dict) -> None
 ```
 
 ### 6. Search and Retrieval Component
@@ -412,6 +398,8 @@ class EmbeddingService:
 
 **Responsibilities**:
 - Semantic search using Chroma vector database
+- Vector database management with Chroma
+- Embedding generation and storage
 - User-scoped data retrieval
 - Search result ranking and metadata enrichment
 - Query validation and input sanitization with automatic whitespace stripping
@@ -426,6 +414,20 @@ class SearchResult:
     chunk_index: int
     filename: str
     created_at: datetime
+
+class EmbeddingService:
+    def __init__(self, config: Config, chroma_client: chromadb.Client)
+    
+    def chunk_markdown(self, markdown: str) -> List[str]
+    
+    def generate_embeddings(self, chunks: List[str]) -> List[List[float]]
+    
+    def store_chunks(self, chunks: List[str], embeddings: List[List[float]], metadata: dict) -> None
+    
+    @retry(max_attempts=3)
+    def process_report_embeddings(self, markdown_content: str, report_metadata: dict) -> None
+    
+    def search_similar(self, query: str, user_filter: Optional[str] = None, k: int = 5) -> List[Dict[str, Any]]
 
 class SearchService:
     def __init__(self, config: Config, chroma_client: chromadb.Client, db_session: Session)

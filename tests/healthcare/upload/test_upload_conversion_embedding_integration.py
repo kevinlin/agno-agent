@@ -49,7 +49,7 @@ def mock_openai_services():
         patch(
             "healthcare.conversion.conversion_service.OpenAI"
         ) as mock_openai_conversion,
-        patch("healthcare.storage.embeddings.OpenAI") as mock_openai_embedding,
+        patch("healthcare.search.embeddings.OpenAI") as mock_openai_embedding,
         patch("chromadb.PersistentClient") as mock_chroma,
     ):
 
@@ -411,7 +411,7 @@ class TestFullPipelineIntegration:
                 PDFConversionService,
             )
             from healthcare.storage.database import DatabaseService
-            from healthcare.storage.embeddings import EmbeddingService
+            from healthcare.search.embeddings import EmbeddingService
             from healthcare.upload.upload_service import PDFUploadService
 
             db_service = DatabaseService(config)

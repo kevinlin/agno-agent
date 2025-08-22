@@ -21,7 +21,7 @@ from healthcare.config.logging_config import (
 from healthcare.reports.service import ReportService
 from healthcare.search.search_service import SearchService
 from healthcare.storage.database import DatabaseService
-from healthcare.storage.embeddings import EmbeddingService
+from healthcare.search.embeddings import EmbeddingService
 
 # Global variables for application state
 config: Config = None

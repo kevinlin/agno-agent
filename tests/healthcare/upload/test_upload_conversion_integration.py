@@ -112,7 +112,7 @@ class TestUploadConversionIntegration:
 
                 # Mock embedding service
                 with patch(
-                    "healthcare.storage.embeddings.EmbeddingService"
+                    "healthcare.search.embeddings.EmbeddingService"
                 ) as mock_embedding_class:
                     mock_embedding_service = Mock()
                     mock_embedding_service.process_report_embeddings = Mock()
@@ -196,7 +196,7 @@ class TestUploadConversionIntegration:
 
                 # Mock embedding service
                 with patch(
-                    "healthcare.storage.embeddings.EmbeddingService"
+                    "healthcare.search.embeddings.EmbeddingService"
                 ) as mock_embedding_class:
                     mock_embedding_service = Mock()
                     mock_embedding_service.process_report_embeddings = Mock()
@@ -263,7 +263,7 @@ class TestUploadConversionIntegration:
 
             # Mock embedding service
             with patch(
-                "healthcare.storage.embeddings.EmbeddingService"
+                "healthcare.search.embeddings.EmbeddingService"
             ) as mock_embedding_class:
                 mock_embedding_service = Mock()
                 mock_embedding_service.process_report_embeddings = Mock()
@@ -362,7 +362,7 @@ class TestUploadConversionIntegration:
 
                 # Mock embedding service
                 with patch(
-                    "healthcare.storage.embeddings.EmbeddingService"
+                    "healthcare.search.embeddings.EmbeddingService"
                 ) as mock_embedding_class:
                     mock_embedding_service = Mock()
                     mock_embedding_service.process_report_embeddings = Mock()

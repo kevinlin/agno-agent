@@ -79,7 +79,7 @@ def get_search_service(
 ) -> SearchService:
     """Dependency to get search service."""
     try:
-        from healthcare.storage.embeddings import EmbeddingService
+        from healthcare.search.embeddings import EmbeddingService
 
         embedding_service = EmbeddingService(config)
         return SearchService(config, db_service, embedding_service)

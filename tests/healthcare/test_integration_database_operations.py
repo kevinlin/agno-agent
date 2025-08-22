@@ -12,7 +12,7 @@ from healthcare.config.config import Config
 from healthcare.reports.service import ReportService
 from healthcare.search.search_service import SearchService
 from healthcare.storage.database import DatabaseService
-from healthcare.storage.embeddings import EmbeddingService
+from healthcare.search.embeddings import EmbeddingService
 from healthcare.storage.models import MedicalReport, ReportAsset, User
 
 
