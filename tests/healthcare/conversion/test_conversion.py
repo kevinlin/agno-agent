@@ -65,9 +65,7 @@ class TestPDFConversionService:
 
     def test_init_with_default_client(self, config):
         """Test initialization with default OpenAI client."""
-        with patch(
-            "healthcare.conversion.conversion_service.OpenAI"
-        ) as mock_openai:
+        with patch("healthcare.conversion.conversion_service.OpenAI") as mock_openai:
             service = PDFConversionService(config)
             mock_openai.assert_called_once_with(api_key="test-key")
             assert service.config == config

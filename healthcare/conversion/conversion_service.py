@@ -167,14 +167,18 @@ Return both as a JSON object with keys: {"markdown": str, "manifest": {"figures"
             # Parse the JSON response from output_text
             if not response.output_text:
                 raise ValueError("OpenAI response output_text is empty or None")
-            
+
             try:
                 result_data = json.loads(response.output_text)
                 logger.info(f"Successfully parsed JSON result")
             except json.JSONDecodeError as json_err:
                 logger.error(f"JSON decode error: {json_err}")
-                logger.error(f"Raw output_text content: '{response.output_text[:500]}...' (first 500 chars)")
-                raise ValueError(f"Invalid JSON response from OpenAI: {json_err}") from json_err
+                logger.error(
+                    f"Raw output_text content: '{response.output_text[:500]}...' (first 500 chars)"
+                )
+                raise ValueError(
+                    f"Invalid JSON response from OpenAI: {json_err}"
+                ) from json_err
             conversion_result = ConversionResult(**result_data)
 
             total_conversion_time = time.time() - conversion_start_time

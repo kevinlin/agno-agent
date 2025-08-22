@@ -270,9 +270,7 @@ startxref
         """Test workflow with multiple documents for the same user."""
 
         with (
-            patch(
-                "healthcare.conversion.conversion_service.OpenAI"
-            ) as mock_openai,
+            patch("healthcare.conversion.conversion_service.OpenAI") as mock_openai,
             patch(
                 "healthcare.images.image_service.extract_images_from_pdf"
             ) as mock_extract,
@@ -363,9 +361,7 @@ startxref
         """Test that data is properly isolated between different users."""
 
         with (
-            patch(
-                "healthcare.conversion.conversion_service.OpenAI"
-            ) as mock_openai,
+            patch("healthcare.conversion.conversion_service.OpenAI") as mock_openai,
             patch(
                 "healthcare.images.image_service.extract_images_from_pdf"
             ) as mock_extract,

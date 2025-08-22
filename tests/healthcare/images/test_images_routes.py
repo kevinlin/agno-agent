@@ -54,9 +54,7 @@ class TestAssetRoutes:
         self.mock_db_service.get_report_assets.return_value = mock_assets
 
         # Mock access validation
-        with patch(
-            "healthcare.images.routes._validate_user_access"
-        ) as mock_validate:
+        with patch("healthcare.images.routes._validate_user_access") as mock_validate:
             mock_validate.return_value = True
 
             response = await list_report_assets(
@@ -84,9 +82,7 @@ class TestAssetRoutes:
     async def test_list_report_assets_access_denied(self):
         """Test asset listing with access denied."""
         # Mock access validation failure
-        with patch(
-            "healthcare.images.routes._validate_user_access"
-        ) as mock_validate:
+        with patch("healthcare.images.routes._validate_user_access") as mock_validate:
             mock_validate.return_value = False
 
             with pytest.raises(HTTPException) as exc_info:
@@ -106,9 +102,7 @@ class TestAssetRoutes:
         self.mock_db_service.get_report_assets.return_value = []
 
         # Mock access validation
-        with patch(
-            "healthcare.images.routes._validate_user_access"
-        ) as mock_validate:
+        with patch("healthcare.images.routes._validate_user_access") as mock_validate:
             mock_validate.return_value = True
 
             response = await list_report_assets(
@@ -136,9 +130,7 @@ class TestAssetRoutes:
         self.mock_db_service.get_report_assets.side_effect = Exception("Database error")
 
         # Mock access validation
-        with patch(
-            "healthcare.images.routes._validate_user_access"
-        ) as mock_validate:
+        with patch("healthcare.images.routes._validate_user_access") as mock_validate:
             mock_validate.return_value = True
 
             with pytest.raises(HTTPException) as exc_info:
@@ -176,12 +168,8 @@ class TestAssetRoutes:
 
         # Mock access validation and file check
         with (
-            patch(
-                "healthcare.images.routes._validate_user_access"
-            ) as mock_validate,
-            patch(
-                "healthcare.images.routes._check_file_exists"
-            ) as mock_file_check,
+            patch("healthcare.images.routes._validate_user_access") as mock_validate,
+            patch("healthcare.images.routes._check_file_exists") as mock_file_check,
         ):
             mock_validate.return_value = True
             mock_file_check.return_value = True
@@ -219,9 +207,7 @@ class TestAssetRoutes:
         self.mock_db_service.get_session.return_value.__exit__.return_value = None
 
         # Mock access validation
-        with patch(
-            "healthcare.images.routes._validate_user_access"
-        ) as mock_validate:
+        with patch("healthcare.images.routes._validate_user_access") as mock_validate:
             mock_validate.return_value = True
 
             with pytest.raises(HTTPException) as exc_info:
@@ -239,9 +225,7 @@ class TestAssetRoutes:
     async def test_get_asset_details_access_denied(self):
         """Test asset detail retrieval with access denied."""
         # Mock access validation failure
-        with patch(
-            "healthcare.images.routes._validate_user_access"
-        ) as mock_validate:
+        with patch("healthcare.images.routes._validate_user_access") as mock_validate:
             mock_validate.return_value = False
 
             with pytest.raises(HTTPException) as exc_info:
