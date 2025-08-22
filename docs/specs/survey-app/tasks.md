@@ -12,7 +12,7 @@ This document outlines the implementation tasks for the Survey App feature, orga
   - **Testable**: Database tables created successfully, can insert/query records, all model tests pass
   - **Requirements**: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7
 
-- [ ] **2. Survey Service and Data Management**
+- [x] **2. Survey Service and Data Management**
   - Create `healthcare/survey/service.py` with `SurveyService` class following healthcare patterns
   - Implement survey CRUD operations (create, get by code, list surveys)
   - Add survey JSON validation and schema storage with personalization survey compatibility
