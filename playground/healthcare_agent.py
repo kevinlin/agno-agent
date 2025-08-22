@@ -75,4 +75,4 @@ agents = [healthcare_agent]
 app = Playground(agents=agents).get_app()
 
 if __name__ == "__main__":
-    serve_playground_app("healthcare_agent_playground:app", reload=True)
+    serve_playground_app("healthcare_agent:app", reload=True)
