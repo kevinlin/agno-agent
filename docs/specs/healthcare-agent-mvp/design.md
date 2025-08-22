@@ -4,7 +4,7 @@
 
 The Healthcare Agent MVP is a personal health data management system that enables a single user to upload medical report PDFs, automatically convert them to structured Markdown format, store them in a local database, and query the longitudinal health data using natural language through an AI agent interface. The system leverages OpenAI's Responses API with File Inputs for document processing and the Agno framework for intelligent querying capabilities.
 
-For setup and usage instructions, see the [Healthcare Agent README](../../agent/healthcare/README.md).
+For setup and usage instructions, see the [Healthcare Agent README](../../healthcare/README.md).
 
 ### Key Design Principles
 
@@ -185,7 +185,7 @@ async def search_endpoint(
 
 ### 1. Configuration and Deployment Component
 
-**Location**: `agent/healthcare/config/`
+**Location**: `healthcare/config/`
 
 **Responsibilities**:
 - Environment configuration management
@@ -232,7 +232,7 @@ class ConfigManager:
 
 ### 2. PDF Upload Component
 
-**Location**: `agent/healthcare/upload/`
+**Location**: `healthcare/upload/`
 **Main File**: `upload_service.py`
 
 **Responsibilities**:
@@ -266,7 +266,7 @@ async def upload_pdf(
 
 ### 3. PDF Conversion Component
 
-**Location**: `agent/healthcare/conversion/`
+**Location**: `healthcare/conversion/`
 **Main File**: `conversion_service.py`
 
 **Responsibilities**:
@@ -311,7 +311,7 @@ class PDFConversionService:
 
 ### 4. Image Extraction Component
 
-**Location**: `agent/healthcare/images/`
+**Location**: `healthcare/images/`
 
 **Responsibilities**:
 - Local PDF image extraction using pikepdf/pdfimages
@@ -345,7 +345,7 @@ class AssetMetadata:
 
 ### 5. Data Storage Component
 
-**Location**: `agent/healthcare/storage/`
+**Location**: `healthcare/storage/`
 
 **Responsibilities**:
 - SQLite database operations using SQLModel
@@ -408,7 +408,7 @@ class EmbeddingService:
 
 ### 6. Search and Retrieval Component
 
-**Location**: `agent/healthcare/search/`
+**Location**: `healthcare/search/`
 
 **Responsibilities**:
 - Semantic search using Chroma vector database
@@ -451,7 +451,7 @@ async def search_reports(
 
 ### 7. Report Management Component
 
-**Location**: `agent/healthcare/reports/`
+**Location**: `healthcare/reports/`
 
 **Responsibilities**:
 - Report listing and metadata retrieval
@@ -485,7 +485,7 @@ async def list_report_assets(report_id: int, user_external_id: str = Query(...))
 
 ### 8. AI Agent Integration Component
 
-**Location**: `agent/healthcare/agent/`
+**Location**: `healthcare/agent/`
 
 **Responsibilities**:
 - Agno agent configuration and initialization with Memory v2
@@ -500,7 +500,7 @@ async def list_report_assets(report_id: int, user_external_id: str = Query(...))
 
 The system implements a comprehensive health check endpoint that monitors all services stored in `app.state` and provides detailed status information for system administrators.
 
-**Location**: `agent/healthcare/main.py`
+**Location**: `healthcare/main.py`
 **Endpoint**: `GET /health`
 
 **Key Features**:
@@ -1011,7 +1011,7 @@ tests/
 
 2. **Integration Tests**
    ```python
-   # tests/agent/healthcare/test_integration_full_workflow.py
+   # tests/healthcare/test_integration_full_workflow.py
    @pytest.mark.integration
    class TestIntegrationFullWorkflow:
        async def test_complete_pdf_ingestion_flow(self, test_client, sample_pdf):

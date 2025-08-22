@@ -36,7 +36,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["agent*"]
+include = ["agent*", "healthcare*"]
 
 [tool.black]
 line-length = 88
@@ -79,7 +79,7 @@ skip_glob = [
     "tmp/*",
     "*.egg-info/*"
 ]
-known_first_party = ["agent", "playground"]
+known_first_party = ["agent", "healthcare", "playground"]
 known_third_party = ["agno", "fastapi", "openai", "duckduckgo_search", "exa_py", "lancedb", "pandas", "yfinance"]
 line_length = 120
 multi_line_output = 3

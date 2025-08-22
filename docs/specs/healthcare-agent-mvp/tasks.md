@@ -9,23 +9,23 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 1. Foundation and Basic Infrastructure
 
 - [x] 1.1 Create project structure and basic configuration
-  - Create `agent/healthcare/` directory structure: `config/`, `storage/`, `__init__.py` files
-  - Implement `agent/healthcare/config/config.py` with Config dataclass for basic settings
+  - Create `healthcare/` directory structure: `config/`, `storage/`, `__init__.py` files
+  - Implement `healthcare/config/config.py` with Config dataclass for basic settings
   - Add configuration loading with environment variable support
   - Create `pyproject.toml` with core dependencies: fastapi, sqlmodel, pytest
   - **Requirements**: 1.1, 1.2, 1.3, 1.4 (project structure, configuration, dependencies)
   - **Testable Outcome**: Configuration can be loaded successfully, directories are created, basic module imports work
 
 - [x] 1.2 Implement database models and basic storage
-  - Create `agent/healthcare/storage/models.py` with User, MedicalReport, ReportAsset SQLModel classes
-  - Implement `agent/healthcare/storage/database.py` with DatabaseService for table creation
+  - Create `healthcare/storage/models.py` with User, MedicalReport, ReportAsset SQLModel classes
+  - Implement `healthcare/storage/database.py` with DatabaseService for table creation
   - Add database initialization and connection handling
   - Create unit tests for models and database service
   - **Requirements**: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6 (SQLite database, tables, constraints)
   - **Testable Outcome**: Database tables can be created, basic CRUD operations work, tests pass
 
 - [x] 1.3 Create minimal FastAPI application foundation
-  - Create `agent/healthcare/main.py` with basic FastAPI app setup
+  - Create `healthcare/main.py` with basic FastAPI app setup
   - Add health check endpoint and basic error handling
   - Implement startup/shutdown handlers for database initialization
   - Add basic logging configuration
@@ -33,7 +33,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Testable Outcome**: FastAPI server starts successfully, health check responds, database initializes on startup
 
 - [x] 1.4 Create comprehensive README documentation
-  - Create `agent/healthcare/README.md` with setup and usage instructions
+  - Create `healthcare/README.md` with setup and usage instructions
   - Document steps to run the testable FastAPI application
   - Document steps to access running app and generated artifacts
   - Include API endpoint documentation and data structure information
@@ -43,7 +43,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 2. PDF Upload and File Handling Core
 
 - [x] 2.1 Implement basic PDF upload service
-  - Create `agent/healthcare/upload/upload_service.py` with PDFUploadService class
+  - Create `healthcare/upload/upload_service.py` with PDFUploadService class
   - Implement PDF validation, SHA-256 hash computation, and file storage
   - Add duplicate detection using file hash
   - Create unit tests for upload service functionality
@@ -51,7 +51,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Testable Outcome**: Can validate PDFs, compute consistent hashes, detect duplicates, store files to disk
 
 - [x] 2.2 Create PDF upload REST endpoint
-  - Create `agent/healthcare/upload/routes.py` with POST /upload endpoint
+  - Create `healthcare/upload/routes.py` with POST /upload endpoint
   - Implement multipart form data handling and basic user management
   - Add request validation and error response formatting
   - Integrate upload service with database to store report metadata
@@ -69,7 +69,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 
 - [x] 3.1 Implement OpenAI Files API integration
   - Add OpenAI dependency and API client configuration
-  - Create `agent/healthcare/conversion/conversion_service.py` with PDFConversionService
+  - Create `healthcare/conversion/conversion_service.py` with PDFConversionService
   - Implement upload_to_openai() method for Files API integration
   - Add basic retry logic and error handling for API calls
   - **Requirements**: 3.1, 3.7, 3.10 (OpenAI Files API, retry logic, timeout handling)
@@ -94,7 +94,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 4. Vector Database and Semantic Search Foundation
 
 - [x] 4.1 Implement vector database integration
-  - Add chromadb dependency and create `agent/healthcare/storage/embeddings.py`
+  - Add chromadb dependency and create `healthcare/storage/embeddings.py`
   - Implement EmbeddingService with Chroma client initialization
   - Add chunk_markdown() for paragraph-based segmentation
   - Configure persistent storage with proper collection naming
@@ -119,7 +119,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 5. Search and Retrieval System
 
 - [x] 5.1 Implement semantic search service
-  - Create `agent/healthcare/search/search_service.py` with SearchService class
+  - Create `healthcare/search/search_service.py` with SearchService class
   - Implement semantic_search() using Chroma vector database
   - Add user-scoped data retrieval with proper filtering
   - Create SearchResult dataclass with relevance scores and metadata
@@ -127,7 +127,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Testable Outcome**: Can perform semantic search with user filtering, results include relevance scores and metadata
 
 - [x] 5.2 Create search API endpoint with validation
-  - Create `agent/healthcare/search/routes.py` with GET /reports/{user_external_id}/search
+  - Create `healthcare/search/routes.py` with GET /reports/{user_external_id}/search
   - Add query validation, parameter handling (k parameter)
   - Implement result ranking and JSON response formatting
   - Handle empty/invalid queries gracefully
@@ -144,7 +144,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 6. Image Extraction and Asset Management
 
 - [x] 6.1 Implement local image extraction
-  - Add pikepdf dependency and create `agent/healthcare/images/image_service.py`
+  - Add pikepdf dependency and create `healthcare/images/image_service.py`
   - Implement extract_images_pikepdf() for local image extraction
   - Add page-indexed naming convention (page-003-img-01.png)
   - Create AssetMetadata dataclass and basic linking to manifest
@@ -160,7 +160,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Testable Outcome**: Complete PDF ingestion with images extracted and stored, database records created
 
 - [x] 6.3 Create asset retrieval API endpoint
-  - Create `agent/healthcare/images/routes.py` with GET /reports/{report_id}/assets
+  - Create `healthcare/images/routes.py` with GET /reports/{report_id}/assets
   - Implement asset listing with proper user access control
   - Add HTTP status codes and JSON response formatting
   - Create integration tests for asset retrieval
@@ -170,7 +170,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 7. Report Management and Content Retrieval
 
 - [x] 7.1 Implement report service layer
-  - Create `agent/healthcare/reports/service.py` with ReportService class
+  - Create `healthcare/reports/service.py` with ReportService class
   - Implement list_user_reports() and get_report_markdown() methods
   - Add validate_user_access() for access control
   - Create unit tests for report service functionality
@@ -178,7 +178,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Testable Outcome**: Can list user reports, retrieve markdown content, access control enforced
 
 - [x] 7.2 Create report management API endpoints
-  - Create `agent/healthcare/reports/routes.py` with report listing and retrieval endpoints
+  - Create `healthcare/reports/routes.py` with report listing and retrieval endpoints
   - Implement GET /reports/{user_external_id} and GET /reports/{report_id}/markdown
   - Add request validation, error handling, and JSON response formatting
   - **Requirements**: 6.1, 6.2, 6.4, 6.6, 6.7 (listing endpoint, markdown retrieval, error handling, JSON formatting, validation)
@@ -194,7 +194,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
 ### 8. AI Agent Integration with Medical Toolkit
 
 - [x] 8.1 Implement Agno agent medical toolkit
-  - Add agno dependency and create `agent/healthcare/agent/toolkit.py`
+  - Add agno dependency and create `healthcare/agent/toolkit.py`
   - Implement MedicalToolkit with ingest_pdf, list_reports, search_medical_data tools
   - Add proper error handling and response formatting for tools
   - Create unit tests for toolkit functionality
@@ -202,7 +202,7 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Testable Outcome**: Medical toolkit tools work correctly, can interact with existing services
 
 - [x] 8.2 Create healthcare agent configuration and service
-  - Create `agent/healthcare/agent/service.py` with HealthcareAgent class
+  - Create `healthcare/agent/service.py` with HealthcareAgent class
   - Implement create_healthcare_agent() with proper Agno configuration
   - Configure OpenAI chat model (gpt-5) and AgentKnowledge with Chroma
   - Add agent session management with SQLite storage
@@ -227,14 +227,14 @@ This document contains the implementation plan for the Healthcare Agent MVP, bro
   - **Testable Outcome**: Complete application starts successfully, all endpoints accessible, proper dependency injection
 
 - [x] 9.2 Create comprehensive integration test suite
-  - Create `tests/agent/healthcare/test_integration_full_workflow.py`
+  - Create `tests/healthcare/test_integration_full_workflow.py`
   - Test complete PDF upload → conversion → storage → search → agent query workflow
-  - Create `tests/agent/healthcare/test_integration_api_endpoints.py` for all API endpoints
+  - Create `tests/healthcare/test_integration_api_endpoints.py` for all API endpoints
   - Add database operations integration tests
   - **Testable Outcome**: Full end-to-end workflow tests pass, all API integration tests validate complete functionality
 
 - [ ] 9.3 Add test fixtures and production readiness
-  - Create comprehensive test fixtures in `tests/agent/healthcare/fixtures/`
+  - Create comprehensive test fixtures in `tests/healthcare/fixtures/`
   - Add sample medical reports and mock responses
   - Implement proper logging and monitoring throughout application
   - Add configuration validation and startup checks

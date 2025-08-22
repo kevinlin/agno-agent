@@ -11,7 +11,7 @@ The Healthcare Agent MVP is a personal health data management system that enable
 **User Story**: As a system administrator, I want configurable deployment options, so that I can run the healthcare agent system in my local environment with appropriate settings.
 
 **Acceptance Criteria**:
-1. The system SHALL create project structure under `agent/healthcare/` directory
+1. The system SHALL create project structure under `healthcare/` directory
 2. The system SHALL provide configuration file for API keys, database paths, and model settings
 3. The system SHALL support environment variable configuration for sensitive values
 4. The system SHALL include dependency management file (requirements.txt or pyproject.toml)
