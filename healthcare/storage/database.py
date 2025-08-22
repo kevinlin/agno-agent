@@ -7,7 +7,15 @@ from typing import List, Optional
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from healthcare.config.config import Config
-from healthcare.storage.models import MedicalReport, ReportAsset, User
+from healthcare.storage.models import (
+    MedicalReport,
+    ReportAsset,
+    Survey,
+    SurveyAnswer,
+    SurveyResponse,
+    SurveyResult,
+    User,
+)
 
 logger = logging.getLogger(__name__)
 
