@@ -164,6 +164,7 @@ class TestUploadIntegration:
         assert isinstance(stats["total_files"], int)
         assert isinstance(stats["total_size"], int)
 
+    @pytest.mark.slow
     def test_multiple_users_separate_files(self, client, sample_pdf_content):
         """Test that different users can upload the same file."""
         files = {"file": ("test.pdf", sample_pdf_content, "application/pdf")}

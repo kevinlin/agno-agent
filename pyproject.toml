@@ -66,8 +66,12 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+# Default: exclude slow tests unless explicitly requested
+addopts = "-m 'not slow'"
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "slow: marks tests as slow running tests (excluded by default, include with '-m slow')",
+    "fast: marks tests as fast running tests (included by default)",
 ]
 
 [tool.isort]
