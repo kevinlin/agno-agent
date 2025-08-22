@@ -270,7 +270,7 @@ class TestAgentIntegration:
 
             # Mock comprehensive agent config
             mock_config_data = {
-                "agent_name": "Healthcare Assistant",
+                "agent_name": "Healthcare Consultant",
                 "model": "gpt-5-mini",
                 "embedding_model": "text-embedding-3-large",
                 "vector_db": "ChromaDB",
@@ -293,7 +293,7 @@ class TestAgentIntegration:
             response_data = response.json()
 
             # Verify comprehensive config
-            assert response_data["agent_name"] == "Healthcare Assistant"
+            assert response_data["agent_name"] == "Healthcare Consultant"
             assert response_data["model"] == "gpt-5-mini"
             assert response_data["vector_db"] == "ChromaDB"
             assert response_data["knowledge_base"] == "medical_reports"

@@ -287,7 +287,7 @@ class TestHealthcareAgent:
         """Test get_agent_stats when agent is not initialized."""
         stats = self.agent_service.get_agent_stats()
 
-        assert stats["agent_name"] == "Healthcare Assistant"
+        assert stats["agent_name"] == "Healthcare Consultant"
         assert stats["model"] == "gpt-5-mini"
         assert stats["embedding_model"] == "text-embedding-3-large"
         assert stats["vector_db"] == "ChromaDB"
@@ -318,7 +318,7 @@ class TestHealthcareAgent:
         # Get stats
         stats = self.agent_service.get_agent_stats()
 
-        assert stats["agent_name"] == "Healthcare Assistant"
+        assert stats["agent_name"] == "Healthcare Consultant"
         assert stats["model"] == "gpt-5-mini"
         assert len(stats["toolkit_functions"]) == 5
         assert "ingest_pdf" in stats["toolkit_functions"]

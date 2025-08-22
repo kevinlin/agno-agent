@@ -220,7 +220,7 @@ class TestAgentRoutesSimple:
         """Test successful agent config retrieval."""
         # Configure mock agent
         mock_config = {
-            "agent_name": "Healthcare Assistant",
+            "agent_name": "Healthcare Consultant",
             "model": "gpt-5-mini",
             "embedding_model": "text-embedding-3-large",
             "vector_db": "ChromaDB",
@@ -239,7 +239,7 @@ class TestAgentRoutesSimple:
         assert response.status_code == 200
         response_data = response.json()
 
-        assert response_data["agent_name"] == "Healthcare Assistant"
+        assert response_data["agent_name"] == "Healthcare Consultant"
         assert response_data["model"] == "gpt-5-mini"
         assert response_data["embedding_model"] == "text-embedding-3-large"
         assert response_data["vector_db"] == "ChromaDB"
