@@ -198,3 +198,4 @@ cython_debug/
 tmp/
 data/
 test_data/
+test_output/
