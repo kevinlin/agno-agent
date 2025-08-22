@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from healthcare.config.config import Config
 from healthcare.storage.database import DatabaseService
 from healthcare.storage.models import Survey, SurveyType
-from healthcare.survey.service import SurveyService
+from healthcare.survey.survey_service import SurveyService
 
 
 @pytest.fixture

@@ -11,7 +11,7 @@ sys.path.insert(0, str(project_root))
 
 from healthcare.config.config import ConfigManager
 from healthcare.storage.database import DatabaseService
-from healthcare.survey.service import SurveyService
+from healthcare.survey.survey_service import SurveyService
 
 # Setup logging
 logging.basicConfig(
