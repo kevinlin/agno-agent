@@ -197,3 +197,4 @@ cython_debug/
 # Data files
 tmp/
 data/
+test_data/
