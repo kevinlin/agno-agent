@@ -10,8 +10,8 @@ from fastapi.responses import JSONResponse
 
 from healthcare.config.config import Config, ConfigManager
 from healthcare.conversion.conversion_service import PDFConversionService
-from healthcare.storage.database import DatabaseService
 from healthcare.search.embeddings import EmbeddingService
+from healthcare.storage.database import DatabaseService
 from healthcare.upload.upload_service import PDFUploadService
 
 logger = logging.getLogger(__name__)

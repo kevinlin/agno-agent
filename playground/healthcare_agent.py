@@ -7,9 +7,9 @@ from agno.playground import Playground, serve_playground_app
 from healthcare.agent.agent_service import HealthcareAgent
 from healthcare.config.config import Config, ConfigManager
 from healthcare.reports.service import ReportService
+from healthcare.search.embeddings import EmbeddingService
 from healthcare.search.search_service import SearchService
 from healthcare.storage.database import DatabaseService
-from healthcare.search.embeddings import EmbeddingService
 
 
 # Configuration for playground (using environment variables or defaults)

@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from healthcare.config.config import Config
+from healthcare.search.embeddings import EmbeddingService
 from healthcare.search.search_service import SearchResult, SearchService
 from healthcare.storage.database import DatabaseService
-from healthcare.search.embeddings import EmbeddingService
 from healthcare.storage.models import MedicalReport, User
 
 

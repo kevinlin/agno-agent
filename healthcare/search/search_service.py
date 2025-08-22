@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional
 from sqlmodel import Session, select
 
 from healthcare.config.config import Config
-from healthcare.storage.database import DatabaseService
 from healthcare.search.embeddings import EmbeddingService
+from healthcare.storage.database import DatabaseService
 from healthcare.storage.models import MedicalReport, User
 
 logger = logging.getLogger(__name__)
