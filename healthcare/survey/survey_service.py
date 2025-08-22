@@ -12,7 +12,15 @@ from sqlmodel import select
 
 from healthcare.config.config import Config
 from healthcare.storage.database import DatabaseService
-from healthcare.storage.models import Survey, SurveyType, User
+from healthcare.storage.models import (
+    Survey,
+    SurveyAnswer,
+    SurveyResponse,
+    SurveyResponseStatus,
+    SurveyResult,
+    SurveyType,
+    User,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -358,3 +366,390 @@ class SurveyService:
             raise HTTPException(
                 status_code=500, detail=f"Failed to load survey: {str(e)}"
             )
+
+    # Survey Response Management Methods
+
+    def get_or_create_survey_response(
+        self, user_id: int, survey_code: str
+    ) -> Optional[Dict]:
+        """Get existing survey response or create new one.
+
+        Args:
+            user_id: User ID
+            survey_code: Survey code
+
+        Returns:
+            Response data with status, progress, and answers, or None if survey not found
+        """
+        try:
+            with self.db_service.get_session() as session:
+                # Get survey by code
+                survey_statement = select(Survey).where(Survey.code == survey_code)
+                survey = session.exec(survey_statement).first()
+                if not survey:
+                    logger.warning(f"Survey not found: {survey_code}")
+                    return None
+
+                # Look for existing response
+                response_statement = (
+                    select(SurveyResponse)
+                    .where(SurveyResponse.user_id == user_id)
+                    .where(SurveyResponse.survey_id == survey.id)
+                )
+                response = session.exec(response_statement).first()
+
+                if response:
+                    # Get existing answers
+                    answers_statement = select(SurveyAnswer).where(
+                        SurveyAnswer.response_id == response.id
+                    )
+                    answers = session.exec(answers_statement).all()
+
+                    answer_data = []
+                    for answer in answers:
+                        try:
+                            value = json.loads(answer.value_json)
+                            answer_data.append(
+                                {"question_code": answer.question_code, "value": value}
+                            )
+                        except json.JSONDecodeError:
+                            logger.warning(f"Invalid JSON in answer {answer.id}")
+                            continue
+
+                    return {
+                        "id": response.id,
+                        "status": response.status.value,
+                        "progress_pct": response.progress_pct,
+                        "answers": answer_data,
+                        "created_at": response.created_at.isoformat(),
+                        "updated_at": response.updated_at.isoformat(),
+                    }
+                else:
+                    # Create new response
+                    response_id = str(uuid.uuid4())
+                    new_response = SurveyResponse(
+                        id=response_id,
+                        survey_id=survey.id,
+                        user_id=user_id,
+                        status=SurveyResponseStatus.IN_PROGRESS,
+                        progress_pct=0,
+                    )
+
+                    session.add(new_response)
+                    session.commit()
+                    session.refresh(new_response)
+
+                    logger.info(
+                        f"Created new survey response: {response_id} for user {user_id}"
+                    )
+                    return {
+                        "id": new_response.id,
+                        "status": new_response.status.value,
+                        "progress_pct": new_response.progress_pct,
+                        "answers": [],
+                        "created_at": new_response.created_at.isoformat(),
+                        "updated_at": new_response.updated_at.isoformat(),
+                    }
+
+        except Exception as e:
+            logger.error(
+                f"Failed to get/create survey response for user {user_id}, survey {survey_code}: {e}"
+            )
+            return None
+
+    def save_survey_answer(
+        self, user_id: int, survey_code: str, question_code: str, value: any
+    ) -> Optional[Dict]:
+        """Save an individual survey answer.
+
+        Args:
+            user_id: User ID
+            survey_code: Survey code
+            question_code: Question code
+            value: Answer value (will be JSON-encoded)
+
+        Returns:
+            Updated response data with progress, or None if failed
+        """
+        try:
+            with self.db_service.get_session() as session:
+                # Get survey by code
+                survey_statement = select(Survey).where(Survey.code == survey_code)
+                survey = session.exec(survey_statement).first()
+                if not survey:
+                    logger.warning(f"Survey not found: {survey_code}")
+                    return None
+
+                # Get survey response
+                response_statement = (
+                    select(SurveyResponse)
+                    .where(SurveyResponse.user_id == user_id)
+                    .where(SurveyResponse.survey_id == survey.id)
+                )
+                response = session.exec(response_statement).first()
+                if not response:
+                    logger.warning(
+                        f"Survey response not found for user {user_id}, survey {survey_code}"
+                    )
+                    return None
+
+                # Check if answer already exists
+                answer_statement = (
+                    select(SurveyAnswer)
+                    .where(SurveyAnswer.response_id == response.id)
+                    .where(SurveyAnswer.question_code == question_code)
+                )
+                existing_answer = session.exec(answer_statement).first()
+
+                # Encode value as JSON
+                value_json = json.dumps(value, ensure_ascii=False)
+
+                if existing_answer:
+                    # Update existing answer
+                    existing_answer.value_json = value_json
+                    session.add(existing_answer)
+                else:
+                    # Create new answer
+                    new_answer = SurveyAnswer(
+                        response_id=response.id,
+                        question_code=question_code,
+                        value_json=value_json,
+                    )
+                    session.add(new_answer)
+
+                # Update response timestamp and calculate progress
+                response.updated_at = datetime.now()
+
+                # Calculate progress based on answered questions
+                progress_pct = self._calculate_progress(session, response.id, survey.id)
+                response.progress_pct = progress_pct
+
+                session.add(response)
+                session.commit()
+
+                logger.info(
+                    f"Saved answer for question {question_code} in response {response.id}"
+                )
+                return {
+                    "ok": True,
+                    "progress_pct": progress_pct,
+                    "response_id": response.id,
+                }
+
+        except Exception as e:
+            logger.error(
+                f"Failed to save answer for user {user_id}, survey {survey_code}, question {question_code}: {e}"
+            )
+            return None
+
+    def complete_survey_response(
+        self, user_id: int, survey_code: str, derived_metrics: Optional[Dict] = None
+    ) -> Optional[Dict]:
+        """Complete a survey response and calculate derived metrics.
+
+        Args:
+            user_id: User ID
+            survey_code: Survey code
+            derived_metrics: Optional derived metrics (BMI, etc.)
+
+        Returns:
+            Completion result with metrics, or None if failed
+        """
+        try:
+            with self.db_service.get_session() as session:
+                # Get survey by code
+                survey_statement = select(Survey).where(Survey.code == survey_code)
+                survey = session.exec(survey_statement).first()
+                if not survey:
+                    logger.warning(f"Survey not found: {survey_code}")
+                    return None
+
+                # Get survey response
+                response_statement = (
+                    select(SurveyResponse)
+                    .where(SurveyResponse.user_id == user_id)
+                    .where(SurveyResponse.survey_id == survey.id)
+                )
+                response = session.exec(response_statement).first()
+                if not response:
+                    logger.warning(
+                        f"Survey response not found for user {user_id}, survey {survey_code}"
+                    )
+                    return None
+
+                # Update response status to completed
+                response.status = SurveyResponseStatus.COMPLETED
+                response.progress_pct = 100
+                response.updated_at = datetime.now()
+                session.add(response)
+
+                # Calculate derived metrics if not provided
+                if derived_metrics is None:
+                    derived_metrics = self._calculate_derived_metrics(
+                        session, response.id, survey_code
+                    )
+
+                # Save survey results
+                if derived_metrics:
+                    # Check if result already exists
+                    result_statement = select(SurveyResult).where(
+                        SurveyResult.response_id == response.id
+                    )
+                    existing_result = session.exec(result_statement).first()
+
+                    result_json = json.dumps(derived_metrics, ensure_ascii=False)
+
+                    if existing_result:
+                        existing_result.result_json = result_json
+                        session.add(existing_result)
+                    else:
+                        new_result = SurveyResult(
+                            response_id=response.id, result_json=result_json
+                        )
+                        session.add(new_result)
+
+                session.commit()
+
+                logger.info(
+                    f"Completed survey response {response.id} for user {user_id}"
+                )
+                return {
+                    "ok": True,
+                    "response_id": response.id,
+                    "status": "completed",
+                    "derived_metrics": derived_metrics,
+                }
+
+        except Exception as e:
+            logger.error(
+                f"Failed to complete survey response for user {user_id}, survey {survey_code}: {e}"
+            )
+            return None
+
+    def _calculate_progress(self, session, response_id: str, survey_id: str) -> int:
+        """Calculate progress percentage based on answered questions.
+
+        Args:
+            session: Database session
+            response_id: Survey response ID
+            survey_id: Survey ID
+
+        Returns:
+            Progress percentage (0-100)
+        """
+        try:
+            # Get total questions in survey
+            survey = session.get(Survey, survey_id)
+            if not survey:
+                return 0
+
+            definition = json.loads(survey.definition_json)
+            total_questions = len(definition.get("questions", []))
+
+            if total_questions == 0:
+                return 0
+
+            # Count answered questions
+            answered_statement = select(SurveyAnswer).where(
+                SurveyAnswer.response_id == response_id
+            )
+            answered_count = len(session.exec(answered_statement).all())
+
+            # Calculate percentage
+            progress = min(100, int((answered_count / total_questions) * 100))
+            return progress
+
+        except Exception as e:
+            logger.error(
+                f"Failed to calculate progress for response {response_id}: {e}"
+            )
+            return 0
+
+    def _calculate_derived_metrics(
+        self, session, response_id: str, survey_code: str
+    ) -> Dict:
+        """Calculate derived metrics based on survey answers.
+
+        Args:
+            session: Database session
+            response_id: Survey response ID
+            survey_code: Survey code
+
+        Returns:
+            Dictionary of derived metrics
+        """
+        try:
+            # Get all answers for the response
+            answers_statement = select(SurveyAnswer).where(
+                SurveyAnswer.response_id == response_id
+            )
+            answers = session.exec(answers_statement).all()
+
+            # Convert answers to dictionary
+            answer_dict = {}
+            for answer in answers:
+                try:
+                    value = json.loads(answer.value_json)
+                    answer_dict[answer.question_code] = value
+                except json.JSONDecodeError:
+                    continue
+
+            metrics = {}
+
+            # Calculate BMI if height and weight are available (check multiple possible field names)
+            height_value = None
+            weight_value = None
+
+            # Check for height in different possible field names
+            for height_key in ["height", "height_cm", "height_in"]:
+                if height_key in answer_dict:
+                    height_value = answer_dict[height_key]
+                    break
+
+            # Check for weight in different possible field names
+            for weight_key in ["weight", "weight_kg", "weight_lbs"]:
+                if weight_key in answer_dict:
+                    weight_value = answer_dict[weight_key]
+                    break
+
+            if height_value is not None and weight_value is not None:
+                try:
+                    height_m = float(height_value) / 100  # Convert cm to m
+                    weight_kg = float(weight_value)
+                    bmi = weight_kg / (height_m**2)
+                    metrics["bmi"] = round(bmi, 2)
+
+                    # BMI categories
+                    if bmi < 18.5:
+                        metrics["bmi_category"] = "underweight"
+                    elif bmi < 25:
+                        metrics["bmi_category"] = "normal"
+                    elif bmi < 30:
+                        metrics["bmi_category"] = "overweight"
+                    else:
+                        metrics["bmi_category"] = "obese"
+
+                except (ValueError, ZeroDivisionError):
+                    pass
+
+            # Calculate age if birth_year is available
+            if "birth_year" in answer_dict:
+                try:
+                    birth_year = int(answer_dict["birth_year"])
+                    current_year = datetime.now().year
+                    metrics["age"] = current_year - birth_year
+                except ValueError:
+                    pass
+
+            # Add survey-specific metrics based on survey code
+            if survey_code == "personalization-survey":
+                metrics["survey_type"] = "personalization"
+                metrics["completion_date"] = datetime.now().isoformat()
+
+            return metrics
+
+        except Exception as e:
+            logger.error(
+                f"Failed to calculate derived metrics for response {response_id}: {e}"
+            )
+            return {}

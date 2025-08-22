@@ -10,7 +10,13 @@ from fastapi import HTTPException
 
 from healthcare.config.config import Config
 from healthcare.storage.database import DatabaseService
-from healthcare.storage.models import Survey, SurveyType
+from healthcare.storage.models import (
+    Survey,
+    SurveyResponse,
+    SurveyResponseStatus,
+    SurveyType,
+    User,
+)
 from healthcare.survey.survey_service import SurveyService
 
 
@@ -519,3 +525,374 @@ class TestSurveyValidation:
 
         assert exc_info.value.status_code == 400
         assert "References unknown question" in str(exc_info.value.detail)
+
+
+class TestSurveyResponseManagement:
+    """Test cases for survey response management functionality."""
+
+    @pytest.fixture
+    def test_user(self, db_service):
+        """Create a test user."""
+        with db_service.get_session() as session:
+            user = User(external_id="test_user_123")
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            return user
+
+    @pytest.fixture
+    def test_survey(self, survey_service, sample_survey_definition):
+        """Create a test survey."""
+        return survey_service.create_survey(
+            code="test_survey",
+            title="Test Survey",
+            version="1.0.0",
+            survey_type=SurveyType.PERSONALIZATION,
+            definition=sample_survey_definition,
+            description="Test survey for response management",
+        )
+
+    def test_get_or_create_survey_response_new(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test creating a new survey response."""
+        result = survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        assert result is not None
+        assert result["status"] == "in_progress"
+        assert result["progress_pct"] == 0
+        assert result["answers"] == []
+        assert "id" in result
+        assert "created_at" in result
+        assert "updated_at" in result
+
+    def test_get_or_create_survey_response_existing(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test getting an existing survey response."""
+        # Create initial response
+        first_result = survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        # Save an answer to make it different
+        survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="height_cm",
+            value=175,
+        )
+
+        # Get the response again
+        second_result = survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        assert second_result is not None
+        assert second_result["id"] == first_result["id"]  # Same response
+        assert second_result["status"] == "in_progress"
+        assert len(second_result["answers"]) == 1
+        assert second_result["answers"][0]["question_code"] == "height_cm"
+        assert second_result["answers"][0]["value"] == 175
+
+    def test_get_or_create_survey_response_invalid_survey(
+        self, survey_service, test_user
+    ):
+        """Test getting response for non-existent survey."""
+        result = survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code="nonexistent_survey"
+        )
+
+        assert result is None
+
+    def test_save_survey_answer_success(self, survey_service, test_user, test_survey):
+        """Test successfully saving a survey answer."""
+        # Create response first
+        survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        # Save answer
+        result = survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="height_cm",
+            value=180,
+        )
+
+        assert result is not None
+        assert result["ok"] is True
+        assert result["progress_pct"] > 0  # Should calculate progress
+        assert "response_id" in result
+
+    def test_save_survey_answer_update_existing(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test updating an existing survey answer."""
+        # Create response and save initial answer
+        survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        # Save initial answer
+        survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="height_cm",
+            value=180,
+        )
+
+        # Update the answer
+        result = survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="height_cm",
+            value=185,
+        )
+
+        assert result is not None
+        assert result["ok"] is True
+
+        # Verify the answer was updated
+        response = survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+        assert len(response["answers"]) == 1
+        assert response["answers"][0]["value"] == 185
+
+    def test_save_survey_answer_invalid_survey(self, survey_service, test_user):
+        """Test saving answer for non-existent survey."""
+        result = survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code="nonexistent_survey",
+            question_code="height_cm",
+            value=180,
+        )
+
+        assert result is None
+
+    def test_save_survey_answer_no_response(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test saving answer when no response exists."""
+        # Don't create response first
+        result = survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="height_cm",
+            value=180,
+        )
+
+        assert result is None
+
+    def test_complete_survey_response_success(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test successfully completing a survey response."""
+        # Create response and save some answers
+        survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        # Save answers for BMI calculation
+        survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="height_cm",
+            value=175,
+        )
+
+        survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="weight",
+            value=70,
+        )
+
+        # Complete the survey
+        result = survey_service.complete_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        assert result is not None
+        assert result["ok"] is True
+        assert result["status"] == "completed"
+        assert "response_id" in result
+        assert "derived_metrics" in result
+
+        # Check if BMI was calculated
+        metrics = result["derived_metrics"]
+        assert "bmi" in metrics
+        assert metrics["bmi"] == 22.86  # 70 / (1.75^2)
+        assert "bmi_category" in metrics
+        assert metrics["bmi_category"] == "normal"
+
+    def test_complete_survey_response_with_custom_metrics(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test completing survey with custom derived metrics."""
+        # Create response
+        survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        custom_metrics = {"custom_score": 85, "risk_level": "low"}
+
+        # Complete with custom metrics
+        result = survey_service.complete_survey_response(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            derived_metrics=custom_metrics,
+        )
+
+        assert result is not None
+        assert result["ok"] is True
+        assert result["derived_metrics"] == custom_metrics
+
+    def test_complete_survey_response_invalid_survey(self, survey_service, test_user):
+        """Test completing response for non-existent survey."""
+        result = survey_service.complete_survey_response(
+            user_id=test_user.id, survey_code="nonexistent_survey"
+        )
+
+        assert result is None
+
+    def test_progress_calculation(self, survey_service, test_user, test_survey):
+        """Test progress percentage calculation."""
+        # Create response
+        survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        # Save first answer (1/3 questions = 33%)
+        result1 = survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="height_cm",
+            value=175,
+        )
+        assert result1["progress_pct"] == 33
+
+        # Save second answer (2/3 questions = 66%)
+        result2 = survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="gender",
+            value="male",
+        )
+        assert result2["progress_pct"] == 66
+
+        # Save third answer (3/3 questions = 100%)
+        result3 = survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="conditions",
+            value=["none"],
+        )
+        assert result3["progress_pct"] == 100
+
+    def test_derived_metrics_bmi_calculation(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test BMI calculation in derived metrics."""
+        # Create response and save height/weight
+        survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="height",  # height in cm
+            value=170,
+        )
+
+        survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="weight",  # weight in kg
+            value=65,
+        )
+
+        # Complete survey to trigger metrics calculation
+        result = survey_service.complete_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        metrics = result["derived_metrics"]
+        assert "bmi" in metrics
+        assert metrics["bmi"] == 22.49  # 65 / (1.70^2)
+        assert metrics["bmi_category"] == "normal"
+
+    def test_derived_metrics_age_calculation(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test age calculation in derived metrics."""
+        from datetime import datetime
+
+        # Create response and save birth year
+        survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        current_year = datetime.now().year
+        birth_year = current_year - 30
+
+        survey_service.save_survey_answer(
+            user_id=test_user.id,
+            survey_code=test_survey.code,
+            question_code="birth_year",
+            value=birth_year,
+        )
+
+        # Complete survey
+        result = survey_service.complete_survey_response(
+            user_id=test_user.id, survey_code=test_survey.code
+        )
+
+        metrics = result["derived_metrics"]
+        assert "age" in metrics
+        assert metrics["age"] == 30
+
+    def test_derived_metrics_personalization_survey(
+        self, survey_service, test_user, test_survey
+    ):
+        """Test survey-specific metrics for personalization survey."""
+        # Create personalization survey
+        personalization_survey = survey_service.create_survey(
+            code="personalization-survey",
+            title="Personalization Survey",
+            version="1.0.0",
+            survey_type=SurveyType.PERSONALIZATION,
+            definition={
+                "code": "personalization-survey",
+                "type": "PERSONALIZATION",
+                "version": "1.0.0",
+                "title": "Personalization Survey",
+                "questions": [
+                    {
+                        "type": "INPUT",
+                        "code": "age",
+                        "title": "Age",
+                        "unit": "INTEGER_NUMBER",
+                    }
+                ],
+                "branching_rules": [],
+            },
+        )
+
+        # Create response and complete
+        survey_service.get_or_create_survey_response(
+            user_id=test_user.id, survey_code="personalization-survey"
+        )
+
+        result = survey_service.complete_survey_response(
+            user_id=test_user.id, survey_code="personalization-survey"
+        )
+
+        metrics = result["derived_metrics"]
+        assert "survey_type" in metrics
+        assert metrics["survey_type"] == "personalization"
+        assert "completion_date" in metrics
