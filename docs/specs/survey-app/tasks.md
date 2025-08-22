@@ -30,7 +30,7 @@ This document outlines the implementation tasks for the Survey App feature, orga
   - **Testable**: Can create, update responses; save individual answers; calculate progress and completion
   - **Requirements**: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 6.7
 
-- [ ] **4. Survey API Endpoints**
+- [x] **4. Survey API Endpoints**
   - Create `healthcare/survey/routes.py` with FastAPI router and proper error handling
   - Implement survey catalog endpoints: `GET /api/survey`, `GET /api/survey/{code}`, `POST /api/survey`
   - Add survey response endpoints: `GET /api/survey-response`, `POST /api/survey-response`, `POST /api/survey-response/answer`

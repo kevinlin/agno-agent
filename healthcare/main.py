@@ -296,6 +296,11 @@ def add_routes(app: FastAPI) -> None:
 
     app.include_router(agent_router)
 
+    # Include survey routes
+    from healthcare.survey.routes import router as survey_router
+
+    app.include_router(survey_router)
+
     @app.get("/")
     async def root():
         """Root endpoint with basic information."""
