@@ -16,6 +16,31 @@ import {
   API_CONFIG,
 } from '../survey-api';
 
+// Helper function to create mock Response objects
+function createMockResponse(
+  data: any,
+  status: number = 200,
+  ok: boolean = true
+): Response {
+  return {
+    ok,
+    status,
+    statusText: ok ? 'OK' : 'Error',
+    headers: { get: () => 'application/json' },
+    json: async () => data,
+    redirected: false,
+    type: 'basic',
+    url: '',
+    clone: jest.fn(),
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: jest.fn(),
+    blob: jest.fn(),
+    formData: jest.fn(),
+    text: jest.fn(),
+  } as unknown as Response;
+}
+
 // Mock fetch for testing
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
@@ -41,11 +66,7 @@ describe('Survey API Client', () => {
         ]
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        headers: { get: () => 'application/json' },
-        json: async () => mockSurvey,
-      } as Response);
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockSurvey));
 
       const result = await getSurveyDefinition('test-survey');
       expect(result).toEqual(mockSurvey);
@@ -69,12 +90,7 @@ describe('Survey API Client', () => {
         }
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        headers: { get: () => 'application/json' },
-        json: async () => mockError,
-      } as Response);
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockError, 404, false));
 
       await expect(getSurveyDefinition('non-existent')).rejects.toThrow(SurveyApiError);
     })
@@ -91,24 +107,15 @@ describe('Survey API Client', () => {
     test('should retry on server errors', async () => {
       // First call fails with 500
       mockFetch
-        .mockResolvedValueOnce({
+        .mockResolvedValueOnce(createMockResponse({ 
           ok: false,
-          status: 500,
-          headers: { get: () => 'application/json' },
-          json: async () => ({ 
-            ok: false,
-            error: { 
-              code: 'server_error',
-              message: 'Internal server error' 
-            }
-          }),
-        } as Response)
+          error: { 
+            code: 'server_error',
+            message: 'Internal server error' 
+          }
+        }, 500, false))
         // Second call succeeds
-        .mockResolvedValueOnce({
-          ok: true,
-          headers: { get: () => 'application/json' },
-          json: async () => ({ code: 'test-survey' }),
-        } as Response);
+        .mockResolvedValueOnce(createMockResponse({ code: 'test-survey' }));
 
       const result = await getSurveyDefinition('test-survey');
       expect(result.code).toBe('test-survey');
@@ -149,11 +156,7 @@ describe('Survey API Client', () => {
         user_response: {}
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        headers: { get: () => 'application/json' },
-        json: async () => mockResponse,
-      } as Response);
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await getSurveyResponse('new_user', 'test-survey');
       expect(result.progress_pct).toBe(0);
@@ -248,7 +251,7 @@ describe('Survey API Client', () => {
         json: async () => mockError,
       } as Response);
 
-      await expect(completeSurveyResponse('user123', 'test-survey'))
+      await expect(completeSurveyResponse('user123', 'test-survey', {}))
         .rejects.toThrow(SurveyApiError);
     })
   })

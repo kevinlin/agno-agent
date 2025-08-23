@@ -50,13 +50,9 @@ describe('useSurvey Hook with Backend Integration', () => {
         ok: true as const,
         status: 'in_progress' as const,
         progress_pct: 50,
-        answers: [
-          {
-            question_id: 'age',
-            title: 'What is your age?',
-            value: 25
-          }
-        ]
+        user_response: {
+          age: 25
+        }
       };
 
       mockSurveyApi.getSurveyResponse.mockResolvedValueOnce(mockResponse);
@@ -121,7 +117,7 @@ describe('useSurvey Hook with Backend Integration', () => {
       mockSurveyApi.completeSurveyResponse.mockResolvedValueOnce({
         ok: true,
         status: 'completed',
-        results: { bmi: 22.5 }
+        progress_pct: 100
       });
 
       // Verify the API is available
