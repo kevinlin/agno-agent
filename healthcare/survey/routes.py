@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
@@ -69,7 +69,7 @@ class SaveAnswerRequest(BaseModel):
     """Request model for saving survey answer."""
 
     question_id: str = Field(..., min_length=1, description="Question ID/code")
-    value: Dict = Field(..., description="Answer value")
+    value: Union[Dict, List, str, int, float, bool] = Field(..., description="Answer value - can be dict, list, string, number, or boolean depending on question type")
 
 
 class SaveAnswerResponse(BaseModel):
