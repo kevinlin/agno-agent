@@ -34,28 +34,52 @@ export interface Question {
   type: "INPUT" | "SINGLE_SELECT" | "MULTIPLE_SELECT" | "DROPDOWN" | "TIME"
   code: string
   title: string
+  subtitle?: string
   required?: boolean
   unit?: "INTEGER_NUMBER" | "DECIMAL_NUMBER" | "TEXT" | "MINUTES"
   unit_text?: string
   constraints?: QuestionConstraints
   answers?: QuestionAnswers
-  visibility_conditions?: Array<{
-    question_code: string
-    operator: "equals" | "not_equals" | "contains" | "not_contains"
-    value: any
-  }>
+  visible_if?: Condition
+  help?: string
+}
+
+export type ConditionOperator = 
+  | "equals" 
+  | "one_of" 
+  | "includes" 
+  | "gt" 
+  | "gte" 
+  | "lt" 
+  | "lte" 
+  | "and" 
+  | "or" 
+  | "not"
+
+export interface Condition {
+  operator: ConditionOperator
+  question_code?: string
+  value?: any
+  conditions?: Condition[]
+}
+
+export type ActionType = 
+  | "skip_questions" 
+  | "goto_question" 
+  | "insert_questions_after" 
+  | "require_questions"
+
+export interface BranchingAction {
+  type: ActionType
+  target: string | string[]
+  data?: Record<string, any>
 }
 
 export interface BranchingRule {
-  condition: {
-    question_code: string
-    operator: "equals" | "not_equals" | "contains" | "not_contains"
-    value: any
-  }
-  action: {
-    type: "skip_to" | "show" | "hide"
-    target: string
-  }
+  id: string
+  condition: Condition
+  action: BranchingAction
+  priority?: number
 }
 
 export interface Survey {

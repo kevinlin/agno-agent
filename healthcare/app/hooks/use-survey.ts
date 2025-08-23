@@ -1,8 +1,12 @@
 "use client"
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react"
-import type { Survey, SurveyAnswer, SurveySession } from "@/types/survey"
-import { getVisibleQuestions } from "@/lib/survey-data"
+import type { Survey, SurveyAnswer, SurveySession, Question } from "@/types/survey"
+import { 
+  getVisibleQuestions, 
+  updateSurveyState, 
+  calculateProgress 
+} from "@/lib/branching"
 import { validateAnswer } from "@/lib/survey-validation"
 import {
   getSurveyResponse,
@@ -41,6 +45,9 @@ export function useSurvey({
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(initialSession?.current_question_index || 0)
   const [surveyMode, setSurveyMode] = useState<"questions" | "review" | "complete">("questions")
+  
+  // Track previously visible questions for branching logic
+  const [previouslyVisibleQuestions, setPreviouslyVisibleQuestions] = useState<Question[]>([])
 
   // Backend integration state
   const [isLoading, setIsLoading] = useState(false)
@@ -164,9 +171,17 @@ export function useSurvey({
     }
   }, [hasUnsavedChanges, enableAutoSave, userId, autoSaveDelay, saveToBackend])
 
-  // Get visible questions based on current answers
+  // Get visible questions based on current answers with branching logic
   const visibleQuestions = useMemo(() => {
-    return getVisibleQuestions(survey, answers)
+    const newVisibleQuestions = getVisibleQuestions(survey, answers)
+    
+    // Update previously visible questions for next comparison
+    // This needs to happen after the computation to avoid infinite loops
+    setTimeout(() => {
+      setPreviouslyVisibleQuestions(newVisibleQuestions)
+    }, 0)
+    
+    return newVisibleQuestions
   }, [survey, answers])
 
   const currentQuestion = surveyMode === "questions" ? visibleQuestions[currentQuestionIndex] : null
@@ -174,8 +189,10 @@ export function useSurvey({
   const isFirstQuestion = currentQuestionIndex === 0
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1
 
-  // Calculate progress percentage
-  const progressPercentage = Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100)
+  // Calculate progress percentage based on answered questions vs total visible questions
+  const progressPercentage = useMemo(() => {
+    return calculateProgress(answers, visibleQuestions)
+  }, [answers, visibleQuestions])
 
   // Check if current question is valid
   const isCurrentQuestionValid = useMemo(() => {
@@ -185,14 +202,36 @@ export function useSurvey({
     return validation.isValid
   }, [currentQuestion, answers])
 
-  // Update answer for a question with backend integration
+  // Update answer for a question with backend integration and branching logic
   const updateAnswer = useCallback(
     async (questionCode: string, value: any, saveImmediately = false) => {
-      // Optimistic update - update UI immediately
-      setAnswers((prev) => ({
-        ...prev,
+      // Create new answer state
+      const newAnswers = {
+        ...answers,
         [questionCode]: value,
-      }))
+      }
+
+      // Apply branching logic to determine state changes
+      const branchingUpdate = updateSurveyState(
+        survey, 
+        newAnswers, 
+        previouslyVisibleQuestions
+      )
+
+      // Update state with branching logic results
+      setAnswers(branchingUpdate.updatedAnswers)
+      
+      // Log voided answers for debugging
+      if (branchingUpdate.voidedAnswerCodes.length > 0) {
+        console.log('Voided answers due to branching logic:', branchingUpdate.voidedAnswerCodes)
+      }
+
+      // Adjust current question index if current question is no longer visible
+      if (currentQuestion && !branchingUpdate.visibleQuestions.some(q => q.code === currentQuestion.code)) {
+        // Find a valid question index within the new visible questions
+        const newIndex = Math.min(currentQuestionIndex, branchingUpdate.visibleQuestions.length - 1)
+        setCurrentQuestionIndex(Math.max(0, newIndex))
+      }
 
       // Mark as having unsaved changes
       setHasUnsavedChanges(true)
@@ -202,7 +241,7 @@ export function useSurvey({
         await saveToBackend(questionCode, value)
       }
     },
-    [enableAutoSave, saveToBackend]
+    [enableAutoSave, saveToBackend, answers, survey, previouslyVisibleQuestions, currentQuestion, currentQuestionIndex]
   )
 
   // Navigate to next question

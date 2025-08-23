@@ -155,30 +155,5 @@ export function getSurvey(code: string): Survey | undefined {
   return getSurveyByCode(code)
 }
 
-export function getVisibleQuestions(survey: Survey, answers: Record<string, any>): Question[] {
-  // For now, return all questions since there are no branching rules in the sample data
-  // This function can be extended to handle conditional logic based on branching_rules
-  return survey.questions.filter((question) => {
-    // Check visibility conditions if they exist
-    if (question.visibility_conditions) {
-      return question.visibility_conditions.every((condition) => {
-        const answerValue = answers[condition.question_code]
-
-        switch (condition.operator) {
-          case "equals":
-            return answerValue === condition.value
-          case "not_equals":
-            return answerValue !== condition.value
-          case "contains":
-            return Array.isArray(answerValue) && answerValue.includes(condition.value)
-          case "not_contains":
-            return !Array.isArray(answerValue) || !answerValue.includes(condition.value)
-          default:
-            return true
-        }
-      })
-    }
-
-    return true
-  })
-}
+// Note: getVisibleQuestions has been moved to lib/branching.ts
+// with enhanced branching logic support
