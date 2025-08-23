@@ -69,7 +69,10 @@ class SaveAnswerRequest(BaseModel):
     """Request model for saving survey answer."""
 
     question_id: str = Field(..., min_length=1, description="Question ID/code")
-    value: Union[Dict, List, str, int, float, bool] = Field(..., description="Answer value - can be dict, list, string, number, or boolean depending on question type")
+    value: Union[Dict, List, str, int, float, bool] = Field(
+        ...,
+        description="Answer value - can be dict, list, string, number, or boolean depending on question type",
+    )
 
 
 class SaveAnswerResponse(BaseModel):
