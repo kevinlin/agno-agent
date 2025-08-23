@@ -40,7 +40,7 @@ This document outlines the implementation tasks for the Survey App feature, orga
   - **Testable**: All survey endpoints work correctly, proper error handling, agent integration functional
   - **Requirements**: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7
 
-- [ ] **5. Frontend API Integration**
+- [x] **5. Frontend API Integration**
   - Create survey API client functions in `healthcare/app/lib/survey-api.ts` with TypeScript types
   - Update `healthcare/app/hooks/use-survey.ts` to integrate with backend API
   - Enhance `healthcare/app/hooks/use-survey-persistence.ts` with backend synchronization
