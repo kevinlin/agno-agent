@@ -6,8 +6,10 @@ with the backend survey API endpoints.
 """
 
 import json
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from healthcare.config.config import ConfigManager
 from healthcare.storage.database import DatabaseService
 from healthcare.storage.models import Survey, SurveyType, User
@@ -36,9 +38,16 @@ def cleanup_database(db_service):
     # Clean up before test
     with db_service.get_session() as session:
         # Delete all records from tables using SQLModel
-        from healthcare.storage.models import SurveyAnswer, SurveyResponse, SurveyResult, Survey, User
         from sqlmodel import select
-        
+
+        from healthcare.storage.models import (
+            Survey,
+            SurveyAnswer,
+            SurveyResponse,
+            SurveyResult,
+            User,
+        )
+
         # Delete in order to respect foreign key constraints
         for answer in session.exec(select(SurveyAnswer)):
             session.delete(answer)
@@ -50,17 +59,24 @@ def cleanup_database(db_service):
             session.delete(survey)
         for user in session.exec(select(User)):
             session.delete(user)
-        
+
         session.commit()
-    
+
     yield
-    
+
     # Clean up after test as well
     with db_service.get_session() as session:
         # Delete all records from tables using SQLModel
-        from healthcare.storage.models import SurveyAnswer, SurveyResponse, SurveyResult, Survey, User
         from sqlmodel import select
-        
+
+        from healthcare.storage.models import (
+            Survey,
+            SurveyAnswer,
+            SurveyResponse,
+            SurveyResult,
+            User,
+        )
+
         # Delete in order to respect foreign key constraints
         for answer in session.exec(select(SurveyAnswer)):
             session.delete(answer)
@@ -72,7 +88,7 @@ def cleanup_database(db_service):
             session.delete(survey)
         for user in session.exec(select(User)):
             session.delete(user)
-        
+
         session.commit()
 
 
@@ -86,6 +102,7 @@ def survey_service(config, db_service):
 def sample_survey_definition():
     """Sample survey definition for testing."""
     import uuid
+
     unique_id = str(uuid.uuid4())[:8]
     return {
         "code": f"test-survey-{unique_id}",
@@ -100,7 +117,7 @@ def sample_survey_definition():
                 "title": "What is your age?",
                 "required": True,
                 "unit": "INTEGER_NUMBER",
-                "constraints": {"min": 0, "max": 120}
+                "constraints": {"min": 0, "max": 120},
             },
             {
                 "type": "SINGLE_SELECT",
@@ -111,9 +128,9 @@ def sample_survey_definition():
                     "answers": [
                         {"code": "male", "title": "Male"},
                         {"code": "female", "title": "Female"},
-                        {"code": "other", "title": "Other"}
+                        {"code": "other", "title": "Other"},
                     ]
-                }
+                },
             },
             {
                 "type": "MULTIPLE_SELECT",
@@ -125,12 +142,12 @@ def sample_survey_definition():
                         {"code": "sports", "title": "Sports"},
                         {"code": "music", "title": "Music"},
                         {"code": "reading", "title": "Reading"},
-                        {"code": "travel", "title": "Travel"}
+                        {"code": "travel", "title": "Travel"},
                     ]
-                }
-            }
+                },
+            },
         ],
-        "branching_rules": []
+        "branching_rules": [],
     }
 
 
@@ -148,7 +165,9 @@ def test_user(db_service):
 class TestSurveyApiIntegration:
     """Test survey API integration with backend."""
 
-    def test_survey_catalog_api_endpoints(self, survey_service, sample_survey_definition):
+    def test_survey_catalog_api_endpoints(
+        self, survey_service, sample_survey_definition
+    ):
         """Test survey catalog API endpoints."""
         # Create survey
         survey = survey_service.create_survey(
@@ -157,9 +176,9 @@ class TestSurveyApiIntegration:
             version=sample_survey_definition["version"],
             survey_type=SurveyType.PERSONALIZATION,
             definition=sample_survey_definition,
-            description=sample_survey_definition["description"]
+            description=sample_survey_definition["description"],
         )
-        
+
         assert survey is not None
         assert survey.code == sample_survey_definition["code"]
 
@@ -167,17 +186,23 @@ class TestSurveyApiIntegration:
         surveys = survey_service.list_surveys()
         assert len(surveys) >= 1
         # Find our specific survey
-        our_survey = next((s for s in surveys if s["code"] == sample_survey_definition["code"]), None)
+        our_survey = next(
+            (s for s in surveys if s["code"] == sample_survey_definition["code"]), None
+        )
         assert our_survey is not None
         assert our_survey["type"] == "PERSONALIZATION"
 
         # Get survey definition
-        definition = survey_service.get_survey_definition(sample_survey_definition["code"])
+        definition = survey_service.get_survey_definition(
+            sample_survey_definition["code"]
+        )
         assert definition is not None
         assert definition["code"] == sample_survey_definition["code"]
         assert len(definition["questions"]) == 3
 
-    def test_survey_response_management(self, survey_service, sample_survey_definition, test_user):
+    def test_survey_response_management(
+        self, survey_service, sample_survey_definition, test_user
+    ):
         """Test survey response management API endpoints."""
         # Create survey
         survey = survey_service.create_survey(
@@ -185,14 +210,14 @@ class TestSurveyApiIntegration:
             title=sample_survey_definition["title"],
             version=sample_survey_definition["version"],
             survey_type=SurveyType.PERSONALIZATION,
-            definition=sample_survey_definition
+            definition=sample_survey_definition,
         )
 
         # Get or create survey response
         response_data = survey_service.get_or_create_survey_response(
             test_user.id, sample_survey_definition["code"]
         )
-        
+
         assert response_data is not None
         assert response_data["status"] == "in_progress"
         assert response_data["progress_pct"] == 0
@@ -215,10 +240,16 @@ class TestSurveyApiIntegration:
         response_data = survey_service.get_or_create_survey_response(
             test_user.id, sample_survey_definition["code"]
         )
-        
+
         assert len(response_data["answers"]) == 2
-        assert any(a["question_code"] == "age" and a["value"] == 25 for a in response_data["answers"])
-        assert any(a["question_code"] == "gender" and a["value"] == "male" for a in response_data["answers"])
+        assert any(
+            a["question_code"] == "age" and a["value"] == 25
+            for a in response_data["answers"]
+        )
+        assert any(
+            a["question_code"] == "gender" and a["value"] == "male"
+            for a in response_data["answers"]
+        )
 
         # Complete survey
         completion_result = survey_service.complete_survey_response(
@@ -247,7 +278,9 @@ class TestSurveyApiIntegration:
         )
         assert result is None
 
-    def test_progress_calculation(self, survey_service, sample_survey_definition, test_user):
+    def test_progress_calculation(
+        self, survey_service, sample_survey_definition, test_user
+    ):
         """Test progress calculation accuracy."""
         # Create survey
         survey = survey_service.create_survey(
@@ -255,30 +288,47 @@ class TestSurveyApiIntegration:
             title=sample_survey_definition["title"],
             version=sample_survey_definition["version"],
             survey_type=SurveyType.PERSONALIZATION,
-            definition=sample_survey_definition
+            definition=sample_survey_definition,
         )
 
         # Answer required questions only
-        survey_service.save_survey_answer(test_user.id, sample_survey_definition["code"], "age", 25)
-        response_data = survey_service.get_or_create_survey_response(test_user.id, sample_survey_definition["code"])
+        survey_service.save_survey_answer(
+            test_user.id, sample_survey_definition["code"], "age", 25
+        )
+        response_data = survey_service.get_or_create_survey_response(
+            test_user.id, sample_survey_definition["code"]
+        )
         progress_1 = response_data["progress_pct"]
 
-        survey_service.save_survey_answer(test_user.id, sample_survey_definition["code"], "gender", "male")
-        response_data = survey_service.get_or_create_survey_response(test_user.id, sample_survey_definition["code"])
+        survey_service.save_survey_answer(
+            test_user.id, sample_survey_definition["code"], "gender", "male"
+        )
+        response_data = survey_service.get_or_create_survey_response(
+            test_user.id, sample_survey_definition["code"]
+        )
         progress_2 = response_data["progress_pct"]
 
         # Progress should increase
         assert progress_2 > progress_1
 
         # Answer optional question
-        survey_service.save_survey_answer(test_user.id, sample_survey_definition["code"], "interests", ["sports", "music"])
-        response_data = survey_service.get_or_create_survey_response(test_user.id, sample_survey_definition["code"])
+        survey_service.save_survey_answer(
+            test_user.id,
+            sample_survey_definition["code"],
+            "interests",
+            ["sports", "music"],
+        )
+        response_data = survey_service.get_or_create_survey_response(
+            test_user.id, sample_survey_definition["code"]
+        )
         progress_3 = response_data["progress_pct"]
 
         # Progress should increase further
         assert progress_3 > progress_2
 
-    def test_answer_overwriting(self, survey_service, sample_survey_definition, test_user):
+    def test_answer_overwriting(
+        self, survey_service, sample_survey_definition, test_user
+    ):
         """Test that answers can be overwritten correctly."""
         # Create survey
         survey = survey_service.create_survey(
@@ -286,27 +336,48 @@ class TestSurveyApiIntegration:
             title=sample_survey_definition["title"],
             version=sample_survey_definition["version"],
             survey_type=SurveyType.PERSONALIZATION,
-            definition=sample_survey_definition
+            definition=sample_survey_definition,
         )
 
         # Create survey response first
-        survey_service.get_or_create_survey_response(test_user.id, sample_survey_definition["code"])
+        survey_service.get_or_create_survey_response(
+            test_user.id, sample_survey_definition["code"]
+        )
 
         # Save initial answer
-        survey_service.save_survey_answer(test_user.id, sample_survey_definition["code"], "age", 25)
-        
-        response_data = survey_service.get_or_create_survey_response(test_user.id, sample_survey_definition["code"])
-        assert any(a["question_code"] == "age" and a["value"] == 25 for a in response_data["answers"])
+        survey_service.save_survey_answer(
+            test_user.id, sample_survey_definition["code"], "age", 25
+        )
+
+        response_data = survey_service.get_or_create_survey_response(
+            test_user.id, sample_survey_definition["code"]
+        )
+        assert any(
+            a["question_code"] == "age" and a["value"] == 25
+            for a in response_data["answers"]
+        )
 
         # Overwrite answer
-        survey_service.save_survey_answer(test_user.id, sample_survey_definition["code"], "age", 30)
-        
-        response_data = survey_service.get_or_create_survey_response(test_user.id, sample_survey_definition["code"])
-        assert any(a["question_code"] == "age" and a["value"] == 30 for a in response_data["answers"])
-        assert not any(a["question_code"] == "age" and a["value"] == 25 for a in response_data["answers"])
+        survey_service.save_survey_answer(
+            test_user.id, sample_survey_definition["code"], "age", 30
+        )
+
+        response_data = survey_service.get_or_create_survey_response(
+            test_user.id, sample_survey_definition["code"]
+        )
+        assert any(
+            a["question_code"] == "age" and a["value"] == 30
+            for a in response_data["answers"]
+        )
+        assert not any(
+            a["question_code"] == "age" and a["value"] == 25
+            for a in response_data["answers"]
+        )
 
         # Should still have only one answer for this question
-        age_answers = [a for a in response_data["answers"] if a["question_code"] == "age"]
+        age_answers = [
+            a for a in response_data["answers"] if a["question_code"] == "age"
+        ]
         assert len(age_answers) == 1
 
 
@@ -318,11 +389,11 @@ class TestApiClientErrorHandling:
         # This would be a JavaScript test in practice, but we can test the concept
         # For now, we verify the concept works in Python by testing timeout behavior
         import time
-        
+
         def mock_timeout_function():
             time.sleep(0.001)  # Small delay to simulate timeout
             raise TimeoutError("Request timed out")
-        
+
         # Test that timeout errors are properly raised
         with pytest.raises(TimeoutError, match="Request timed out"):
             mock_timeout_function()
@@ -340,7 +411,9 @@ class TestApiClientErrorHandling:
 class TestFrontendBackendIntegration:
     """Test integration between frontend hooks and backend API."""
 
-    def test_survey_loading_workflow(self, survey_service, sample_survey_definition, test_user):
+    def test_survey_loading_workflow(
+        self, survey_service, sample_survey_definition, test_user
+    ):
         """Test the complete survey loading workflow."""
         # Create survey (simulating admin action)
         survey = survey_service.create_survey(
@@ -348,11 +421,13 @@ class TestFrontendBackendIntegration:
             title=sample_survey_definition["title"],
             version=sample_survey_definition["version"],
             survey_type=SurveyType.PERSONALIZATION,
-            definition=sample_survey_definition
+            definition=sample_survey_definition,
         )
 
         # Simulate frontend loading survey definition
-        definition = survey_service.get_survey_definition(sample_survey_definition["code"])
+        definition = survey_service.get_survey_definition(
+            sample_survey_definition["code"]
+        )
         assert definition["questions"] == sample_survey_definition["questions"]
 
         # Simulate frontend checking for existing response
@@ -362,7 +437,9 @@ class TestFrontendBackendIntegration:
         assert response_data["status"] == "in_progress"
         assert len(response_data["answers"]) == 0
 
-    def test_auto_save_workflow(self, survey_service, sample_survey_definition, test_user):
+    def test_auto_save_workflow(
+        self, survey_service, sample_survey_definition, test_user
+    ):
         """Test the auto-save workflow."""
         # Create survey
         survey = survey_service.create_survey(
@@ -370,18 +447,16 @@ class TestFrontendBackendIntegration:
             title=sample_survey_definition["title"],
             version=sample_survey_definition["version"],
             survey_type=SurveyType.PERSONALIZATION,
-            definition=sample_survey_definition
+            definition=sample_survey_definition,
         )
 
         # Create survey response first
-        survey_service.get_or_create_survey_response(test_user.id, sample_survey_definition["code"])
+        survey_service.get_or_create_survey_response(
+            test_user.id, sample_survey_definition["code"]
+        )
 
         # Simulate user answering questions with auto-save
-        answers = [
-            ("age", 25),
-            ("gender", "male"),
-            ("interests", ["sports", "music"])
-        ]
+        answers = [("age", 25), ("gender", "male"), ("interests", ["sports", "music"])]
 
         for question_code, value in answers:
             # Simulate auto-save after each answer
@@ -404,28 +479,36 @@ class TestFrontendBackendIntegration:
             title=sample_survey_definition["title"],
             version=sample_survey_definition["version"],
             survey_type=SurveyType.PERSONALIZATION,
-            definition=sample_survey_definition
+            definition=sample_survey_definition,
         )
 
         # Create survey response first
-        survey_service.get_or_create_survey_response(test_user.id, sample_survey_definition["code"])
+        survey_service.get_or_create_survey_response(
+            test_user.id, sample_survey_definition["code"]
+        )
 
         # Save partial answers
-        survey_service.save_survey_answer(test_user.id, sample_survey_definition["code"], "age", 25)
-        survey_service.save_survey_answer(test_user.id, sample_survey_definition["code"], "gender", "male")
+        survey_service.save_survey_answer(
+            test_user.id, sample_survey_definition["code"], "age", 25
+        )
+        survey_service.save_survey_answer(
+            test_user.id, sample_survey_definition["code"], "gender", "male"
+        )
 
         # Simulate user returning and resuming
         response_data = survey_service.get_or_create_survey_response(
             test_user.id, sample_survey_definition["code"]
         )
-        
+
         assert response_data["status"] == "in_progress"
         assert len(response_data["answers"]) == 2
         assert response_data["progress_pct"] > 0
 
         # Continue with remaining questions
-        survey_service.save_survey_answer(test_user.id, sample_survey_definition["code"], "interests", ["reading"])
-        
+        survey_service.save_survey_answer(
+            test_user.id, sample_survey_definition["code"], "interests", ["reading"]
+        )
+
         # Complete survey
         completion_result = survey_service.complete_survey_response(
             test_user.id, sample_survey_definition["code"]
@@ -437,11 +520,11 @@ class TestFrontendBackendIntegration:
 @pytest.mark.integration
 class TestRealApiEndpoints:
     """Integration tests that would test real API endpoints."""
-    
+
     def test_survey_api_client_functions(self):
         """
         Test the actual TypeScript API client functions.
-        
+
         Note: In a real testing environment, this would use a testing framework
         like Jest to test the actual TypeScript functions. For now, we document
         the testing approach.
@@ -459,7 +542,7 @@ class TestRealApiEndpoints:
     def test_survey_hooks_integration(self):
         """
         Test the enhanced survey hooks with backend integration.
-        
+
         Note: This would use React Testing Library to test the hooks.
         """
         # This test would verify:
@@ -474,7 +557,7 @@ class TestRealApiEndpoints:
     def test_persistence_hook_integration(self):
         """
         Test the enhanced persistence hook with backend sync.
-        
+
         Note: This would test the useSurveyPersistence hook.
         """
         # This test would verify:
