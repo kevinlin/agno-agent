@@ -215,29 +215,55 @@ export function useSurvey({
 
   // Navigate to next question
   const goToNext = useCallback(() => {
-    if (isLastQuestion && isCurrentQuestionValid) {
+    if (!isCurrentQuestionValid) return
+    
+    // Trigger immediate save if there are unsaved changes
+    if (hasUnsavedChanges && currentQuestion && answers[currentQuestion.code] !== undefined) {
+      // Save without waiting to avoid blocking navigation
+      saveToBackend(currentQuestion.code, answers[currentQuestion.code]).catch(err => {
+        console.warn('Failed to save answer during navigation:', err)
+      })
+    }
+    
+    if (isLastQuestion) {
       setSurveyMode("review")
-    } else if (!isLastQuestion && isCurrentQuestionValid) {
+    } else {
       setCurrentQuestionIndex((prev) => prev + 1)
     }
-  }, [isLastQuestion, isCurrentQuestionValid])
+  }, [isLastQuestion, isCurrentQuestionValid, hasUnsavedChanges, currentQuestion, answers, saveToBackend])
 
   // Navigate to previous question
   const goToPrevious = useCallback(() => {
     if (!isFirstQuestion) {
+      // Trigger immediate save if there are unsaved changes
+      if (hasUnsavedChanges && currentQuestion && answers[currentQuestion.code] !== undefined) {
+        // Save without waiting to avoid blocking navigation
+        saveToBackend(currentQuestion.code, answers[currentQuestion.code]).catch(err => {
+          console.warn('Failed to save answer during navigation:', err)
+        })
+      }
+      
       setCurrentQuestionIndex((prev) => prev - 1)
     }
-  }, [isFirstQuestion])
+  }, [isFirstQuestion, hasUnsavedChanges, currentQuestion, answers, saveToBackend])
 
   // Jump to specific question index
   const goToQuestion = useCallback(
     (index: number) => {
       if (index >= 0 && index < totalQuestions) {
+        // Trigger immediate save if there are unsaved changes
+        if (hasUnsavedChanges && currentQuestion && answers[currentQuestion.code] !== undefined) {
+          // Save without waiting to avoid blocking navigation
+          saveToBackend(currentQuestion.code, answers[currentQuestion.code]).catch(err => {
+            console.warn('Failed to save answer during navigation:', err)
+          })
+        }
+        
         setCurrentQuestionIndex(index)
         setSurveyMode("questions")
       }
     },
-    [totalQuestions],
+    [totalQuestions, hasUnsavedChanges, currentQuestion, answers, saveToBackend],
   )
 
   const goToReview = useCallback(() => {

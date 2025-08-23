@@ -71,8 +71,12 @@ export function SurveyContainer({ survey, userId, onComplete, onSave }: SurveyCo
     goToComplete,
     getAllAnswers,
     visibleQuestions,
+    completeOnBackend,
+    isSaving,
+    error,
   } = useSurvey({
     survey,
+    userId,
     initialSession: savedProgress && savedProgress.answers
       ? {
           answers: Object.entries(savedProgress.answers).map(([question_code, value]) => ({
@@ -110,12 +114,21 @@ export function SurveyContainer({ survey, userId, onComplete, onSave }: SurveyCo
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      const allAnswers = getAllAnswers()
-      await onComplete?.(allAnswers)
+      // Complete survey on backend (saves status as completed and creates results)
+      const result = await completeOnBackend()
+      
+      // Call onComplete callback if provided (for additional handling)
+      if (onComplete) {
+        const allAnswers = getAllAnswers()
+        await onComplete(allAnswers)
+      }
+      
+      // Clear local storage and navigate to completion
       persistence.clearProgress()
       goToComplete()
     } catch (error) {
       console.error("Failed to submit survey:", error)
+      // Don't navigate to completion if submission failed
     } finally {
       setIsSubmitting(false)
     }
