@@ -206,6 +206,44 @@ export async function getSurveyCatalog(type?: string): Promise<SurveyCatalogItem
 }
 
 /**
+ * Get surveys with full definitions for homepage display
+ * This function fetches the catalog and then loads the full definition for each survey
+ */
+export async function getSurveysWithDefinitions(type?: string): Promise<any[]> {
+  // First get the catalog
+  const catalog = await getSurveyCatalog(type)
+  
+  // Then load full definitions for each survey
+  const surveys = await Promise.all(
+    catalog.map(async (item) => {
+      try {
+        const definition = await getSurveyDefinition(item.code)
+        return {
+          ...definition,
+          // Ensure we have catalog metadata
+          id: item.id,
+          active_version: item.active_version,
+        }
+      } catch (error) {
+        console.error(`Failed to load definition for survey ${item.code}:`, error)
+        // Return basic info if definition fails to load
+        return {
+          code: item.code,
+          title: item.title,
+          type: item.type,
+          version: item.active_version,
+          description: `Failed to load survey definition`,
+          questions: [],
+          branching_rules: [],
+        }
+      }
+    })
+  )
+  
+  return surveys
+}
+
+/**
  * Get full survey definition by code
  */
 export async function getSurveyDefinition(code: string): Promise<any> {

@@ -156,6 +156,8 @@ The system is designed to work with flat question arrays (removing the sections 
 6. The system SHALL provide clear error messages and validation feedback
 7. The system SHALL support keyboard navigation and accessibility standards
 8. The system SHALL show survey completion confirmation with results summary
+9. The system SHALL load survey data dynamically from the backend API
+10. The system SHALL display surveys from the backend on the home page
 
 ### 10. Data Compatibility and Migration
 

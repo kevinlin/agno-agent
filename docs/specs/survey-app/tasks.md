@@ -98,6 +98,16 @@ This document outlines the implementation tasks for the Survey App feature, orga
   - **Testable**: Survey page loads correctly with user_id parameter, proper error handling, resume works
   - **Requirements**: 5.1, 5.2, 5.3, 5.6, 5.7, 3.5
 
+- [x] **8.1. Home Page API Integration**
+  - Update `healthcare/app/app/page.tsx` to use backend API instead of hardcoded data
+  - Replace `getAllSurveys()` with calls to `GET /api/survey` and `GET /api/survey/{code}`
+  - Create server-side API client functions (`lib/survey-api-server.ts`) for SSR compatibility
+  - Implement proper error handling and fallback states for API failures
+  - Add loading states and user-friendly error messages
+  - Ensure all tests pass after integration changes
+  - **Testable**: Home page loads surveys from backend API, displays proper error states, all tests pass
+  - **Requirements**: 9.9, 9.10, 7.1, 7.2
+
 - [ ] **9. Question Type Support and Validation**
   - Enhance existing question renderer components in `healthcare/app/components/survey/`
   - Add proper validation feedback, error states, and accessibility compliance
