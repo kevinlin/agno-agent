@@ -20,7 +20,7 @@ interface SurveyPersistenceOptions {
 export function useSurveyPersistence({
   surveyCode,
   userId,
-  autoSaveInterval = 30000, // 30 seconds
+  autoSaveInterval = 3000, // 3 seconds
   enableBackendSync = true,
   fallbackToLocalStorage = true,
 }: SurveyPersistenceOptions) {
