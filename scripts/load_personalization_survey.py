@@ -37,7 +37,9 @@ def main():
         logger.info("Survey service initialized")
 
         # Path to personalization survey file
-        survey_file = project_root / "docs" / "personalization-survey.json"
+        survey_file = (
+            project_root / "docs" / "survey-definition" / "personalization-survey.json"
+        )
 
         if not survey_file.exists():
             logger.error(f"Personalization survey file not found: {survey_file}")
