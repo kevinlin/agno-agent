@@ -1,0 +1,194 @@
+{
+  "code": "dietary",
+  "type": "LIFE_STYLE",
+  "version": "1.0.0",
+  "title": "Dietary",
+  "questions": [
+    {
+      "type": "SINGLE_SELECT",
+      "code": "diet_vegetarian_status",
+      "title": "Are you a vegetarian?",
+      "required": true,
+      "answers": {
+        "answers": [
+          {
+            "code": "non_vegetarian",
+            "title": "Non-vegetarian"
+          },
+          {
+            "code": "occasional_vegetarian_1_2_times_a_week",
+            "title": "Occasional vegetarian (1-2 times a week)"
+          },
+          {
+            "code": "vegetarian_incl_dairy_products_and_eggs",
+            "title": "Vegetarian, incl dairy products and eggs"
+          },
+          {
+            "code": "vegetarian_incl_dairy_products_but_no_eggs",
+            "title": "Vegetarian, incl dairy products but no eggs"
+          },
+          {
+            "code": "vegetarian_incl_eggs_but_no_diary_products",
+            "title": "Vegetarian, incl eggs but no diary products"
+          },
+          {
+            "code": "vegan",
+            "title": "Vegan"
+          }
+        ]
+      }
+    },
+    {
+      "type": "INPUT",
+      "code": "breakfast_items",
+      "title": "What do you typically eat for breakfast? (free text)",
+      "required": true,
+      "unit": "TEXT",
+      "unit_text": null
+    },
+    {
+      "type": "INPUT",
+      "code": "lunch_items",
+      "title": "What do you typically eat for lunch? (free text)",
+      "required": true,
+      "unit": "TEXT",
+      "unit_text": null
+    },
+    {
+      "type": "INPUT",
+      "code": "dinner_items",
+      "title": "What do you typically eat for dinner? (free text)",
+      "required": true,
+      "unit": "TEXT",
+      "unit_text": null
+    },
+    {
+      "type": "INPUT",
+      "code": "snacks_outside_meal_items",
+      "title": "What snacks/food do you typically eat outside of meal-time? (free text)",
+      "required": true,
+      "unit": "TEXT",
+      "unit_text": null
+    },
+    {
+      "type": "INPUT",
+      "code": "supplements_current",
+      "title": "Do you take any vitamins and supplements? If so, please select what are you taking now? (list them; free text)",
+      "required": false,
+      "unit": "TEXT",
+      "unit_text": null
+    },
+    {
+      "type": "INPUT",
+      "code": "exercise_freq_per_week",
+      "title": "In a week, how many times do you do physical exercise?",
+      "required": true,
+      "unit": "INTEGER_NUMBER",
+      "unit_text": "times/week",
+      "constraints": {
+        "min": 0,
+        "max": 21
+      }
+    },
+    {
+      "type": "SINGLE_SELECT",
+      "code": "nutrition_knowledge_self_assessed",
+      "title": "Do you have good knowledge about what YOU should eat and not eat, e.g. knowledge gained from a consultation with a nutritionist or a nutrigenomic test?",
+      "required": true,
+      "answers": {
+        "answers": [
+          {
+            "code": "yes_i_know_exactly_what_i_should_be_eating_based_on_my_own_situation",
+            "title": "Yes, I know exactly what I should be eating based on my own situation"
+          },
+          {
+            "code": "no_i_follow_general_guidance_on_nutrition_and_eating",
+            "title": "No, I follow general guidance on nutrition and eating"
+          }
+        ]
+      }
+    }
+  ],
+  "branching_rules": [
+    {
+      "id": "require_supplements_for_veg",
+      "priority": 10,
+      "condition": {
+        "operator": "one_of",
+        "question_code": "diet_vegetarian_status",
+        "value": [
+          "occasional_vegetarian_1_2_times_a_week",
+          "vegetarian_incl_dairy_products_and_eggs",
+          "vegetarian_incl_dairy_products_but_no_eggs",
+          "vegetarian_incl_eggs_but_no_diary_products",
+          "vegan"
+        ]
+      },
+      "action": {
+        "type": "require_questions",
+        "target": [
+          "supplements_current"
+        ]
+      }
+    },
+    {
+      "id": "skip_supplements_if_omnivore_and_confident",
+      "priority": 20,
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {
+            "operator": "equals",
+            "question_code": "diet_vegetarian_status",
+            "value": "non_vegetarian"
+          },
+          {
+            "operator": "equals",
+            "question_code": "nutrition_knowledge_self_assessed",
+            "value": "yes_i_know_exactly_what_i_should_be_eating_based_on_my_own_situation"
+          }
+        ]
+      },
+      "action": {
+        "type": "skip_questions",
+        "target": [
+          "supplements_current"
+        ]
+      }
+    },
+    {
+      "id": "goto_supplements_when_veg",
+      "priority": 30,
+      "condition": {
+        "operator": "one_of",
+        "question_code": "diet_vegetarian_status",
+        "value": [
+          "occasional_vegetarian_1_2_times_a_week",
+          "vegetarian_incl_dairy_products_and_eggs",
+          "vegetarian_incl_dairy_products_but_no_eggs",
+          "vegetarian_incl_eggs_but_no_diary_products",
+          "vegan"
+        ]
+      },
+      "action": {
+        "type": "goto_question",
+        "target": "supplements_current"
+      }
+    },
+    {
+      "id": "require_knowledge_if_high_exercise_freq",
+      "priority": 40,
+      "condition": {
+        "operator": "gte",
+        "question_code": "exercise_freq_per_week",
+        "value": 6
+      },
+      "action": {
+        "type": "require_questions",
+        "target": [
+          "nutrition_knowledge_self_assessed"
+        ]
+      }
+    }
+  ]
+}

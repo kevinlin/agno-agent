@@ -315,14 +315,14 @@ class SurveyService:
                         detail=f"Branching rule {i}: References unknown question '{condition['question_code']}'",
                     )
 
-    def load_survey_from_file(self, file_path: Path) -> Survey:
+    def load_survey_from_file(self, file_path: Path) -> Optional[Survey]:
         """Load survey definition from JSON file.
 
         Args:
             file_path: Path to survey JSON file
 
         Returns:
-            Created survey instance
+            Created survey instance if survey was created, None if survey already exists
 
         Raises:
             HTTPException: If file loading or survey creation fails
@@ -342,6 +342,12 @@ class SurveyService:
             version = definition.get("version")
             survey_type = SurveyType(definition.get("type"))
             description = definition.get("description")
+
+            # Check if survey already exists
+            existing_survey = self.get_survey_by_code(code)
+            if existing_survey:
+                logger.info(f"Survey already exists, skipping: {code} (v{existing_survey.version})")
+                return None
 
             return self.create_survey(
                 code=code,
