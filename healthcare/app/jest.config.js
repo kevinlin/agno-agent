@@ -24,15 +24,6 @@ const customJestConfig = {
     '**/*.(test|spec).(ts|tsx|js)'
   ],
   
-  // Transform configuration
-  transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx',
-      },
-    }],
-  },
-  
   // Module file extensions
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   
@@ -56,6 +47,15 @@ const customJestConfig = {
   
   // Verbose output
   verbose: true,
+  
+  // Test reporters
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: './reports',
+      outputName: 'jest-junit.xml',
+    }]
+  ],
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

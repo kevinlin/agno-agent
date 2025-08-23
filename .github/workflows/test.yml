@@ -42,7 +42,30 @@ jobs:
             echo "::warning::Import sorting issues found. Run 'uv run isort .' to fix."
           fi
 
-      - name: Run tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+          cache-dependency-path: 'healthcare/app/pnpm-lock.yaml'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install frontend dependencies
+        run: |
+          cd healthcare/app
+          pnpm install
+
+      - name: Run frontend tests
+        run: |
+          cd healthcare/app
+          mkdir -p reports
+          pnpm run test:ci
+
+      - name: Run backend tests
         run: |
           mkdir -p reports
           uv run pytest tests/ -v \
@@ -52,12 +75,29 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
 
-      - name: Publish test report
+      - name: Publish backend test report
         uses: dorny/test-reporter@v2
         if: always()                      # run even if tests failed
         with:
-          name: Pytest Results
+          name: Backend Tests (Pytest)
           path: reports/pytest-junit.xml  # file produced by --junitxml
-          reporter: java-junit            # works for pytest’s JUnit XML
+          reporter: java-junit            # works for pytest's JUnit XML
           use-actions-summary: true       # puts a table in the run Summary
-          fail-on-error: true
+          fail-on-error: false
+
+      - name: Publish frontend test report
+        uses: dorny/test-reporter@v2
+        if: always()                      # run even if tests failed
+        with:
+          name: Frontend Tests (Jest)
+          path: healthcare/app/reports/jest-junit.xml  # file produced by jest-junit
+          reporter: java-junit            # works for Jest's JUnit XML
+          use-actions-summary: true       # puts a table in the run Summary
+          fail-on-error: false
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./coverage.xml,./healthcare/app/coverage/lcov.info
+          fail_ci_if_error: false

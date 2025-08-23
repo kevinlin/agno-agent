@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",
@@ -39,6 +40,7 @@
     "eslint-config-next": "15.2.4",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "jest-junit": "^16.0.0",
     "tailwindcss": "^4.1.12",
     "ts-jest": "^29.4.1",
     "tw-animate-css": "^1.3.7",

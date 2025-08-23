@@ -198,3 +198,6 @@ tmp/
 data/
 test_data/
 test_output/
+
+# Frontend test reports
+healthcare/app/reports/
