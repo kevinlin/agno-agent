@@ -24,7 +24,9 @@ The system is designed to work with flat question arrays (removing the sections 
 - SurveyService class provides complete CRUD operations
 - Comprehensive validation for survey definitions, questions, and branching rules
 - Support for all question types: INPUT, SINGLE_SELECT, MULTIPLE_SELECT, DROPDOWN, TIME
-- Personalization survey successfully loaded and validated
+- Enhanced survey loading with duplicate prevention - existing surveys are automatically skipped
+- Batch survey loading script can process all survey definitions from docs/survey-definition/ directory
+- Personalization and dietary surveys successfully loaded and validated
 - Proper error handling with HTTP status codes
 
 ### 2. Question Type Support
@@ -32,14 +34,21 @@ The system is designed to work with flat question arrays (removing the sections 
 **User Story**: As a survey respondent, I want to answer different types of questions, so that I can provide comprehensive health information.
 
 **Acceptance Criteria**:
-1. The system SHALL support INPUT questions with INTEGER_NUMBER and DECIMAL_NUMBER units
-2. The system SHALL support SINGLE_SELECT questions with radio button selection
-3. The system SHALL support MULTIPLE_SELECT questions with checkbox selection
-4. The system SHALL support DROPDOWN questions with select menu
-5. The system SHALL support TIME questions with minute-based input
-6. The system SHALL validate input constraints (min/max values, required fields)
-7. The system SHALL support exclusive options in MULTIPLE_SELECT questions
-8. The system SHALL display unit text alongside input controls
+1. The system SHALL support INPUT questions with INTEGER_NUMBER, DECIMAL_NUMBER, and TEXT units
+2. The system SHALL render appropriate input types: number inputs for INTEGER_NUMBER/DECIMAL_NUMBER, text inputs for TEXT
+3. The system SHALL support SINGLE_SELECT questions with radio button selection
+4. The system SHALL support MULTIPLE_SELECT questions with checkbox selection
+5. The system SHALL support DROPDOWN questions with select menu
+6. The system SHALL support TIME questions with minute-based input
+7. The system SHALL validate input constraints (min/max values, required fields)
+8. The system SHALL support exclusive options in MULTIPLE_SELECT questions
+9. The system SHALL display unit text alongside input controls
+
+**Implementation Notes**:
+- QuestionInput component properly handles TEXT unit type by rendering text input instead of number input
+- Number inputs are only used for INTEGER_NUMBER and DECIMAL_NUMBER unit types
+- Text inputs support all text-based questions including free-text responses
+- All question types have been tested and validated with comprehensive test coverage
 
 ### 3. Survey Response Management
 
@@ -173,8 +182,28 @@ The system is designed to work with flat question arrays (removing the sections 
 7. The system SHALL support empty branching_rules arrays for simple surveys
 
 **Implementation Notes**:
-- Personalization survey (9 questions) successfully loaded from JSON file
-- Survey loader script available at `scripts/load_personalization_survey.py`
+- Personalization and dietary surveys successfully loaded from JSON files
+- Enhanced survey loader script at `scripts/load_survey_definition.py` processes all JSON files in docs/survey-definition/
+- SurveyService.load_survey_from_file() includes duplicate detection and automatic skipping
 - Validation system handles all existing survey formats
-- Proper support for all question types used in personalization survey
+- Proper support for all question types used in all survey definitions
 - Branching rules validation allows empty arrays
+
+### 11. Survey Loading Automation
+
+**User Story**: As a system administrator, I want to automate survey loading and prevent duplicates, so that I can efficiently manage survey definitions without manual intervention.
+
+**Acceptance Criteria**:
+1. The system SHALL automatically detect and skip surveys that already exist in the database
+2. The system SHALL provide batch loading capability for all survey definitions in a directory
+3. The system SHALL process all JSON files in docs/survey-definition/ directory automatically
+4. The system SHALL provide detailed logging and summary reports for loading operations
+5. The system SHALL handle loading errors gracefully without stopping the entire batch process
+6. The system SHALL support idempotent operations - running the loader multiple times should be safe
+
+**Implementation Notes**:
+- Enhanced `SurveyService.load_survey_from_file()` method checks for existing surveys by code
+- Updated `scripts/load_survey_definition.py` script scans directory for all JSON files
+- Comprehensive error handling and progress reporting
+- Safe to run multiple times without creating duplicates
+- Detailed logging shows which surveys were loaded, skipped, or failed

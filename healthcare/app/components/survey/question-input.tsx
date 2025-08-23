@@ -52,7 +52,7 @@ export function QuestionInput({ question, value, onChange, className }: Question
       <div className="relative">
         <Input
           id={question.code}
-          type={question.unit ? "number" : "text"}
+          type={question.unit === "INTEGER_NUMBER" || question.unit === "DECIMAL_NUMBER" ? "number" : "text"}
           value={value || ""}
           onChange={(e) => handleChange(e.target.value)}
           onBlur={handleBlur}

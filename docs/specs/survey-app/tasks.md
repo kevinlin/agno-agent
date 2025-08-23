@@ -108,14 +108,25 @@ This document outlines the implementation tasks for the Survey App feature, orga
   - **Testable**: Home page loads surveys from backend API, displays proper error states, all tests pass
   - **Requirements**: 9.9, 9.10, 7.1, 7.2
 
-- [ ] **9. Question Type Support and Validation**
-  - Enhance existing question renderer components in `healthcare/app/components/survey/`
-  - Add proper validation feedback, error states, and accessibility compliance
-  - Ensure support for all question types: INPUT, SINGLE_SELECT, MULTIPLE_SELECT, DROPDOWN, TIME
-  - Implement exclusive options handling and proper unit text display
-  - Add keyboard navigation and screen reader support
-  - Create comprehensive component tests for all question types
-  - **Testable**: All question types render correctly, validation works, accessibility compliant
+- [x] **8.2. Survey Loading Automation and Duplicate Prevention**
+  - Enhanced `SurveyService.load_survey_from_file()` method to check for existing surveys by code
+  - Modified method to return `None` for existing surveys instead of throwing errors
+  - Updated `scripts/load_survey_definition.py` to process all JSON files in docs/survey-definition/
+  - Implemented batch processing with comprehensive error handling and progress reporting
+  - Added detailed logging and summary statistics (loaded/skipped/failed counts)
+  - Made loading operations idempotent - safe to run multiple times
+  - **Testable**: Script processes all survey files, skips existing surveys, provides detailed reports
+  - **Requirements**: 1.2, 1.3, 10.1, 10.2, 10.6, 10.7
+
+- [x] **9. Question Type Support and Validation**
+  - Enhanced existing question renderer components in `healthcare/app/components/survey/`
+  - Added proper validation feedback, error states, and accessibility compliance
+  - Fixed QuestionInput component to properly handle TEXT unit type (renders text input instead of number input)
+  - Ensured support for all question types: INPUT (with TEXT, INTEGER_NUMBER, DECIMAL_NUMBER units), SINGLE_SELECT, MULTIPLE_SELECT, DROPDOWN, TIME
+  - Implemented exclusive options handling and proper unit text display
+  - Added keyboard navigation and screen reader support
+  - Created comprehensive component tests for all question types - all tests passing
+  - **Testable**: All question types render correctly, validation works, accessibility compliant, TEXT inputs work properly
   - **Requirements**: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 9.3, 9.4, 9.7
 
 - [ ] **10. Progress Tracking and Navigation**
@@ -142,7 +153,9 @@ This document outlines the implementation tasks for the Survey App feature, orga
 - **Tasks 1-2**: Database and service foundation
 - **Tasks 3-4**: Backend API implementation (depends on 1-2)
 - **Tasks 5-6**: Frontend integration and logic (depends on 4)
-- **Tasks 7-10**: UI components and user experience (depends on 5-6)
+- **Tasks 7-8**: UI components and integration (depends on 5-6)
+- **Task 8.2**: Survey loading automation (depends on 2)
+- **Tasks 9-10**: Question types and navigation (depends on 7-8)
 - **Task 11**: Final integration and testing (depends on all previous)
 
 ## Verification Methods

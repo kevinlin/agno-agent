@@ -346,8 +346,12 @@ class SurveyService:
             # Check if survey already exists
             existing_survey = self.get_survey_by_code(code)
             if existing_survey:
-                logger.info(f"Survey already exists, skipping: {code} (v{existing_survey.version})")
-                return None
+                if existing_survey.version == version:
+                    logger.info(f"Survey already exists with same version, skipping: {code} (v{existing_survey.version})")
+                    return None
+                else:
+                    logger.info(f"Survey exists with different version, will create new version: {code} (existing: v{existing_survey.version}, new: v{version})")
+                    # Continue to create new version
 
             return self.create_survey(
                 code=code,

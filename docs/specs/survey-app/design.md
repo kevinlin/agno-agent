@@ -93,8 +93,9 @@ Core business logic for survey management following the functional requirements 
 - Comprehensive validation system for survey definitions
 - Support for all question types: INPUT, SINGLE_SELECT, MULTIPLE_SELECT, DROPDOWN, TIME
 - Branching rules validation with question reference checking
-- File-based survey loading with proper error handling
-- Full test coverage with 21 unit tests
+- Enhanced file-based survey loading with duplicate detection and automatic skipping
+- Batch survey loading script for processing entire directories
+- Full test coverage with comprehensive unit tests
 
 #### 2. Survey Routes (`healthcare/survey/routes.py`)
 
@@ -170,6 +171,41 @@ CREATE TABLE survey_results (
 - `surveys (code, type)` for catalog queries
 - `survey_results (response_id)` for efficient result retrieval
 
+#### Enhanced Survey Loading System
+
+**Survey Loading Features**:
+- **Duplicate Prevention**: `SurveyService.load_survey_from_file()` automatically checks for existing surveys by code
+- **Batch Processing**: `scripts/load_survey_definition.py` processes all JSON files in docs/survey-definition/
+- **Idempotent Operations**: Safe to run multiple times without creating duplicates
+- **Comprehensive Reporting**: Detailed logging and summary statistics for loading operations
+- **Error Resilience**: Individual file failures don't stop the entire batch process
+
+**Implementation Details**:
+```python
+# Enhanced load_survey_from_file method
+def load_survey_from_file(self, file_path: Path) -> Optional[Survey]:
+    # Check if survey already exists
+    existing_survey = self.get_survey_by_code(code)
+    if existing_survey:
+        logger.info(f"Survey already exists, skipping: {code}")
+        return None
+    # Create new survey if not exists
+    return self.create_survey(...)
+```
+
+**Script Usage**:
+```bash
+# Load all survey definitions
+python scripts/load_survey_definition.py
+
+# Output example:
+# Found 2 survey definition files
+# Processing: personalization-survey.json
+# Survey already exists, skipping: personalization (v1.0.0)
+# Processing: dietary-survey.json
+# ✓ Successfully loaded survey: dietary (v1.0.1)
+```
+
 ### Frontend Components
 
 #### 1. Survey Container (`components/survey/survey-container.tsx`)
@@ -205,11 +241,17 @@ CREATE TABLE survey_results (
 #### 3. Question Renderers (existing components)
 
 **Enhanced existing components:**
-- `QuestionInput`: Enhanced validation with backend sync
+- `QuestionInput`: Enhanced validation with backend sync, proper TEXT vs NUMBER input type handling
 - `QuestionSingleSelect`: Optimized rendering with proper ARIA labels
 - `QuestionMultipleSelect`: Enhanced exclusive option handling
 - `QuestionDropdown`: Improved accessibility and search
 - `QuestionTime`: New component for time-based inputs
+
+**QuestionInput Component Details:**
+- Properly handles TEXT unit type by rendering text input instead of number input
+- Number inputs only used for INTEGER_NUMBER and DECIMAL_NUMBER units
+- Supports all text-based questions including free-text responses
+- Comprehensive validation and error handling
 
 #### 4. New Components
 
@@ -267,7 +309,7 @@ interface Question {
   title: string                  // Main question text
   subtitle?: string              // Optional helper text
   required?: boolean             // Validation requirement
-  unit?: UnitType               // For INPUT questions
+  unit?: UnitType               // For INPUT questions: INTEGER_NUMBER | DECIMAL_NUMBER | TEXT | MINUTES
   unit_text?: string            // Display unit
   constraints?: Constraints     // Validation rules
   answers?: QuestionAnswers     // For select-type questions
