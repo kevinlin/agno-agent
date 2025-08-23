@@ -2,14 +2,33 @@
 
 This document outlines the implementation tasks for the Survey App feature, organized incrementally where each task builds upon previous ones and can be tested or verified manually.
 
+## Architecture Changes
+
+**Simplified Response Storage:**
+- **Previous**: Individual answers stored in separate `survey_answers` table
+- **Current**: Complete survey state stored in `user_response` JSON field on `survey_responses` table
+- **Benefits**: Simplified schema, easier state management, atomic saves, better performance
+
+**Unified API Endpoint:**  
+- **Previous**: Separate endpoints for individual answers (`POST /api/survey-response/answer`) and completion
+- **Current**: Single `POST /api/survey-response` endpoint handles both partial and complete saves
+- **Benefits**: Simpler API, consistent state handling, reduced complexity
+
+**Enhanced Frontend State Management:**
+- Frontend maintains complete answer state and saves entire response object
+- State reconstruction from `user_response` JSON for resume functionality  
+- Simplified auto-save logic with complete state persistence
+
 ## Implementation Tasks
 
 - [x] **1. Database Foundation Setup**
-  - Create `Survey`, `SurveyResponse`, `SurveyAnswer`, `SurveyResult` SQLModel classes in `healthcare/storage/models.py`
+  - Create `Survey`, `SurveyResponse`, `SurveyResult` SQLModel classes in `healthcare/storage/models.py`
+  - Add `user_response` JSON field to `SurveyResponse` model for storing answer data
+  - Remove `SurveyAnswer` model in favor of simplified user_response JSON storage
   - Update `healthcare/storage/database.py` to create survey tables with proper indexes
   - Add survey table creation to existing `create_tables()` method
   - Create unit tests for all database models and relationships
-  - **Testable**: Database tables created successfully, can insert/query records, all model tests pass
+  - **Testable**: Database tables created successfully, can insert/query records with JSON data, all model tests pass
   - **Requirements**: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7
 
 - [x] **2. Survey Service and Data Management**
@@ -23,31 +42,33 @@ This document outlines the implementation tasks for the Survey App feature, orga
 
 - [x] **3. Survey Response Management**
   - Add survey response management methods to `SurveyService`
-  - Implement response lookup by user_id and survey_code
-  - Add response creation, answer saving, and progress tracking
-  - Implement survey completion with derived metrics calculation (BMI, etc.)
+  - Implement response lookup by user_id and survey_code with user_response JSON field
+  - Add response creation, complete state saving, and progress tracking
+  - Implement survey completion with derived metrics calculation from user_response JSON
   - Create unit tests for response management functionality
-  - **Testable**: Can create, update responses; save individual answers; calculate progress and completion
-  - **Requirements**: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 6.7
+  - **Testable**: Can create, update responses; save complete answer state; calculate progress and completion
+  - **Requirements**: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 6.7
 
 - [x] **4. Survey API Endpoints**
   - Create `healthcare/survey/routes.py` with FastAPI router and proper error handling
   - Implement survey catalog endpoints: `GET /api/survey`, `GET /api/survey/{code}`, `POST /api/survey`
-  - Add survey response endpoints: `GET /api/survey-response`, `POST /api/survey-response`, `POST /api/survey-response/answer`
+  - Add unified survey response endpoint: `GET /api/survey-response`, `POST /api/survey-response` (handles both partial and complete saves)
+  - Remove separate answer endpoint in favor of unified response handling
   - Implement `POST /api/survey-links` for agent integration
   - Integrate survey routes with main application in `healthcare/main.py`
   - Create comprehensive API endpoint tests
-  - **Testable**: All survey endpoints work correctly, proper error handling, agent integration functional
-  - **Requirements**: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7
+  - **Testable**: All survey endpoints work correctly, unified response handling, proper error handling, agent integration functional
+  - **Requirements**: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9
 
 - [x] **5. Frontend API Integration**
   - Create survey API client functions in `healthcare/app/lib/survey-api.ts` with TypeScript types
-  - Update `healthcare/app/hooks/use-survey.ts` to integrate with backend API
-  - Enhance `healthcare/app/hooks/use-survey-persistence.ts` with backend synchronization
-  - Add proper error handling, retry logic, and optimistic updates
+  - Update `healthcare/app/hooks/use-survey.ts` to integrate with unified response API
+  - Enhance `healthcare/app/hooks/use-survey-persistence.ts` with complete state synchronization
+  - Add proper error handling, retry logic, and optimistic updates for complete state saves
+  - Implement state reconstruction from user_response JSON data
   - Create tests for API client functions and enhanced hooks
-  - **Testable**: Frontend can load surveys from backend, save answers automatically, proper error recovery
-  - **Requirements**: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 3.3, 3.4, 3.5, 7.5, 7.7
+  - **Testable**: Frontend can load surveys from backend, save complete state automatically, reconstruct from partial states, proper error recovery
+  - **Requirements**: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 3.3, 3.4, 3.5, 3.10, 7.4, 7.5, 7.9
 
 - [ ] **6. Branching Logic Implementation**
   - Create branching logic evaluation functions in `healthcare/app/lib/branching.ts`

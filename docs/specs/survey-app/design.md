@@ -23,19 +23,21 @@ The Survey App is a full-stack web application designed to seamlessly integrate 
 
 ## Implementation Status
 
-### ✅ Completed Components (Task 2)
+### ✅ Completed Components
 - **SurveyService**: Complete survey management service with CRUD operations
 - **Database Models**: All survey-related models implemented with proper relationships
 - **Validation System**: Comprehensive validation for survey definitions and questions
 - **Data Migration**: Personalization survey successfully loaded and validated
 - **Testing**: Full test coverage with 21 unit tests
+- **Survey Routes**: API endpoints for survey management and response handling
+- **Auto-Save Implementation**: Frontend auto-save with navigation triggers and backend integration
+- **Survey Completion Flow**: Complete submission with status updates and result creation
+- **Frontend Integration**: React components with state management and backend synchronization
 
-### 🔄 Pending Components (Tasks 3-11)
-- **Survey Routes**: API endpoints for survey management
-- **Survey Response Management**: Backend response tracking and persistence
-- **Frontend Integration**: React components and state management
-- **Branching Logic**: Frontend conditional question flow
-- **User Interface**: Survey rendering and navigation components
+### 🔄 Remaining Components
+- **Branching Logic**: Frontend conditional question flow (complex branching rules)
+- **Advanced UI Features**: Loading skeletons, error boundaries, accessibility enhancements
+- **Testing**: End-to-end testing and integration test coverage for new features
 
 
 ## Architecture
@@ -86,10 +88,12 @@ graph TB
 ### Data Flow
 
 1. **Survey Loading**: Frontend fetches survey definition from `/api/survey/{code}`
-2. **Response Management**: Backend looks up existing survey response by `user_id` and `survey_code`
-3. **Branching Evaluation**: Frontend evaluates conditions locally
-4. **Progress Tracking**: Calculated based on visible questions and completion status
-5. **Survey Completion**: Submit final response via `/api/survey-response`
+2. **Response Management**: Backend looks up existing survey response with user_response JSON by `user_id` and `survey_code`
+3. **State Restoration**: Frontend reconstructs answer state from user_response JSON field
+4. **Auto-Save**: Complete survey state saved automatically with configurable delay (2s) or on navigation
+5. **Progress Tracking**: Real-time progress calculation with each complete state save
+6. **Branching Evaluation**: Frontend evaluates conditions locally for dynamic question flow
+7. **Survey Completion**: Complete survey via `/api/survey-response` POST with status update and result creation
 
 
 ## Components and Interfaces
@@ -136,9 +140,9 @@ Database schema following the functional requirements without survey sessions:
 - `surveys` table: Stores survey definitions with code, title, version, type, definition_json ✅ **IMPLEMENTED**
 
 **Survey Response Tracking:**
-- `survey_responses` table: Tracks user survey responses by `user_id` and `survey_code` with status tracking ✅ **IMPLEMENTED**
-- `survey_answers` table: Individual answer storage linked to survey responses ✅ **IMPLEMENTED**
+- `survey_responses` table: Tracks user survey responses with user_response JSON field ✅ **IMPLEMENTED** 
 - `survey_results` table: Computed assessment outputs and derived metrics ✅ **IMPLEMENTED**
+- `survey_answers` table: **REMOVED** - replaced by user_response JSON field for simplified storage
 
 **Implementation Details**:
 - All models implemented using SQLModel with proper type hints
@@ -157,7 +161,7 @@ CREATE TABLE surveys (
   version TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('PERSONALIZATION','DISEASE_RISK','LIFE_STYLE')),
   description TEXT,
-  definition_json TEXT NOT NULL,  -- Updated column name
+  definition_json TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -167,16 +171,9 @@ CREATE TABLE survey_responses (
   user_id INTEGER NOT NULL REFERENCES users(id),
   status TEXT NOT NULL CHECK (status IN ('in_progress','completed','cancelled')),
   progress_pct INTEGER NOT NULL DEFAULT 0,
+  user_response TEXT,  -- JSON field: {"height_cm": "173", "smoke_status": "never"}
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE survey_answers (
-  id INTEGER PRIMARY KEY,
-  response_id TEXT NOT NULL REFERENCES survey_responses(id),
-  question_code TEXT NOT NULL,
-  value_json TEXT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE survey_results (
@@ -189,26 +186,30 @@ CREATE TABLE survey_results (
 
 **Indexes:**
 - `survey_responses (user_id, survey_id)` for fast lookup
-- `survey_answers (response_id, question_code)` for efficient answer retrieval
 - `surveys (code, type)` for catalog queries
+- `survey_results (response_id)` for efficient result retrieval
 
 ### Frontend Components
 
-#### 1. Survey Container (`components/survey/survey-container.tsx`)
+#### 1. Survey Container (`components/survey/survey-container.tsx`) ✅ **IMPLEMENTED**
 
 **Existing component enhanced with:**
-- Backend API integration for survey responses
-- Error boundary implementation
-- Loading state management
-- Progress persistence via localStorage and API
+- Backend API integration for survey responses with completion flow
+- Survey submission via `completeOnBackend()` with status update to 'completed'
+- Automatic survey result creation with derived metrics on completion
+- Error boundary implementation with graceful error handling
+- Loading state management for submission and progress loading
+- Progress persistence via localStorage and API with auto-sync
 
-#### 2. Survey State Management (`hooks/use-survey.ts`)
+#### 2. Survey State Management (`hooks/use-survey.ts`) ✅ **IMPLEMENTED**
 
 **Enhanced existing hook with:**
-- Backend synchronization via survey-response APIs
-- Optimistic updates for better UX
-- Error recovery and retry logic
-- Progress persistence without sessions
+- Backend synchronization via survey-response APIs with auto-save functionality
+- Auto-save on navigation (goToNext, goToPrevious, goToQuestion) with non-blocking saves
+- Configurable auto-save delay (default 2 seconds) for answer persistence
+- Survey completion integration with `completeOnBackend()` function
+- Optimistic updates for better UX with error recovery and retry logic
+- Progress persistence without sessions using real-time progress tracking
 
 #### 3. Question Renderers (existing components)
 
@@ -284,9 +285,9 @@ interface BranchingAction {
 Following the functional requirements API specification:
 
 **Survey Response Management:**
-- `GET /api/survey-response` returns: `{ok, status, progress_pct, last_question_id, answers: [{question_id, title, value}]}`
-- `POST /api/survey-response/answer` accepts: `{question_id, value}` returns: `{ok, progress_pct}`
-- `POST /api/survey-response` for final submission with status `completed`
+- `GET /api/survey-response` returns: `{ok, status, progress_pct, user_response: {"height_cm": "173", "smoke_status": "never"}}`
+- `POST /api/survey-response` accepts: `{user_response: {...}, status?: "in_progress"|"completed"}` returns: `{ok, progress_pct}`
+- Single endpoint handles both partial saves (in_progress) and final submission (completed)
 
 **Survey Catalog:**
 - `GET /api/survey` returns: `[{id, code, title, type, active_version}]`
@@ -294,6 +295,46 @@ Following the functional requirements API specification:
 
 **Error Format:**
 - All errors use: `{ok: false, error: {code, message, details}}`
+
+
+## Auto-Save and Completion Implementation
+
+### Auto-Save Strategy
+
+**Frontend Auto-Save (`use-survey.ts`):**
+- **Triggered Events**: Answer changes, navigation between questions, timeout-based saves
+- **Save Timing**: Configurable delay (default 2 seconds) after answer input
+- **Navigation Saves**: Non-blocking immediate saves of complete survey state when navigating
+- **State Management**: Maintains complete answer state and saves entire user_response object
+- **Error Handling**: Graceful degradation with local storage fallback and retry logic
+- **Progress Tracking**: Real-time progress calculation with each successful state save
+
+**Backend Response Save (`POST /api/survey-response`):**
+- **Complete State Persistence**: Entire survey state saved in user_response JSON field
+- **Progress Calculation**: Based on answered questions vs total visible questions from user_response
+- **Response Status**: Handles both 'in_progress' and 'completed' status in single endpoint
+- **Timestamps**: Updates response `updated_at` timestamp on each save
+- **Flexible Storage**: JSON field allows for arbitrary question-answer mappings
+
+### Survey Completion Flow
+
+**Frontend Completion (`handleSubmit`):**
+1. Call `completeOnBackend()` to finalize survey with status update
+2. Invoke optional `onComplete` callback for additional processing
+3. Clear local storage progress data
+4. Navigate to completion screen with derived metrics display
+
+**Backend Completion (`POST /api/survey-response` with status='completed'):**
+1. Update survey response status to 'completed' with 100% progress
+2. Calculate derived metrics (BMI, risk scores) from user_response JSON data
+3. Create survey result record with computed metrics and assessments
+4. Return completion result with metrics for frontend display
+
+**Derived Metrics Calculation:**
+- **Automatic Processing**: Backend calculates health metrics from user_response JSON data
+- **Flexible Schema**: JSON storage allows for various metric types and future extensions  
+- **Direct Access**: Metrics calculation reads directly from user_response field without joins
+- **Error Resilience**: Completion succeeds even if metrics calculation fails
 
 
 ## Error Handling

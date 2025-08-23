@@ -48,11 +48,23 @@ The system is designed to work with flat question arrays (removing the sections 
 **Acceptance Criteria**:
 1. The system SHALL look up existing survey responses by user_id and survey_code
 2. The system SHALL track response status: in_progress, completed, cancelled
-3. The system SHALL save answers automatically after each valid input
-4. The system SHALL calculate and update progress percentage
-5. The system SHALL provide resume capability via URLs
-6. The system SHALL allow users to review saved results before final submission
-7. The system SHALL overwrite existing in_progress responses for the same user-survey
+3. The system SHALL save complete survey state automatically after each valid input
+4. The system SHALL save complete survey state automatically when navigating between questions
+5. The system SHALL store all answers in a single user_response JSON field as key-value pairs
+6. The system SHALL calculate and update progress percentage after each state save
+7. The system SHALL provide resume capability via URLs with partial answer restoration
+8. The system SHALL allow users to review saved results before final submission
+9. The system SHALL overwrite existing in_progress responses for the same user-survey
+10. The system SHALL handle partial answer states and restore frontend state accordingly
+
+**Implementation Notes**:
+- Auto-save functionality saves entire survey response with user_response JSON field
+- Single API endpoint `POST /api/survey-response` handles both partial and complete saves
+- User responses stored as JSON map: `{"height_cm": "173", "smoke_status": "never"}`
+- Frontend can resume from any partial state by reconstructing answers from user_response
+- Navigation functions automatically save complete survey state
+- Optimistic UI updates with error recovery and retry logic
+- Local storage fallback for offline scenarios with backend sync when online
 
 ### 4. Conditional Branching Logic
 
@@ -75,10 +87,11 @@ The system is designed to work with flat question arrays (removing the sections 
 1. The system SHALL display only one question per screen
 2. The system SHALL provide Next/Back navigation buttons
 3. The system SHALL disable Next button until valid answer is provided for required questions
-4. The system SHALL show field-level validation error messages
-5. The system SHALL calculate next question based on branching logic
-6. The system SHALL support direct navigation to specific questions via URL
-7. The system SHALL handle navigation for conditional questions appropriately
+4. The system SHALL save current answer automatically before navigating to next/previous questions
+5. The system SHALL show field-level validation error messages
+6. The system SHALL calculate next question based on branching logic
+7. The system SHALL support direct navigation to specific questions via URL
+8. The system SHALL handle navigation for conditional questions appropriately
 
 ### 6. Progress Tracking and Review
 
@@ -100,11 +113,13 @@ The system is designed to work with flat question arrays (removing the sections 
 **Acceptance Criteria**:
 1. The system SHALL provide API to generate signed survey URLs with user_id and survey_code
 2. The system SHALL provide API to check survey completion status
-3. The system SHALL provide API to retrieve survey responses and answers
-4. The system SHALL provide API to submit completed surveys
-5. The system SHALL return structured response data with ok/error format
-6. The system SHALL support external user ID mapping to internal user records
-7. The system SHALL provide APIs for answer persistence during survey taking
+3. The system SHALL provide API to retrieve survey responses with user_response data
+4. The system SHALL provide single API endpoint to save/update complete survey responses
+5. The system SHALL support both partial (in_progress) and complete survey response saves
+6. The system SHALL automatically create survey results with derived metrics on completion
+7. The system SHALL return structured response data with ok/error format
+8. The system SHALL support external user ID mapping to internal user records
+9. The system SHALL handle user_response JSON field for flexible answer storage
 
 ### 8. Database Schema Implementation
 
@@ -112,19 +127,21 @@ The system is designed to work with flat question arrays (removing the sections 
 
 **Acceptance Criteria**:
 1. The system SHALL implement surveys table with id, code, title, version, type, description, created_at
-2. The system SHALL implement survey_responses table with response tracking by user_id and survey_code
-3. The system SHALL implement survey_answers table with answer storage linked to responses
-4. The system SHALL implement survey_results table for computed assessment outputs
+2. The system SHALL implement survey_responses table with user_response JSON field for answer storage
+3. The system SHALL implement survey_results table for computed assessment outputs
+4. The system SHALL eliminate survey_answers table in favor of user_response JSON field
 5. The system SHALL create appropriate indexes for performance optimization
 6. The system SHALL reuse existing users table from the healthcare system
-7. The system SHALL support JSON storage for flexible answer values
+7. The system SHALL support JSON storage for flexible answer values in user_response field
 
 **Implementation Notes**:
 - Database models defined in `healthcare/storage/models.py`
 - Survey definitions stored as JSON in `definition_json` column
+- User responses stored as JSON in `user_response` column: `{"height_cm": "173", "smoke_status": "never"}`
 - UUID-based primary keys for surveys and survey responses
 - Proper foreign key relationships and constraints
 - Unique constraints for survey codes and user-survey response pairs
+- Simplified schema eliminates need for separate answers table
 
 ### 9. Frontend User Experience
 
