@@ -42,17 +42,17 @@ jobs:
             echo "::warning::Import sorting issues found. Run 'uv run isort .' to fix."
           fi
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'pnpm'
           cache-dependency-path: 'healthcare/app/pnpm-lock.yaml'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
 
       - name: Install frontend dependencies
         run: |
