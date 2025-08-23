@@ -55,6 +55,9 @@ const sessionStorageMock = {
 }
 global.sessionStorage = sessionStorageMock
 
+// Mock Element.prototype.scrollIntoView
+Element.prototype.scrollIntoView = jest.fn()
+
 // Clean up after each test
 afterEach(() => {
   jest.clearAllMocks()

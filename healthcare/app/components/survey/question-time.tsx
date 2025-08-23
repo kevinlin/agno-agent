@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Question } from "@/types/survey"
 import { validateAnswer } from "@/lib/survey-validation"
 import { Input } from "@/components/ui/input"
@@ -18,13 +18,24 @@ export function QuestionTime({ question, value, onChange, className }: QuestionT
   const [error, setError] = useState<string>()
   const [touched, setTouched] = useState(false)
   const [displayValue, setDisplayValue] = useState(() => {
-    if (value) {
+    if (value !== undefined && value !== null) {
       const hours = Math.floor(value / 60)
-      const minutes = value % 60
+      const minutes = Math.floor(value % 60)
       return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`
     }
     return ""
   })
+
+  // Update display value when prop changes
+  useEffect(() => {
+    if (value !== undefined && value !== null) {
+      const hours = Math.floor(value / 60)
+      const minutes = Math.floor(value % 60)
+      setDisplayValue(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`)
+    } else {
+      setDisplayValue("")
+    }
+  }, [value])
 
   const handleChange = (timeString: string) => {
     setDisplayValue(timeString)

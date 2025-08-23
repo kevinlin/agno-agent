@@ -118,7 +118,7 @@ This document outlines the implementation tasks for the Survey App feature, orga
   - **Testable**: Script processes all survey files, skips existing surveys, provides detailed reports
   - **Requirements**: 1.2, 1.3, 10.1, 10.2, 10.6, 10.7
 
-- [x] **9. Question Type Support and Validation**
+- [ ] **9. Question Type Support and Validation**
   - Enhanced existing question renderer components in `healthcare/app/components/survey/`
   - Added proper validation feedback, error states, and accessibility compliance
   - Fixed QuestionInput component to properly handle TEXT unit type (renders text input instead of number input)
