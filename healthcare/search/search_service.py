@@ -218,3 +218,34 @@ class SearchService:
         except Exception as e:
             logger.error(f"Failed to get search stats: {e}")
             return {"error": str(e)}
+
+    def refresh_vector_database(self) -> Dict[str, Any]:
+        """Refresh the vector database collection to handle external updates.
+        
+        This method should be called when ChromaDB has been updated externally
+        and you need to refresh the collection state.
+        
+        Returns:
+            Dictionary with refresh status and collection info
+        """
+        try:
+            logger.info("Refreshing vector database collection...")
+            
+            # Refresh the embedding service collection
+            self.embedding_service.refresh_collection()
+            
+            # Get updated collection stats
+            collection_stats = self.embedding_service.get_collection_stats()
+            
+            return {
+                "status": "success",
+                "message": "Vector database collection refreshed successfully",
+                "collection_stats": collection_stats,
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to refresh vector database: {e}")
+            return {
+                "status": "error", 
+                "message": f"Failed to refresh vector database: {str(e)}"
+            }

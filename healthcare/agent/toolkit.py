@@ -324,3 +324,39 @@ class MedicalToolkit(Toolkit):
                 f"Failed to generate report summary for user {user_external_id}, report {report_id}: {e}"
             )
             raise RuntimeError(f"Failed to generate report summary: {e}")
+
+    def refresh_search_database(self) -> str:
+        """Refresh the vector search database to handle external updates.
+        
+        This function should be called when the ChromaDB database has been 
+        updated externally and you encounter search errors. It will refresh
+        the collection reference and resolve common database inconsistency issues.
+        
+        Returns:
+            String message indicating the refresh status
+            
+        Raises:
+            RuntimeError: If refresh operation fails
+        """
+        try:
+            logger.info("Refreshing search database collection...")
+            
+            # Call the search service refresh method
+            result = self.search_service.refresh_vector_database()
+            
+            if result.get("status") == "success":
+                collection_stats = result.get("collection_stats", {})
+                total_chunks = collection_stats.get("total_chunks", "unknown")
+                
+                return (
+                    f"✓ Search database refreshed successfully. "
+                    f"Collection now contains {total_chunks} chunks. "
+                    f"You can now retry your search operations."
+                )
+            else:
+                error_msg = result.get("message", "Unknown error occurred")
+                raise RuntimeError(error_msg)
+                
+        except Exception as e:
+            logger.error(f"Failed to refresh search database: {e}")
+            raise RuntimeError(f"Search database refresh failed: {str(e)}")

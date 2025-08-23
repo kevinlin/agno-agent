@@ -58,6 +58,29 @@ class EmbeddingService:
             logger.error(f"Failed to initialize Chroma: {e}")
             raise
 
+    def refresh_collection(self) -> None:
+        """Refresh the collection reference to handle database updates.
+        
+        This should be called when ChromaDB has been updated externally
+        and the collection state may have changed.
+        """
+        try:
+            logger.info("Refreshing ChromaDB collection reference...")
+            
+            # Get fresh collection reference
+            self.collection = self.chroma_client.get_or_create_collection(
+                name="medical_reports",
+                metadata={"description": "Medical report chunks with embeddings"},
+            )
+            
+            logger.info(f"✓ Collection refreshed, count: {self.collection.count()}")
+            
+        except Exception as e:
+            logger.error(f"Failed to refresh collection: {e}")
+            # If refresh fails, try full reinitialization
+            logger.info("Attempting full ChromaDB reinitialization...")
+            self._initialize_chroma()
+
     def chunk_markdown(self, markdown: str) -> List[str]:
         """Chunk Markdown content into semantic segments.
 
@@ -242,13 +265,34 @@ class EmbeddingService:
             if user_filter:
                 where_clause["user_external_id"] = user_filter
 
-            # Search in Chroma
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
-                n_results=k,
-                where=where_clause if where_clause else None,
-                include=["documents", "metadatas", "distances"],
-            )
+            # Search in Chroma with error recovery
+            try:
+                results = self.collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=k,
+                    where=where_clause if where_clause else None,
+                    include=["documents", "metadatas", "distances"],
+                )
+            except Exception as query_error:
+                # Check if this is a ChromaDB internal error that can be resolved by refreshing
+                error_msg = str(query_error).lower()
+                if "error finding id" in error_msg or "internal error" in error_msg:
+                    logger.warning(f"ChromaDB collection error detected: {query_error}")
+                    logger.info("Attempting to refresh collection and retry query...")
+                    
+                    # Refresh collection and retry once
+                    self.refresh_collection()
+                    
+                    results = self.collection.query(
+                        query_embeddings=[query_embedding],
+                        n_results=k,
+                        where=where_clause if where_clause else None,
+                        include=["documents", "metadatas", "distances"],
+                    )
+                    logger.info("✓ Query succeeded after collection refresh")
+                else:
+                    # Re-raise non-recoverable errors
+                    raise
 
             # Format results
             search_results = []
