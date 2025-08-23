@@ -6,6 +6,9 @@ with the backend survey API endpoints.
 """
 
 import json
+import os
+import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,8 +21,20 @@ from healthcare.survey.survey_service import SurveyService
 
 @pytest.fixture
 def config():
-    """Load test configuration."""
-    return ConfigManager.load_config()
+    """Load test configuration with proper test database paths."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        env_vars = {
+            "OPENAI_API_KEY": "test_key",
+            "MEDICAL_DB_PATH": str(temp_path / "test_medical.db"),
+            "AGENT_DB_PATH": str(temp_path / "test_agent.db"),
+            "DATA_DIR": str(temp_path / "data"),
+            "UPLOADS_DIR": str(temp_path / "data" / "uploads"),
+            "REPORTS_DIR": str(temp_path / "data" / "reports"),
+            "CHROMA_DIR": str(temp_path / "data" / "chroma"),
+        }
+        with patch.dict("os.environ", env_vars):
+            yield ConfigManager.load_config()
 
 
 @pytest.fixture
