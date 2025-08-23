@@ -25,6 +25,8 @@ interface SurveyContainerProps {
 export function SurveyContainer({ survey, userId, onComplete, onSave }: SurveyContainerProps) {
   const [showSidebar, setShowSidebar] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [savedProgress, setSavedProgress] = useState<any>(null)
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true)
 
   const persistence = useSurveyPersistence({
     surveyCode: survey.code,
@@ -33,7 +35,22 @@ export function SurveyContainer({ survey, userId, onComplete, onSave }: SurveyCo
   })
 
   // Load initial data from persistence
-  const savedProgress = persistence.loadProgress()
+  useEffect(() => {
+    const loadInitialProgress = async () => {
+      try {
+        setIsLoadingProgress(true)
+        const progress = await persistence.loadProgress()
+        setSavedProgress(progress)
+      } catch (error) {
+        console.error("Failed to load saved progress:", error)
+        setSavedProgress(null)
+      } finally {
+        setIsLoadingProgress(false)
+      }
+    }
+
+    loadInitialProgress()
+  }, [persistence.loadProgress])
 
   const {
     currentQuestion,
@@ -56,7 +73,7 @@ export function SurveyContainer({ survey, userId, onComplete, onSave }: SurveyCo
     visibleQuestions,
   } = useSurvey({
     survey,
-    initialSession: savedProgress
+    initialSession: savedProgress && savedProgress.answers
       ? {
           answers: Object.entries(savedProgress.answers).map(([question_code, value]) => ({
             question_code,
@@ -67,17 +84,10 @@ export function SurveyContainer({ survey, userId, onComplete, onSave }: SurveyCo
       : undefined,
   })
 
-  // Set last saved time from persistence
-  useEffect(() => {
-    if (savedProgress?.lastSaved) {
-      // This would be handled by the persistence hook
-    }
-  }, [savedProgress])
-
   // Mark as unsaved when answers change
   useEffect(() => {
     persistence.markUnsaved()
-  }, [answers, persistence])
+  }, [answers, persistence.markUnsaved])
 
   const handleNext = () => {
     if (isLastQuestion && isCurrentQuestionValid) {
@@ -112,6 +122,20 @@ export function SurveyContainer({ survey, userId, onComplete, onSave }: SurveyCo
   }
 
   const derivedMetrics = surveyMode === "complete" ? calculateDerivedMetrics(visibleQuestions, answers) : []
+
+  // Show loading state while progress is being loaded
+  if (isLoadingProgress) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md mx-auto">
+          <CardContent className="pt-6 text-center">
+            <h2 className="text-xl font-semibold mb-2">Loading Survey...</h2>
+            <p className="text-muted-foreground">Please wait while we load your progress.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   if (surveyMode === "complete") {
     return (

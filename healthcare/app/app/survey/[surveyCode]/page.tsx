@@ -1,18 +1,24 @@
+"use client"
+
+import { use } from "react"
 import { notFound } from "next/navigation"
 import { getSurvey } from "@/lib/survey-data"
 import { SurveyContainer } from "@/components/survey/survey-container"
 
 interface SurveyPageProps {
-  params: {
+  params: Promise<{
     surveyCode: string
-  }
-  searchParams: {
+  }>
+  searchParams: Promise<{
     user_id?: string
-  }
+  }>
 }
 
 export default function SurveyPage({ params, searchParams }: SurveyPageProps) {
-  const survey = getSurvey(params.surveyCode)
+  const { surveyCode } = use(params)
+  const { user_id } = use(searchParams)
+  
+  const survey = getSurvey(surveyCode)
 
   if (!survey) {
     notFound()
@@ -28,5 +34,5 @@ export default function SurveyPage({ params, searchParams }: SurveyPageProps) {
     // TODO: Save to API
   }
 
-  return <SurveyContainer survey={survey} onComplete={handleComplete} onSave={handleSave} />
+  return <SurveyContainer survey={survey} userId={user_id} onComplete={handleComplete} onSave={handleSave} />
 }

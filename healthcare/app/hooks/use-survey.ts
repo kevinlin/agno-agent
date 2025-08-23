@@ -25,7 +25,7 @@ export function useSurvey({
   survey,
   initialSession,
   userId,
-  enableAutoSave = false,
+  enableAutoSave = true,
   autoSaveDelay = 2000,
 }: UseSurveyOptions) {
   // Initialize answers from session or empty
@@ -51,7 +51,7 @@ export function useSurvey({
   const [backendProgress, setBackendProgress] = useState<number>(0)
 
   // Auto-save timeout ref
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>()
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Load initial data from backend if userId is provided
   useEffect(() => {
@@ -90,27 +90,6 @@ export function useSurvey({
 
     loadBackendData()
   }, [userId, survey?.code])
-
-  // Auto-save functionality
-  useEffect(() => {
-    if (!enableAutoSave || !userId || !hasUnsavedChanges) return
-
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current)
-    }
-
-    // Set new timeout
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      saveToBackend()
-    }, autoSaveDelay)
-
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current)
-      }
-    }
-  }, [answers, enableAutoSave, userId, hasUnsavedChanges, autoSaveDelay])
 
   // Save individual answer to backend
   const saveToBackend = useCallback(async (questionCode?: string, value?: any) => {
@@ -171,6 +150,27 @@ export function useSurvey({
       setIsSaving(false)
     }
   }, [userId, survey?.code])
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!enableAutoSave || !userId || !hasUnsavedChanges) return
+
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current)
+    }
+
+    // Set new timeout
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      saveToBackend()
+    }, autoSaveDelay)
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+      }
+    }
+  }, [hasUnsavedChanges, enableAutoSave, userId, autoSaveDelay, saveToBackend])
 
   // Get visible questions based on current answers
   const visibleQuestions = useMemo(() => {
