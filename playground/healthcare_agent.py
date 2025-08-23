@@ -12,30 +12,9 @@ from healthcare.search.search_service import SearchService
 from healthcare.storage.database import DatabaseService
 
 
-# Configuration for playground (using environment variables or defaults)
-def create_minimal_config():
-    """Create a minimal configuration for playground use."""
-    return Config(
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        openai_model=os.getenv("OPENAI_MODEL", "gpt-5-mini"),
-        embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-large"),
-        base_data_dir=Path("data"),
-        uploads_dir=Path("data/uploads"),
-        reports_dir=Path("data/reports"),
-        chroma_dir=Path("data/chroma"),
-        medical_db_path=Path("data/medical.db"),
-        agent_db_path=Path("data/healthcare_agent.db"),
-        chunk_size=1000,
-        chunk_overlap=200,
-        max_retries=3,
-        request_timeout=120,
-        log_level="INFO",
-    )
-
-
 def initialize_healthcare_services():
     """Initialize minimal healthcare services for playground."""
-    config = create_minimal_config()
+    config = ConfigManager.load_config()
 
     # Create directories
     ConfigManager.initialize_directories(config)
