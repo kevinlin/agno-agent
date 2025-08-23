@@ -30,17 +30,18 @@ export interface SurveyResponseStatus {
   ok: true
   status: "in_progress" | "completed" | "cancelled"
   progress_pct: number
-  last_question_id?: string
-  answers: Array<{
-    question_id: string
-    title: string
-    value: any
-  }>
+  user_response: Record<string, any>
 }
 
-export interface SaveAnswerResponse {
+export interface SaveSurveyResponseRequest {
+  user_response: Record<string, any>
+  status?: "in_progress" | "completed"
+}
+
+export interface SaveSurveyResponseResponse {
   ok: true
   progress_pct: number
+  status: "in_progress" | "completed" | "cancelled"
 }
 
 export interface SurveyLinkRequest {
@@ -258,27 +259,29 @@ export async function getSurveyResponse(
 }
 
 /**
- * Save an individual survey answer
+ * Save complete survey response (handles both partial and complete saves)
  */
-export async function saveSurveyAnswer(
+export async function saveSurveyResponse(
   userId: string,
   surveyCode: string,
-  questionId: string,
-  value: any
-): Promise<SaveAnswerResponse> {
-  const url = new URL(`${API_CONFIG.baseUrl}/api/survey-response/answer`)
+  userResponse: Record<string, any>,
+  status?: "in_progress" | "completed"
+): Promise<SaveSurveyResponseResponse> {
+  const url = new URL(`${API_CONFIG.baseUrl}/api/survey-response`)
   url.searchParams.set('user_id', userId)
   url.searchParams.set('survey_code', surveyCode)
+
+  const requestBody: SaveSurveyResponseRequest = {
+    user_response: userResponse,
+    ...(status && { status })
+  }
 
   return withRetry(async () => {
     const response = await fetchWithTimeout(url.toString(), {
       method: 'POST',
-      body: JSON.stringify({
-        question_id: questionId,
-        value: value,
-      }),
+      body: JSON.stringify(requestBody),
     })
-    return handleApiResponse<SaveAnswerResponse>(response)
+    return handleApiResponse<SaveSurveyResponseResponse>(response)
   })
 }
 
@@ -287,18 +290,10 @@ export async function saveSurveyAnswer(
  */
 export async function completeSurveyResponse(
   userId: string,
-  surveyCode: string
-): Promise<any> {
-  const url = new URL(`${API_CONFIG.baseUrl}/api/survey-response`)
-  url.searchParams.set('user_id', userId)
-  url.searchParams.set('survey_code', surveyCode)
-
-  return withRetry(async () => {
-    const response = await fetchWithTimeout(url.toString(), {
-      method: 'POST',
-    })
-    return handleApiResponse<any>(response)
-  })
+  surveyCode: string,
+  userResponse: Record<string, any>
+): Promise<SaveSurveyResponseResponse> {
+  return saveSurveyResponse(userId, surveyCode, userResponse, "completed")
 }
 
 // Agent Integration API Functions

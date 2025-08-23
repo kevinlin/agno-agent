@@ -13,7 +13,6 @@ from healthcare.config.config import Config
 from healthcare.storage.database import DatabaseService
 from healthcare.storage.models import (
     Survey,
-    SurveyAnswer,
     SurveyResponse,
     SurveyResponseStatus,
     SurveyResult,
@@ -269,98 +268,6 @@ class TestSurveyResponseModel:
                 session.commit()
 
 
-class TestSurveyAnswerModel:
-    """Test SurveyAnswer model."""
-
-    def test_survey_answer_creation(self, db_service, test_user, test_survey_data):
-        """Test creating survey answer records."""
-        with db_service.get_session() as session:
-            # Create survey and response
-            survey = Survey(
-                id="test_survey_id",
-                code="test_survey",
-                title="Test Survey",
-                version="1.0.0",
-                type=SurveyType.PERSONALIZATION,
-                definition_json=json.dumps(test_survey_data),
-            )
-            session.add(survey)
-
-            response = SurveyResponse(
-                id=str(uuid.uuid4()), survey_id=survey.id, user_id=test_user.id
-            )
-            session.add(response)
-            session.commit()
-
-            # Create answers
-            answer1 = SurveyAnswer(
-                response_id=response.id,
-                question_code="height_cm",
-                value_json=json.dumps(175),
-            )
-
-            answer2 = SurveyAnswer(
-                response_id=response.id,
-                question_code="smoke_status",
-                value_json=json.dumps("never"),
-            )
-
-            session.add_all([answer1, answer2])
-            session.commit()
-            session.refresh(answer1)
-            session.refresh(answer2)
-
-            assert answer1.response_id == response.id
-            assert answer1.question_code == "height_cm"
-            assert json.loads(answer1.value_json) == 175
-            assert isinstance(answer1.created_at, datetime)
-
-            assert answer2.question_code == "smoke_status"
-            assert json.loads(answer2.value_json) == "never"
-
-    def test_survey_answer_unique_response_question_constraint(
-        self, db_service, test_user, test_survey_data
-    ):
-        """Test that each question can have only one answer per response."""
-        with db_service.get_session() as session:
-            # Create survey and response
-            survey = Survey(
-                id="test_survey_id",
-                code="test_survey",
-                title="Test Survey",
-                version="1.0.0",
-                type=SurveyType.PERSONALIZATION,
-                definition_json=json.dumps(test_survey_data),
-            )
-            session.add(survey)
-
-            response = SurveyResponse(
-                id=str(uuid.uuid4()), survey_id=survey.id, user_id=test_user.id
-            )
-            session.add(response)
-            session.commit()
-
-            # Create first answer
-            answer1 = SurveyAnswer(
-                response_id=response.id,
-                question_code="height_cm",
-                value_json=json.dumps(175),
-            )
-            session.add(answer1)
-            session.commit()
-
-            # Try to create second answer for same question
-            answer2 = SurveyAnswer(
-                response_id=response.id,
-                question_code="height_cm",
-                value_json=json.dumps(180),
-            )
-            session.add(answer2)
-
-            with pytest.raises(Exception):  # Should raise integrity error
-                session.commit()
-
-
 class TestSurveyResultModel:
     """Test SurveyResult model."""
 
@@ -482,15 +389,6 @@ class TestDatabaseIntegration:
             session.add(response)
             session.commit()
 
-            # Create an answer
-            answer = SurveyAnswer(
-                response_id=response.id,
-                question_code="test_question",
-                value_json=json.dumps("test_value"),
-            )
-            session.add(answer)
-            session.commit()
-
             # Create a result
             result = SurveyResult(
                 response_id=response.id, result_json=json.dumps({"test": "result"})
@@ -502,5 +400,4 @@ class TestDatabaseIntegration:
             assert session.get(User, user.id) is not None
             assert session.get(Survey, survey.id) is not None
             assert session.get(SurveyResponse, response.id) is not None
-            assert session.get(SurveyAnswer, answer.id) is not None
             assert session.get(SurveyResult, result.id) is not None

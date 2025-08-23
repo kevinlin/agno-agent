@@ -10,10 +10,6 @@ from healthcare.config.config import Config
 from healthcare.storage.models import (
     MedicalReport,
     ReportAsset,
-    Survey,
-    SurveyAnswer,
-    SurveyResponse,
-    SurveyResult,
     User,
 )
 

@@ -563,7 +563,7 @@ class TestSurveyResponseManagement:
         assert result is not None
         assert result["status"] == "in_progress"
         assert result["progress_pct"] == 0
-        assert result["answers"] == []
+        assert result["user_response"] == {}
         assert "id" in result
         assert "created_at" in result
         assert "updated_at" in result
@@ -577,12 +577,11 @@ class TestSurveyResponseManagement:
             user_id=test_user.id, survey_code=test_survey.code
         )
 
-        # Save an answer to make it different
-        survey_service.save_survey_answer(
+        # Save responses to make it different
+        survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="height_cm",
-            value=175,
+            user_response={"height_cm": 175},
         )
 
         # Get the response again
@@ -593,9 +592,7 @@ class TestSurveyResponseManagement:
         assert second_result is not None
         assert second_result["id"] == first_result["id"]  # Same response
         assert second_result["status"] == "in_progress"
-        assert len(second_result["answers"]) == 1
-        assert second_result["answers"][0]["question_code"] == "height_cm"
-        assert second_result["answers"][0]["value"] == 175
+        assert second_result["user_response"] == {"height_cm": 175}
 
     def test_get_or_create_survey_response_invalid_survey(
         self, survey_service, test_user
@@ -607,19 +604,13 @@ class TestSurveyResponseManagement:
 
         assert result is None
 
-    def test_save_survey_answer_success(self, survey_service, test_user, test_survey):
-        """Test successfully saving a survey answer."""
-        # Create response first
-        survey_service.get_or_create_survey_response(
-            user_id=test_user.id, survey_code=test_survey.code
-        )
-
-        # Save answer
-        result = survey_service.save_survey_answer(
+    def test_save_survey_response_success(self, survey_service, test_user, test_survey):
+        """Test successfully saving a survey response."""
+        # Save survey response
+        result = survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="height_cm",
-            value=180,
+            user_response={"height_cm": 180},
         )
 
         assert result is not None
@@ -627,7 +618,7 @@ class TestSurveyResponseManagement:
         assert result["progress_pct"] > 0  # Should calculate progress
         assert "response_id" in result
 
-    def test_save_survey_answer_update_existing(
+    def test_save_survey_response_update_existing(
         self, survey_service, test_user, test_survey
     ):
         """Test updating an existing survey answer."""
@@ -636,79 +627,62 @@ class TestSurveyResponseManagement:
             user_id=test_user.id, survey_code=test_survey.code
         )
 
-        # Save initial answer
-        survey_service.save_survey_answer(
+        # Save initial response
+        survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="height_cm",
-            value=180,
+            user_response={"height_cm": 180},
         )
 
-        # Update the answer
-        result = survey_service.save_survey_answer(
+        # Update the response
+        result = survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="height_cm",
-            value=185,
+            user_response={"height_cm": 185},
         )
 
         assert result is not None
         assert result["ok"] is True
 
-        # Verify the answer was updated
+        # Verify the response was updated
         response = survey_service.get_or_create_survey_response(
             user_id=test_user.id, survey_code=test_survey.code
         )
-        assert len(response["answers"]) == 1
-        assert response["answers"][0]["value"] == 185
+        assert response["user_response"]["height_cm"] == 185
 
-    def test_save_survey_answer_invalid_survey(self, survey_service, test_user):
-        """Test saving answer for non-existent survey."""
-        result = survey_service.save_survey_answer(
+    def test_save_survey_response_invalid_survey(self, survey_service, test_user):
+        """Test saving response for non-existent survey."""
+        result = survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code="nonexistent_survey",
-            question_code="height_cm",
-            value=180,
+            user_response={"height_cm": 180},
         )
 
         assert result is None
 
-    def test_save_survey_answer_no_response(
+    def test_save_survey_response_creates_new(
         self, survey_service, test_user, test_survey
     ):
-        """Test saving answer when no response exists."""
-        # Don't create response first
-        result = survey_service.save_survey_answer(
+        """Test saving response creates new response if none exists."""
+        # Don't create response first - save_survey_response should create it
+        result = survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="height_cm",
-            value=180,
+            user_response={"height_cm": 180},
         )
 
-        assert result is None
+        assert result is not None
+        assert result["ok"] is True
 
     def test_complete_survey_response_success(
         self, survey_service, test_user, test_survey
     ):
         """Test successfully completing a survey response."""
-        # Create response and save some answers
-        survey_service.get_or_create_survey_response(
-            user_id=test_user.id, survey_code=test_survey.code
-        )
-
-        # Save answers for BMI calculation
-        survey_service.save_survey_answer(
+        # Save response with answers for BMI calculation
+        survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="height_cm",
-            value=175,
-        )
-
-        survey_service.save_survey_answer(
-            user_id=test_user.id,
-            survey_code=test_survey.code,
-            question_code="weight",
-            value=70,
+            user_response={"height_cm": 175, "weight": 70},
         )
 
         # Complete the survey
@@ -767,29 +741,26 @@ class TestSurveyResponseManagement:
         )
 
         # Save first answer (1/3 questions = 33%)
-        result1 = survey_service.save_survey_answer(
+        result1 = survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="height_cm",
-            value=175,
+            user_response={"height_cm": 175},
         )
         assert result1["progress_pct"] == 33
 
         # Save second answer (2/3 questions = 66%)
-        result2 = survey_service.save_survey_answer(
+        result2 = survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="gender",
-            value="male",
+            user_response={"height_cm": 175, "gender": "male"},
         )
         assert result2["progress_pct"] == 66
 
         # Save third answer (3/3 questions = 100%)
-        result3 = survey_service.save_survey_answer(
+        result3 = survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="conditions",
-            value=["none"],
+            user_response={"height_cm": 175, "gender": "male", "conditions": ["none"]},
         )
         assert result3["progress_pct"] == 100
 
@@ -802,18 +773,13 @@ class TestSurveyResponseManagement:
             user_id=test_user.id, survey_code=test_survey.code
         )
 
-        survey_service.save_survey_answer(
+        survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="height",  # height in cm
-            value=170,
-        )
-
-        survey_service.save_survey_answer(
-            user_id=test_user.id,
-            survey_code=test_survey.code,
-            question_code="weight",  # weight in kg
-            value=65,
+            user_response={
+                "height": 170,  # height in cm
+                "weight": 65,  # weight in kg
+            },
         )
 
         # Complete survey to trigger metrics calculation
@@ -840,11 +806,10 @@ class TestSurveyResponseManagement:
         current_year = datetime.now().year
         birth_year = current_year - 30
 
-        survey_service.save_survey_answer(
+        survey_service.save_survey_response(
             user_id=test_user.id,
             survey_code=test_survey.code,
-            question_code="birth_year",
-            value=birth_year,
+            user_response={"birth_year": birth_year},
         )
 
         # Complete survey
@@ -883,9 +848,11 @@ class TestSurveyResponseManagement:
             },
         )
 
-        # Create response and complete
-        survey_service.get_or_create_survey_response(
-            user_id=test_user.id, survey_code="personalization-survey"
+        # Save response with data and complete
+        survey_service.save_survey_response(
+            user_id=test_user.id,
+            survey_code="personalization-survey",
+            user_response={"age": 30},
         )
 
         result = survey_service.complete_survey_response(

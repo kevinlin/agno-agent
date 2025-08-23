@@ -80,29 +80,20 @@ class Survey(SQLModel, table=True):
 
 
 class SurveyResponse(SQLModel, table=True):
-    """Survey response tracking model."""
+    """Survey response tracking model with complete answer storage."""
 
     id: Optional[str] = Field(default=None, primary_key=True)  # UUID
     survey_id: str = Field(foreign_key="survey.id")
     user_id: int = Field(foreign_key="user.id")
     status: SurveyResponseStatus = Field(default=SurveyResponseStatus.IN_PROGRESS)
     progress_pct: int = Field(default=0, ge=0, le=100)
+    user_response: Optional[str] = Field(
+        default=None
+    )  # JSON field: {"height_cm": "173", "smoke_status": "never"}
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
     __table_args__ = (UniqueConstraint("user_id", "survey_id"),)
-
-
-class SurveyAnswer(SQLModel, table=True):
-    """Individual answer storage model."""
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    response_id: str = Field(foreign_key="surveyresponse.id")
-    question_code: str
-    value_json: str  # JSON-encoded answer value
-    created_at: datetime = Field(default_factory=utc_now)
-
-    __table_args__ = (UniqueConstraint("response_id", "question_code"),)
 
 
 class SurveyResult(SQLModel, table=True):

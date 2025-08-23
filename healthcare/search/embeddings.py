@@ -60,21 +60,21 @@ class EmbeddingService:
 
     def refresh_collection(self) -> None:
         """Refresh the collection reference to handle database updates.
-        
+
         This should be called when ChromaDB has been updated externally
         and the collection state may have changed.
         """
         try:
             logger.info("Refreshing ChromaDB collection reference...")
-            
+
             # Get fresh collection reference
             self.collection = self.chroma_client.get_or_create_collection(
                 name="medical_reports",
                 metadata={"description": "Medical report chunks with embeddings"},
             )
-            
+
             logger.info(f"✓ Collection refreshed, count: {self.collection.count()}")
-            
+
         except Exception as e:
             logger.error(f"Failed to refresh collection: {e}")
             # If refresh fails, try full reinitialization
@@ -279,10 +279,10 @@ class EmbeddingService:
                 if "error finding id" in error_msg or "internal error" in error_msg:
                     logger.warning(f"ChromaDB collection error detected: {query_error}")
                     logger.info("Attempting to refresh collection and retry query...")
-                    
+
                     # Refresh collection and retry once
                     self.refresh_collection()
-                    
+
                     results = self.collection.query(
                         query_embeddings=[query_embedding],
                         n_results=k,

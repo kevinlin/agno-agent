@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import {
   getSurveyResponse,
-  saveSurveyAnswer,
+  saveSurveyResponse,
   SurveyApiError,
   formatErrorMessage,
   isNetworkError,
@@ -32,7 +32,7 @@ export function useSurveyPersistence({
   const [backendAvailable, setBackendAvailable] = useState(true)
 
   const storageKey = `survey_${surveyCode}_${userId || "anonymous"}`
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>()
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Monitor online status
   useEffect(() => {
@@ -73,11 +73,7 @@ export function useSurveyPersistence({
     if (enableBackendSync && userId && isOnline && preferBackend) {
       try {
         const response = await getSurveyResponse(userId, surveyCode)
-        const backendAnswers: Record<string, any> = {}
-        
-        response.answers.forEach((answer) => {
-          backendAnswers[answer.question_id] = answer.value
-        })
+        const backendAnswers = response.user_response || {}
 
         backendData = {
           answers: backendAnswers,
@@ -147,21 +143,17 @@ export function useSurveyPersistence({
         // Save to backend if enabled and conditions are met
         if (enableBackendSync && userId && isOnline && backendAvailable) {
           try {
-            if (questionCode && answers[questionCode] !== undefined) {
-              // Save specific answer
-              await saveSurveyAnswer(userId, surveyCode, questionCode, answers[questionCode])
-              backendSaveSuccess = true
-              setBackendAvailable(true)
-            } else {
-              // Save most recent answer (batch save not implemented yet)
-              const answerEntries = Object.entries(answers)
-              if (answerEntries.length > 0) {
-                const [lastQuestionCode, lastValue] = answerEntries[answerEntries.length - 1]
-                await saveSurveyAnswer(userId, surveyCode, lastQuestionCode, lastValue)
-                backendSaveSuccess = true
-                setBackendAvailable(true)
-              }
+            // Always save complete state with new unified API
+            let currentAnswers = { ...answers }
+            
+            // If specific question/value provided, ensure it's included
+            if (questionCode && currentAnswers[questionCode] !== undefined) {
+              // Answer already in state, save complete state
             }
+            
+            await saveSurveyResponse(userId, surveyCode, currentAnswers, "in_progress")
+            backendSaveSuccess = true
+            setBackendAvailable(true)
           } catch (error) {
             if (error instanceof SurveyApiError) {
               setError(formatErrorMessage(error))
@@ -255,7 +247,9 @@ export function useSurveyPersistence({
     try {
       // Try to sync all answers with backend
       for (const [questionCode, value] of Object.entries(answers)) {
-        await saveSurveyAnswer(userId, surveyCode, questionCode, value)
+        // Create a temporary answers object for this specific save
+        const tempAnswers = { [questionCode]: value }
+        await saveSurveyResponse(userId, surveyCode, tempAnswers, "in_progress")
       }
       setBackendAvailable(true)
       setError(undefined)

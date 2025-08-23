@@ -6,7 +6,7 @@ import { getVisibleQuestions } from "@/lib/survey-data"
 import { validateAnswer } from "@/lib/survey-validation"
 import {
   getSurveyResponse,
-  saveSurveyAnswer,
+  saveSurveyResponse,
   completeSurveyResponse,
   SurveyApiError,
   formatErrorMessage,
@@ -64,11 +64,8 @@ export function useSurvey({
       try {
         const response = await getSurveyResponse(userId, survey.code)
         
-        // Update answers with backend data
-        const backendAnswers: Record<string, any> = {}
-        response.answers.forEach((answer) => {
-          backendAnswers[answer.question_id] = answer.value
-        })
+        // Update answers with backend data from user_response field
+        const backendAnswers = response.user_response || {}
 
         // Merge with existing answers (backend takes precedence)
         setAnswers((prev) => ({ ...prev, ...backendAnswers }))
@@ -99,21 +96,16 @@ export function useSurvey({
     setError(undefined)
 
     try {
+      // Always save complete survey state
+      let currentAnswers = { ...answers }
+      
+      // If specific question/value provided, update it in the current state
       if (questionCode && value !== undefined) {
-        // Save single answer
-        const response = await saveSurveyAnswer(userId, survey.code, questionCode, value)
-        setBackendProgress(response.progress_pct)
-      } else {
-        // Save all unsaved answers (batch save)
-        // For now, we'll save the most recent answer
-        // In a more sophisticated implementation, we could track which answers are dirty
-        const answerEntries = Object.entries(answers)
-        if (answerEntries.length > 0) {
-          const [lastQuestionCode, lastValue] = answerEntries[answerEntries.length - 1]
-          const response = await saveSurveyAnswer(userId, survey.code, lastQuestionCode, lastValue)
-          setBackendProgress(response.progress_pct)
-        }
+        currentAnswers[questionCode] = value
       }
+
+      const response = await saveSurveyResponse(userId, survey.code, currentAnswers, "in_progress")
+      setBackendProgress(response.progress_pct)
 
       setLastSaved(new Date())
       setHasUnsavedChanges(false)
@@ -138,7 +130,7 @@ export function useSurvey({
     setError(undefined)
 
     try {
-      const result = await completeSurveyResponse(userId, survey.code)
+      const result = await completeSurveyResponse(userId, survey.code, answers)
       setLastSaved(new Date())
       setHasUnsavedChanges(false)
       return result
@@ -149,7 +141,7 @@ export function useSurvey({
     } finally {
       setIsSaving(false)
     }
-  }, [userId, survey?.code])
+  }, [userId, survey?.code, answers])
 
   // Auto-save functionality
   useEffect(() => {

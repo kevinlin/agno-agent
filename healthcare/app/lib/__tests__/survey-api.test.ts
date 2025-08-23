@@ -5,7 +5,7 @@
 import {
   getSurveyDefinition,
   getSurveyResponse,
-  saveSurveyAnswer,
+  saveSurveyResponse,
   completeSurveyResponse,
   generateSurveyLink,
   getSurveyCatalog,
@@ -122,14 +122,9 @@ describe('Survey API Client', () => {
         ok: true,
         status: 'in_progress',
         progress_pct: 50,
-        last_question_id: 'age',
-        answers: [
-          {
-            question_id: 'age',
-            title: 'What is your age?',
-            value: 25
-          }
-        ]
+        user_response: {
+          age: 25
+        }
       }
 
       mockFetch.mockResolvedValueOnce({
@@ -151,7 +146,7 @@ describe('Survey API Client', () => {
         ok: true,
         status: 'in_progress',
         progress_pct: 0,
-        answers: []
+        user_response: {}
       }
 
       mockFetch.mockResolvedValueOnce({
@@ -162,15 +157,16 @@ describe('Survey API Client', () => {
 
       const result = await getSurveyResponse('new_user', 'test-survey');
       expect(result.progress_pct).toBe(0);
-      expect(result.answers).toEqual([]);
+      expect(result.user_response).toEqual({});
     })
   })
 
-  describe('saveSurveyAnswer', () => {
-    test('should save answer successfully', async () => {
+  describe('saveSurveyResponse', () => {
+    test('should save survey response successfully', async () => {
       const mockResponse = {
         ok: true,
-        progress_pct: 33
+        progress_pct: 33,
+        status: 'in_progress'
       }
 
       mockFetch.mockResolvedValueOnce({
@@ -179,15 +175,15 @@ describe('Survey API Client', () => {
         json: async () => mockResponse,
       } as Response);
 
-      const result = await saveSurveyAnswer('user123', 'test-survey', 'age', 25);
+      const result = await saveSurveyResponse('user123', 'test-survey', { age: 25 }, 'in_progress');
       expect(result).toEqual(mockResponse);
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/survey-response/answer?user_id=user123&survey_code=test-survey',
+        'http://localhost:8000/api/survey-response?user_id=user123&survey_code=test-survey',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({
-            question_id: 'age',
-            value: 25
+            user_response: { age: 25 },
+            status: 'in_progress'
           }),
         })
       );
@@ -198,8 +194,8 @@ describe('Survey API Client', () => {
         ok: false,
         error: {
           code: 'validation_error',
-          message: 'Invalid answer value',
-          details: 'Age must be between 0 and 120'
+          message: 'Invalid response data',
+          details: 'User response cannot be empty'
         }
       }
 
@@ -210,7 +206,7 @@ describe('Survey API Client', () => {
         json: async () => mockError,
       } as Response);
 
-      await expect(saveSurveyAnswer('user123', 'test-survey', 'age', -5))
+      await expect(saveSurveyResponse('user123', 'test-survey', {}, 'in_progress'))
         .rejects.toThrow(SurveyApiError);
     })
   })
@@ -220,10 +216,7 @@ describe('Survey API Client', () => {
       const mockResponse = {
         ok: true,
         status: 'completed',
-        results: {
-          bmi: 22.5,
-          risk_score: 'low'
-        }
+        progress_pct: 100
       }
 
       mockFetch.mockResolvedValueOnce({
@@ -232,9 +225,10 @@ describe('Survey API Client', () => {
         json: async () => mockResponse,
       } as Response);
 
-      const result = await completeSurveyResponse('user123', 'test-survey');
+      const userResponse = { height: 170, weight: 65, age: 25 };
+      const result = await completeSurveyResponse('user123', 'test-survey', userResponse);
       expect(result.status).toBe('completed');
-      expect(result.results).toBeDefined();
+      expect(result.progress_pct).toBe(100);
     })
 
     test('should handle incomplete survey error', async () => {

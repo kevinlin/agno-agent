@@ -89,19 +89,20 @@ describe('useSurvey Hook with Backend Integration', () => {
   });
 
   describe('Answer Saving with Backend', () => {
-    test('should have saveSurveyAnswer API available', () => {
-      mockSurveyApi.saveSurveyAnswer.mockResolvedValueOnce({
+    test('should have saveSurveyResponse API available', () => {
+      mockSurveyApi.saveSurveyResponse.mockResolvedValueOnce({
         ok: true,
-        progress_pct: 50
+        progress_pct: 50,
+        status: 'in_progress'
       });
 
       // Verify the API is mocked correctly
-      expect(jest.isMockFunction(mockSurveyApi.saveSurveyAnswer)).toBe(true);
+      expect(jest.isMockFunction(mockSurveyApi.saveSurveyResponse)).toBe(true);
     });
 
     test('should handle save errors gracefully', () => {
       const saveError = new surveyApi.SurveyApiError('validation_error', 'Invalid value');
-      mockSurveyApi.saveSurveyAnswer.mockRejectedValueOnce(saveError);
+      mockSurveyApi.saveSurveyResponse.mockRejectedValueOnce(saveError);
 
       // Verify error handling
       expect(saveError).toBeInstanceOf(surveyApi.SurveyApiError);

@@ -59,27 +59,28 @@ class SurveyResponseStatus(BaseModel):
         ..., description="Response status: in_progress, completed, cancelled"
     )
     progress_pct: int = Field(..., description="Progress percentage (0-100)")
-    last_question_id: Optional[str] = Field(
-        None, description="Last answered question ID"
-    )
-    answers: List[Dict] = Field(..., description="List of question answers")
-
-
-class SaveAnswerRequest(BaseModel):
-    """Request model for saving survey answer."""
-
-    question_id: str = Field(..., min_length=1, description="Question ID/code")
-    value: Union[Dict, List, str, int, float, bool] = Field(
-        ...,
-        description="Answer value - can be dict, list, string, number, or boolean depending on question type",
+    user_response: Dict = Field(
+        ..., description="Complete user response data as JSON object"
     )
 
 
-class SaveAnswerResponse(BaseModel):
-    """Response model for saving survey answer."""
+class SaveSurveyResponseRequest(BaseModel):
+    """Request model for saving complete survey response."""
+
+    user_response: Dict = Field(
+        ..., description="Complete user response data as JSON object"
+    )
+    status: Optional[str] = Field(
+        None, description="Response status: in_progress or completed"
+    )
+
+
+class SaveSurveyResponseResponse(BaseModel):
+    """Response model for saving survey response."""
 
     ok: bool = Field(..., description="Operation success status")
     progress_pct: int = Field(..., description="Updated progress percentage")
+    status: str = Field(..., description="Response status")
 
 
 class SurveyLinkRequest(BaseModel):
@@ -360,38 +361,11 @@ async def get_survey_response(
                 },
             )
 
-        # Format answers for response
-        formatted_answers = []
-        for answer in response_data.get("answers", []):
-            # Get question title from survey definition
-            survey_def = survey_service.get_survey_definition(survey_code)
-            question_title = answer["question_code"]  # Default to code
-
-            if survey_def and "questions" in survey_def:
-                for q in survey_def["questions"]:
-                    if q.get("code") == answer["question_code"]:
-                        question_title = q.get("title", answer["question_code"])
-                        break
-
-            formatted_answers.append(
-                {
-                    "question_id": answer["question_code"],
-                    "title": question_title,
-                    "value": answer["value"],
-                }
-            )
-
-        # Get last question ID (most recent answer)
-        last_question_id = None
-        if formatted_answers:
-            last_question_id = formatted_answers[-1]["question_id"]
-
         return SurveyResponseStatus(
             ok=True,
             status=response_data["status"],
             progress_pct=response_data["progress_pct"],
-            last_question_id=last_question_id,
-            answers=formatted_answers,
+            user_response=response_data["user_response"],
         )
 
     except HTTPException:
@@ -413,22 +387,32 @@ async def get_survey_response(
         )
 
 
-@router.post("/survey-response/answer", response_model=SaveAnswerResponse)
-async def save_survey_answer(
+@router.post("/survey-response", response_model=SaveSurveyResponseResponse)
+async def save_survey_response(
     user_id: str = Query(..., description="External user ID"),
     survey_code: str = Query(..., description="Survey code"),
-    request: SaveAnswerRequest = ...,
+    request: SaveSurveyResponseRequest = ...,
     survey_service: Annotated[SurveyService, Depends(get_survey_service)] = ...,
     db_service: Annotated[DatabaseService, Depends(get_database_service)] = ...,
 ):
-    """Save an individual survey answer."""
+    """Save complete survey response (handles both partial and complete saves)."""
     try:
         # Get or create user
         user = get_or_create_user(db_service, user_id)
 
-        # Save answer
-        result = survey_service.save_survey_answer(
-            user.id, survey_code, request.question_id, request.value
+        # Parse status if provided
+        status = None
+        if request.status:
+            from healthcare.storage.models import SurveyResponseStatus
+
+            if request.status == "completed":
+                status = SurveyResponseStatus.COMPLETED
+            elif request.status == "in_progress":
+                status = SurveyResponseStatus.IN_PROGRESS
+
+        # Save survey response
+        result = survey_service.save_survey_response(
+            user.id, survey_code, request.user_response, status
         )
 
         if not result:
@@ -438,80 +422,47 @@ async def save_survey_answer(
                     "ok": False,
                     "error": {
                         "code": "save_failed",
-                        "message": "Failed to save answer",
-                        "details": "Survey or response not found",
+                        "message": "Failed to save survey response",
+                        "details": "Survey not found",
                     },
                 },
             )
 
-        return SaveAnswerResponse(ok=result["ok"], progress_pct=result["progress_pct"])
+        # If status is completed, calculate derived metrics
+        if status == SurveyResponseStatus.COMPLETED:
+            # This will trigger the complete_survey_response logic
+            completion_result = survey_service.complete_survey_response(
+                user.id, survey_code
+            )
+            if completion_result:
+                result.update(completion_result)
+
+        return SaveSurveyResponseResponse(
+            ok=result["ok"],
+            progress_pct=result["progress_pct"],
+            status=result["status"],
+        )
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(
-            f"Failed to save answer for user {user_id}, survey {survey_code}: {e}"
+            f"Failed to save survey response for user {user_id}, survey {survey_code}: {e}"
         )
         raise HTTPException(
             status_code=500,
             detail={
                 "ok": False,
                 "error": {
-                    "code": "answer_save_failed",
-                    "message": "Failed to save survey answer",
+                    "code": "response_save_failed",
+                    "message": "Failed to save survey response",
                     "details": str(e),
                 },
             },
         )
 
 
-@router.post("/survey-response", response_model=Dict)
-async def complete_survey_response(
-    user_id: str = Query(..., description="External user ID"),
-    survey_code: str = Query(..., description="Survey code"),
-    survey_service: Annotated[SurveyService, Depends(get_survey_service)] = ...,
-    db_service: Annotated[DatabaseService, Depends(get_database_service)] = ...,
-):
-    """Complete a survey response and calculate derived metrics."""
-    try:
-        # Get or create user
-        user = get_or_create_user(db_service, user_id)
-
-        # Complete survey
-        result = survey_service.complete_survey_response(user.id, survey_code)
-
-        if not result:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "ok": False,
-                    "error": {
-                        "code": "completion_failed",
-                        "message": "Failed to complete survey",
-                        "details": "Survey or response not found",
-                    },
-                },
-            )
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to complete survey for user {user_id}, survey {survey_code}: {e}"
-        )
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "ok": False,
-                "error": {
-                    "code": "completion_failed",
-                    "message": "Failed to complete survey response",
-                    "details": str(e),
-                },
-            },
-        )
+# Old completion endpoint removed - now handled by unified save_survey_response endpoint
 
 
 # Agent Integration Endpoints

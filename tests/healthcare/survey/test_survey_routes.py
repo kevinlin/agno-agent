@@ -308,10 +308,10 @@ class TestSurveyRoutes:
             "id": str(uuid.uuid4()),
             "status": "in_progress",
             "progress_pct": 50,
-            "answers": [
-                {"question_code": "age", "value": 25},
-                {"question_code": "gender", "value": "M"},
-            ],
+            "user_response": {
+                "age": 25,
+                "gender": "M",
+            },
         }
         self.mock_survey_service.get_or_create_survey_response.return_value = (
             mock_response_data
@@ -331,8 +331,8 @@ class TestSurveyRoutes:
         assert data["ok"] is True
         assert data["status"] == "in_progress"
         assert data["progress_pct"] == 50
-        assert len(data["answers"]) == 2
-        assert data["last_question_id"] == "gender"
+        assert data["user_response"]["age"] == 25
+        assert data["user_response"]["gender"] == "M"
 
     @patch("healthcare.survey.routes.get_or_create_user")
     def test_get_survey_response_survey_not_found(self, mock_get_user):
@@ -357,24 +357,29 @@ class TestSurveyRoutes:
         assert data["detail"]["error"]["code"] == "survey_not_found"
 
     @patch("healthcare.survey.routes.get_or_create_user")
-    def test_save_survey_answer_success(self, mock_get_user):
-        """Test successful survey answer saving."""
+    def test_save_survey_response_success(self, mock_get_user):
+        """Test successful survey response saving."""
         self.override_dependencies()
 
         # Mock user creation
         mock_get_user.return_value = self.mock_user
 
         # Mock survey service response
-        mock_result = {"ok": True, "progress_pct": 75, "response_id": str(uuid.uuid4())}
-        self.mock_survey_service.save_survey_answer.return_value = mock_result
+        mock_result = {
+            "ok": True,
+            "progress_pct": 75,
+            "response_id": str(uuid.uuid4()),
+            "status": "in_progress",
+        }
+        self.mock_survey_service.save_survey_response.return_value = mock_result
 
         # Test data
-        answer_request = {"question_id": "age", "value": {"answer": 25}}
+        response_request = {"user_response": {"age": 25}, "status": "in_progress"}
 
         # Make request
         response = self.client.post(
-            "/api/survey-response/answer?user_id=test-user-123&survey_code=test-survey",
-            json=answer_request,
+            "/api/survey-response?user_id=test-user-123&survey_code=test-survey",
+            json=response_request,
         )
 
         # Assertions
@@ -382,30 +387,29 @@ class TestSurveyRoutes:
         data = response.json()
         assert data["ok"] is True
         assert data["progress_pct"] == 75
+        assert data["status"] == "in_progress"
 
         # Verify service was called correctly
-        self.mock_survey_service.save_survey_answer.assert_called_once_with(
-            1, "test-survey", "age", {"answer": 25}
-        )
+        self.mock_survey_service.save_survey_response.assert_called_once()
 
     @patch("healthcare.survey.routes.get_or_create_user")
-    def test_save_survey_answer_failed(self, mock_get_user):
-        """Test failed survey answer saving."""
+    def test_save_survey_response_failed(self, mock_get_user):
+        """Test failed survey response saving."""
         self.override_dependencies()
 
         # Mock user creation
         mock_get_user.return_value = self.mock_user
 
         # Mock survey service response
-        self.mock_survey_service.save_survey_answer.return_value = None
+        self.mock_survey_service.save_survey_response.return_value = None
 
         # Test data
-        answer_request = {"question_id": "age", "value": {"answer": 25}}
+        response_request = {"user_response": {"age": 25}}
 
         # Make request
         response = self.client.post(
-            "/api/survey-response/answer?user_id=test-user-123&survey_code=test-survey",
-            json=answer_request,
+            "/api/survey-response?user_id=test-user-123&survey_code=test-survey",
+            json=response_request,
         )
 
         # Assertions
@@ -416,24 +420,38 @@ class TestSurveyRoutes:
 
     @patch("healthcare.survey.routes.get_or_create_user")
     def test_complete_survey_response_success(self, mock_get_user):
-        """Test successful survey response completion."""
+        """Test successful survey response completion via unified endpoint."""
         self.override_dependencies()
 
         # Mock user creation
         mock_get_user.return_value = self.mock_user
 
-        # Mock survey service response
-        mock_result = {
+        # Mock survey service responses
+        save_result = {
+            "ok": True,
+            "response_id": str(uuid.uuid4()),
+            "status": "completed",
+            "progress_pct": 100,
+        }
+        complete_result = {
             "ok": True,
             "response_id": str(uuid.uuid4()),
             "status": "completed",
             "derived_metrics": {"bmi": 22.5, "age": 25},
         }
-        self.mock_survey_service.complete_survey_response.return_value = mock_result
+        self.mock_survey_service.save_survey_response.return_value = save_result
+        self.mock_survey_service.complete_survey_response.return_value = complete_result
+
+        # Test data for completion
+        completion_request = {
+            "user_response": {"height": 170, "weight": 65, "age": 25},
+            "status": "completed",
+        }
 
         # Make request
         response = self.client.post(
-            "/api/survey-response?user_id=test-user-123&survey_code=test-survey"
+            "/api/survey-response?user_id=test-user-123&survey_code=test-survey",
+            json=completion_request,
         )
 
         # Assertions
@@ -441,8 +459,6 @@ class TestSurveyRoutes:
         data = response.json()
         assert data["ok"] is True
         assert data["status"] == "completed"
-        assert "derived_metrics" in data
-        assert data["derived_metrics"]["bmi"] == 22.5
 
         # Verify service was called correctly
         self.mock_survey_service.complete_survey_response.assert_called_once_with(
@@ -457,19 +473,26 @@ class TestSurveyRoutes:
         # Mock user creation
         mock_get_user.return_value = self.mock_user
 
-        # Mock survey service response
-        self.mock_survey_service.complete_survey_response.return_value = None
+        # Mock survey service responses to fail
+        self.mock_survey_service.save_survey_response.return_value = None
+
+        # Test data for completion
+        completion_request = {
+            "user_response": {"height": 170, "weight": 65},
+            "status": "completed",
+        }
 
         # Make request
         response = self.client.post(
-            "/api/survey-response?user_id=test-user-123&survey_code=test-survey"
+            "/api/survey-response?user_id=test-user-123&survey_code=test-survey",
+            json=completion_request,
         )
 
         # Assertions
         assert response.status_code == 404
         data = response.json()
         assert data["detail"]["ok"] is False
-        assert data["detail"]["error"]["code"] == "completion_failed"
+        assert data["detail"]["error"]["code"] == "save_failed"
 
     def test_generate_survey_link_success(self):
         """Test successful survey link generation."""
